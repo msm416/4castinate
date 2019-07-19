@@ -1,0 +1,42 @@
+branch-defaults:
+  default:
+    environment: null
+    group_suffix: null
+  master:
+    environment: null
+  team-model:
+    environment: django-env
+environment-defaults:
+  django-env:
+    branch: null
+    repository: null
+global:
+  application_name: django-tutorial-2
+  branch: null
+  default_ec2_keyname: aws-eb
+  default_platform: python-3.6
+  default_region: us-east-1
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: eb-cli
+  repository: null
+  sc: git
+  workspace_type: Application
+
+container_commands:
+  01_collectstatic:
+    command: "source /opt/python/run/venv/bin/activate && python manage.py collectstatic --noinput"
+
+option_settings:
+  "aws:elasticbeanstalk:application:environment":
+    DJANGO_SETTINGS_MODULE: "ebdjango.settings"
+    "PYTHONPATH": "$PYTHONPATH"
+    "ALLOWED_HOSTS": ".elasticbeanstalk.com"
+  "aws:elasticbeanstalk:container:python":
+    WSGIPath: ebdjango/ebdjango/wsgi.py
+    NumProcesses: 3
+    NumThreads: 20
+  "aws:elasticbeanstalk:container:python:staticfiles":
+    "/static/": "www/static/"
