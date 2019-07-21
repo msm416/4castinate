@@ -6,6 +6,10 @@ branch-defaults:
     environment: null
   team-model:
     environment: django-env
+container_commands:
+  01_collectstatic:
+    command: source /opt/python/run/venv/bin/activate && python manage.py collectstatic
+      --noinput
 environment-defaults:
   django-env:
     branch: null
@@ -24,19 +28,14 @@ global:
   repository: null
   sc: git
   workspace_type: Application
-
-container_commands:
-  01_collectstatic:
-    command: "source /opt/python/run/venv/bin/activate && python manage.py collectstatic --noinput"
-
 option_settings:
-  "aws:elasticbeanstalk:application:environment":
-    DJANGO_SETTINGS_MODULE: "ebdjango.settings"
-    "PYTHONPATH": "$PYTHONPATH"
-    "ALLOWED_HOSTS": ".elasticbeanstalk.com"
-  "aws:elasticbeanstalk:container:python":
-    WSGIPath: ebdjango/ebdjango/wsgi.py
+  aws:elasticbeanstalk:application:environment:
+    ALLOWED_HOSTS: .elasticbeanstalk.com
+    DJANGO_SETTINGS_MODULE: ebdjango.settings
+    PYTHONPATH: $PYTHONPATH
+  aws:elasticbeanstalk:container:python:
     NumProcesses: 3
     NumThreads: 20
-  "aws:elasticbeanstalk:container:python:staticfiles":
-    "/static/": "www/static/"
+    WSGIPath: ebdjango/ebdjango/wsgi.py
+  aws:elasticbeanstalk:container:python:staticfiles:
+    /static/: www/static/
