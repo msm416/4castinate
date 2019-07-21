@@ -16,9 +16,28 @@ class Team(models.Model):
 
 
 class TeamData(models.Model):
+    # An instance of TeamData could be a sprint
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     team_data_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
 
     def __str__(self):
         return self.team_data_text
+
+
+class ForecastInput(models.Model):
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    forecast_text = models.CharField(max_length=200)
+    start_date = models.DateField()
+    wip_lower_bound = models.PositiveSmallIntegerField()
+    wip_upper_bound = models.PositiveSmallIntegerField()
+    split_factor_lower_bound = models.FloatField()
+    split_factor_upper_bound = models.FloatField()
+    throughput_period_length = models.PositiveSmallIntegerField()
+    throughput_lower_bound = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return self.forecast_text
+
+    def generate_forecast_output(self):
+        return "in 10 days we're done for " + self.forecast_text
