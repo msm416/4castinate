@@ -18,11 +18,11 @@ class Team(models.Model):
 class TeamData(models.Model):
     # An instance of TeamData could be a sprint
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    team_data_text = models.CharField(max_length=200)
+    teamdata_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
 
     def __str__(self):
-        return self.team_data_text
+        return self.teamdata_text
 
 
 class ForecastInput(models.Model):

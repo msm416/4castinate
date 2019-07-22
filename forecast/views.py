@@ -1,12 +1,18 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
+from django.shortcuts import get_object_or_404, render
+
+from .models import Team
 
 
 def index(request):
-    return HttpResponse("Hello, world. You're at the forecast index.")
+    latest_team_list = Team.objects.order_by('-pub_date')[:5]
+    context = {'latest_team_list': latest_team_list}
+    return render(request, 'forecast/index.html', context)
 
 
 def detail(request, team_id):
-    return HttpResponse("You're looking at team %s." % team_id)
+    team = get_object_or_404(Team, pk=team_id)
+    return render(request, 'forecast/detail.html', {'team': team})
 
 
 def results(request, team_id):

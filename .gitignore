@@ -1,5 +1,11 @@
 # Elastic Beanstalk files
-.elasticbeanstalk/config.yml
+.elasticbeanstalk/
+
+# Migrations
+forecast/migrations/*.py
+
+#DS STORE
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

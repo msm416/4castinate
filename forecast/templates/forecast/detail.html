@@ -1,0 +1,6 @@
+<h1>{{ team.team_text }}</h1>
+<ul>
+    {% for teamdata in team.teamdata_set.all %}
+    <li>{{ teamdata.teamdata_text }}</li>
+    {% endfor %}
+</ul>

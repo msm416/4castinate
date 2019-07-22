@@ -1,0 +1,9 @@
+{% if latest_team_list %}
+<ul>
+    {% for team in latest_team_list %}
+    <li><a href="{% url 'forecast:detail' team.id %}">{{ team.team_text }}</a></li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No Forecasts are available.</p>
+{% endif %}
