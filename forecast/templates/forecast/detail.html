@@ -2,11 +2,11 @@
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
-<form action="{% url 'forecast:vote' team.id %}" method="post">
+<form action="{% url 'forecast:estimate' team.id %}" method="post">
     {% csrf_token %}
     {% for forecastinput in team.forecastinput_set.all %}
     <input type="radio" name="forecastinput" id="forecastinput{{ forloop.counter }}" value="{{ forecastinput.id }}">
     <label for="forecastinput{{ forloop.counter }}">{{ forecastinput.forecastinput_text }}</label><br>
     {% endfor %}
-    <input type="submit" value="Vote">
+    <input type="submit" value="Estimate">
 </form>

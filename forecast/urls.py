@@ -10,6 +10,6 @@ urlpatterns = [
     path('<int:team_id>/', views.detail, name='detail'),
     # ex: /forecast/5/results/
     path('<int:team_id>/results/', views.results, name='results'),
-    # ex: /forecast/5/vote/
-    path('<int:team_id>/vote/', views.vote, name='vote'),
+    # ex: /forecast/5/estimate/
+    path('<int:team_id>/estimate/', views.estimate, name='estimate'),
 ]

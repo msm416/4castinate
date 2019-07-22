@@ -4,6 +4,10 @@
     {% for teamdata in team.teamdata_set.all %}
     <li>{{ teamdata.teamdata_text }} -- {{ teamdata.votes }} vote{{ teamdata.votes|pluralize }}</li>
     {% endfor %}
+
+    <li>{{ forecastinput.forecastinput_text }}</li>
 </ul>
 
-<a href="{% url 'forecast:detail' team.id %}">Vote again?</a>
+
+
+<a href="{% url 'forecast:detail' team.id %}">Estimate again?</a>

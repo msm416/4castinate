@@ -18,10 +18,14 @@ def detail(request, team_id):
 
 def results(request, team_id):
     team = get_object_or_404(Team, pk=team_id)
-    return render(request, 'forecast/results.html', {'team': team})
+    # forecastinput = get_object_or_404(ForecastInput, pk=selected_forecastinput_id)
+    return render(request, 'forecast/results.html', {
+        'team': team,
+        #§'forecastinput': forecastinput,
+    })
 
 
-def vote(request, team_id):
+def estimate(request, team_id):
     team = get_object_or_404(Team, pk=team_id)
     try:
         selected_forecastinput = \
@@ -38,4 +42,6 @@ def vote(request, team_id):
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
-        return HttpResponseRedirect(reverse('forecast:results', args=(team.id,)))
+        return HttpResponseRedirect(
+            reverse('forecast:results',
+                    args=(team.id,)))

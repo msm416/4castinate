@@ -20,6 +20,7 @@ class TeamData(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     teamdata_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
+    # TODO: remove votes
 
     def __str__(self):
         return self.teamdata_text
