@@ -4,9 +4,9 @@
 
 <form action="{% url 'forecast:vote' team.id %}" method="post">
     {% csrf_token %}
-    {% for teamdata in team.teamdata_set.all %}
-    <input type="radio" name="teamdata" id="teamdata{{ forloop.counter }}" value="{{ teamdata.id }}">
-    <label for="teamdata{{ forloop.counter }}">{{ teamdata.teamdata_text }}</label><br>
+    {% for forecastinput in team.forecastinput_set.all %}
+    <input type="radio" name="forecastinput" id="forecastinput{{ forloop.counter }}" value="{{ forecastinput.id }}">
+    <label for="forecastinput{{ forloop.counter }}">{{ forecastinput.forecastinput_text }}</label><br>
     {% endfor %}
     <input type="submit" value="Vote">
 </form>

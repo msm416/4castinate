@@ -27,17 +27,25 @@ class TeamData(models.Model):
 
 class ForecastInput(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    forecast_text = models.CharField(max_length=200)
-    start_date = models.DateField()
-    wip_lower_bound = models.PositiveSmallIntegerField()
-    wip_upper_bound = models.PositiveSmallIntegerField()
-    split_factor_lower_bound = models.FloatField()
-    split_factor_upper_bound = models.FloatField()
-    throughput_period_length = models.PositiveSmallIntegerField()
-    throughput_lower_bound = models.PositiveSmallIntegerField()
+    forecastinput_text = models.CharField(max_length=200)
+    start_date = models.DateField(default=timezone.now())
+    wip_lower_bound = models.PositiveSmallIntegerField(default=20)
+    wip_upper_bound = models.PositiveSmallIntegerField(default=30)
+    split_factor_lower_bound = models.FloatField(default=1.00)
+    split_factor_upper_bound = models.FloatField(default=3.00)
+    throughput_period_length = models.PositiveSmallIntegerField(default=1)
+    throughput_lower_bound = models.PositiveSmallIntegerField(default=1)
+    throughput_upper_bound = models.PositiveSmallIntegerField(default=5)
+    is_selected = models.BooleanField(default=False)
 
     def __str__(self):
         return self.forecast_text
+
+    # t is a team
+    # t.forecastinput_set.create(forecastinput_text='Sheet 1',
+    # start_date=datetime.date.today(), wip_lower_bound=20,
+    # wip_upper_bound=30, split_factor_lower_bound=1.00, split_factor_upper_bound=1.00,
+    # throughput_period_length=1, throughput_lower_bound=1, throughput_upper_bound=1)
 
     def generate_forecast_output(self):
         return "in 10 days we're done for " + self.forecast_text
