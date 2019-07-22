@@ -1,6 +1,12 @@
 <h1>{{ team.team_text }}</h1>
-<ul>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'forecast:vote' team.id %}" method="post">
+    {% csrf_token %}
     {% for teamdata in team.teamdata_set.all %}
-    <li>{{ teamdata.teamdata_text }}</li>
+    <input type="radio" name="teamdata" id="teamdata{{ forloop.counter }}" value="{{ teamdata.id }}">
+    <label for="teamdata{{ forloop.counter }}">{{ teamdata.teamdata_text }}</label><br>
     {% endfor %}
-</ul>
+    <input type="submit" value="Vote">
+</form>
