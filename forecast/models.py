@@ -40,7 +40,7 @@ class ForecastInput(models.Model):
     is_selected = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.forecast_text
+        return self.forecastinput_text
 
     # t is a team
     # t.forecastinput_set.create(forecastinput_text='Sheet 1',
@@ -49,4 +49,4 @@ class ForecastInput(models.Model):
     # throughput_period_length=1, throughput_lower_bound=1, throughput_upper_bound=1)
 
     def generate_forecast_output(self):
-        return "in 10 days we're done for " + self.forecast_text
+        return "in 10 days we're done for " + self.forecastinput_text

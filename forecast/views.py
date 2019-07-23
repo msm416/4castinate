@@ -21,7 +21,7 @@ def results(request, team_id, forecastinput_id):
     forecastinput = get_object_or_404(ForecastInput, pk=forecastinput_id)
     return render(request, 'forecast/results.html', {
         'team': team,
-        'forecastinput': forecastinput
+        'forecastoutput': forecastinput.generate_forecast_output()
     })
 
 
