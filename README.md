@@ -22,7 +22,7 @@
        e.g. export SECRET_KEY='abcd1234'
        you can verify it with:
        echo $SECRET_KEY
-#### 5.2 Run the app
+#### 5.2 Run the app:
        python manage.py runserver
 ### 6. Deactivate environment:
        deactivate

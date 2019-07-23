@@ -7,6 +7,9 @@ forecast/migrations/*.py
 #DS STORE
 .DS_Store
 
+# INTELLIJ
+.idea/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
