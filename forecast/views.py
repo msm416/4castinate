@@ -16,12 +16,12 @@ def detail(request, team_id):
     return render(request, 'forecast/detail.html', {'team': team})
 
 
-def results(request, team_id):
+def results(request, team_id, forecastinput_id):
     team = get_object_or_404(Team, pk=team_id)
-    # forecastinput = get_object_or_404(ForecastInput, pk=selected_forecastinput_id)
+    forecastinput = get_object_or_404(ForecastInput, pk=forecastinput_id)
     return render(request, 'forecast/results.html', {
         'team': team,
-        #§'forecastinput': forecastinput,
+        'forecastinput': forecastinput
     })
 
 
@@ -44,4 +44,4 @@ def estimate(request, team_id):
         # user hits the Back button.
         return HttpResponseRedirect(
             reverse('forecast:results',
-                    args=(team.id,)))
+                    args=(team.id, selected_forecastinput.id)))
