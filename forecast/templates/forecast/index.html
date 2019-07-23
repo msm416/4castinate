@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+{% block title %}My amazing forecast{% endblock %}
+
+{% block content %}
+
 {% if latest_team_list %}
 <ul>
     {% for team in latest_team_list %}
@@ -7,3 +12,5 @@
 {% else %}
 <p>No Forecasts are available.</p>
 {% endif %}
+
+{% endblock %}
