@@ -29,12 +29,14 @@
 ####   Note: Activate it back only when you need to install other dependencies and before commiting, do: 
        pip freeze > requirements.txt
 ### 7. Deploy the app with eb cli. 
-#### 7.1 Follow steps [1-6](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy). The *EB CLI init* steps you'll have to perform just at the time when you clone the repo:
+#### 7.1 Follow steps [1-3](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy). The *EB CLI init* steps you'll have to perform just at the time when you clone the repo:
 #### 7.2 Set environment variable in environment. This has to be done for each new environment you make on AWS EB:
        eb setenv SECRET_KEY='YOUR_AWS_SECRET_KEY' 
        e.g. eb setenv SECRET_KEY='abcd1234'
        you can verify it with:
        eb printenv
-#### 7.2 Access the website manually / from eb cli [step 7](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy):
+#### 7.3 Deploy your local repository:
+       eb deploy
+#### 7.4 Access the website manually / from eb cli [step 7](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy):
        eb open
 ### 8. [Cleanup](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-stopping).
