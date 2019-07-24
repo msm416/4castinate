@@ -1,4 +1,9 @@
 import datetime
+import random
+import time
+import numpy as np
+import matplotlib.pyplot as plt
+import mpld3
 
 from django.db import models
 from django.utils import timezone
@@ -49,4 +54,18 @@ class ForecastInput(models.Model):
     # throughput_period_length=1, throughput_lower_bound=1, throughput_upper_bound=1)
 
     def generate_forecast_output(self):
-        return "in 10 days we're done for " + self.forecastinput_text
+        nb_of_tests = 10
+
+        for i in range(nb_of_tests):
+            start_time = time.time()
+            wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
+            split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)
+            throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound)
+
+            completion = int((wip * split_rate) / throughput)
+
+            end_time = time.time()
+
+        return "In " + str(completion) + " weeks we're done for this sprint. #Tasks is: " \
+               + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
+               + "Elapsed time was: " + str(end_time - start_time) + "seconds."
