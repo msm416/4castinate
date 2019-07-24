@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+{% block title %}My amazing results{% endblock %}
+
+{% block content %}
+
 <h1>{{ team.team_text }}</h1>
 
 <ul>
@@ -10,7 +15,7 @@
 
 <canvas id="myChart"></canvas>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+<a href="{% url 'forecast:detail' team.id %}">Estimate again?</a>
 
 <script>
     var ctx = document.getElementById('myChart').getContext('2d');
@@ -34,4 +39,4 @@
     });
 </script>
 
-<a href="{% url 'forecast:detail' team.id %}">Estimate again?</a>
+{% endblock %}
