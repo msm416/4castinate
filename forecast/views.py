@@ -2,8 +2,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from .models import Team, TeamData, ForecastInput
-
+from .models import Team, TeamData, ForecastInput, ForecastOutputSample
+from collections import Counter
 
 def index(request):
     latest_team_list = Team.objects.order_by('-pub_date')[:5]
@@ -18,10 +18,15 @@ def detail(request, team_id):
 
 def results(request, team_id, forecastinput_id):
     team = get_object_or_404(Team, pk=team_id)
-    forecastinput = get_object_or_404(ForecastInput, pk=forecastinput_id)
+    forecastoutputsamples = []
+    for sample in ForecastOutputSample.objects.all():
+        forecastoutputsamples.append(sample.completion_duration)
+    forecastoutputsamples = sorted(Counter(forecastoutputsamples).items())
+
     return render(request, 'forecast/results.html', {
         'team': team,
-        'forecastinput': forecastinput
+        'forecast_weeks': [k for (k, v) in forecastoutputsamples],
+        'forecast_weeks_counts': [v for (k, v) in forecastoutputsamples],
     })
 
 

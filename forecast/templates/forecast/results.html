@@ -10,27 +10,30 @@
     <li>{{ teamdata.teamdata_text }} -- {{ teamdata.votes }} vote{{ teamdata.votes|pluralize }}</li>
     {% endfor %}
 
-    <li>{{ forecastoutput }}</li>
 </ul>
 
 <canvas id="myChart"></canvas>
 
 <a href="{% url 'forecast:detail' team.id %}">Estimate again?</a>
 
+{{ forecast_weeks |json_script:"weeks"}}
+{{ forecast_weeks_counts |json_script:"weeks_counts"}}
+
 <script>
     var ctx = document.getElementById('myChart').getContext('2d');
+    var weeks = JSON.parse(document.getElementById('weeks').textContent);
+    var weeks_counts = JSON.parse(document.getElementById('weeks_counts').textContent);
     var chart = new Chart(ctx, {
         // The type of chart we want to create
         type: 'line',
-
         // The data for our dataset
         data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+            labels: weeks,
             datasets: [{
-                label: 'My First dataset',
+                label: "DISTRIBUTION",
                 backgroundColor: 'rgb(255, 99, 132)',
                 borderColor: 'rgb(255, 99, 132)',
-                data: [0, 10, 5, 2, 20, 30, 45]
+                data: weeks_counts
             }]
         },
 
