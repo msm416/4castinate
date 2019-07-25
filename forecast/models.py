@@ -32,7 +32,7 @@ class Iteration(models.Model):
 class Form(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
-    start_date = models.DateField(default=timezone.now())
+    start_date = models.DateField(default=timezone.now)
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
     split_factor_lower_bound = models.FloatField(default=1.00)
@@ -41,7 +41,7 @@ class Form(models.Model):
     throughput_lower_bound = models.PositiveSmallIntegerField(default=1)
     throughput_upper_bound = models.PositiveSmallIntegerField(default=5)
     is_selected = models.BooleanField(default=False)
-    test_count = models.PositiveSmallIntegerField(default=100)
+    output_count = models.PositiveSmallIntegerField(default=100)
 
     def __str__(self):
         return self.description
@@ -51,7 +51,7 @@ class Form(models.Model):
         # Run only once per Form
         if self.output_set.count() != 0:
             return
-        for i in range(self.test_count):
+        for i in range(self.output_count):
             start_time = time.time()
             wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
             split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)

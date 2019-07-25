@@ -5,6 +5,7 @@ from django.urls import reverse
 from .models import Team, Iteration, Form, Output
 from collections import Counter
 
+
 def index(request):
     latest_team_list = Team.objects.order_by('-pub_date')[:5]
     context = {'latest_team_list': latest_team_list}
@@ -21,17 +22,15 @@ def results(request, team_id, form_id):
     outputs = []
     for sample in Output.objects.filter(form=form_id):
         outputs.append(sample.completion_duration)
-    outputs = sorted(Counter(outputs).items())
-    weeks = [k for (k, v) in outputs]
-    weeks_counts = [v for (k, v) in outputs]
+    weeks_to_frequency = sorted(Counter(outputs).items())
+    weeks = [k for (k, v) in weeks_to_frequency]
+    weeks_frequency = [v for (k, v) in weeks_to_frequency]
 
     return render(request, 'forecast/results.html', {
         'team': team,
-        'forecast_weeks': weeks,
-        'forecast_weeks_counts': [x / sum(weeks_counts) for x in weeks_counts],
-        'debug_weeks_aux': str(sum(weeks_counts)),
-
-        ##TODO: remove debug_weeks_aux when done with debugging this feature
+        'weeks': weeks,
+        'weeks_frequency': [x / sum(weeks_frequency) for x in weeks_frequency],
+        'weeks_frequency_sum': str(sum(weeks_frequency)),
     })
 
 

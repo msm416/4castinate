@@ -9,15 +9,15 @@
 
 <a href="{% url 'forecast:detail' team.id %}">Estimate again?</a>
 
-{{ forecast_weeks |json_script:"weeks"}}
-{{ forecast_weeks_counts |json_script:"weeks_counts"}}
-{{ debug_weeks_aux |json_script:"debug_weeks_aux"}}
+{{ weeks |json_script:"weeks"}}
+{{ weeks_frequency |json_script:"weeks_frequency"}}
+{{ weeks_frequency_sum |json_script:"weeks_frequency_sum"}}
 
 <script>
     var ctx = document.getElementById('myChart').getContext('2d');
     var weeks = JSON.parse(document.getElementById('weeks').textContent);
-    var weeks_counts = JSON.parse(document.getElementById('weeks_counts').textContent);
-    var debug_weeks_aux = JSON.parse(document.getElementById('debug_weeks_aux').textContent);
+    var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
+    var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
 
     var chart = new Chart(ctx, {
         // The type of chart we want to create
@@ -26,10 +26,10 @@
         data: {
             labels: weeks,
             datasets: [{
-                label: debug_weeks_aux,
+                label: weeks_frequency_sum,
                 backgroundColor: 'rgb(255, 99, 132)',
                 borderColor: 'rgb(255, 99, 132)',
-                data: weeks_counts
+                data: weeks_frequency
             }]
         },
 
