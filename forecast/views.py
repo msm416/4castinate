@@ -21,7 +21,7 @@ def results(request, team_id, forecastinput_id):
     forecastinput = get_object_or_404(ForecastInput, pk=forecastinput_id)
     return render(request, 'forecast/results.html', {
         'team': team,
-        'forecastoutput': forecastinput.generate_forecast_output()
+        'forecastinput': forecastinput
     })
 
 
@@ -39,6 +39,7 @@ def estimate(request, team_id):
     else:
         selected_forecastinput.is_selected = True
         selected_forecastinput.save()
+        selected_forecastinput.generate_forecast_output()
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.

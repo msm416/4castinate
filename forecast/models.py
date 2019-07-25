@@ -43,6 +43,7 @@ class ForecastInput(models.Model):
     throughput_lower_bound = models.PositiveSmallIntegerField(default=1)
     throughput_upper_bound = models.PositiveSmallIntegerField(default=5)
     is_selected = models.BooleanField(default=False)
+    nb_of_tests = models.PositiveSmallIntegerField(default=10)
 
     def __str__(self):
         return self.forecastinput_text
@@ -54,18 +55,30 @@ class ForecastInput(models.Model):
     # throughput_period_length=1, throughput_lower_bound=1, throughput_upper_bound=1)
 
     def generate_forecast_output(self):
-        nb_of_tests = 10
-
-        for i in range(nb_of_tests):
+        if self.forecastoutputsample_set.count() >= self.nb_of_tests:
+            return
+        for i in range(self.nb_of_tests):
             start_time = time.time()
             wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
             split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)
             throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound)
 
-            completion = int((wip * split_rate) / throughput)
-
+            completion_duration = int((wip * split_rate) / throughput)
             end_time = time.time()
+            msg = "In " + str(completion_duration) + " weeks we're done for this sprint. #Tasks is: " \
+                   + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
+                   + "Elapsed time was: " + str(end_time - start_time) + "seconds."
 
-        return "In " + str(completion) + " weeks we're done for this sprint. #Tasks is: " \
-               + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
-               + "Elapsed time was: " + str(end_time - start_time) + "seconds."
+            forecastoutputsample = ForecastOutputSample(forecastinput=self,
+                                                        completion_duration=completion_duration,
+                                                        output_message=msg)
+            forecastoutputsample.save()
+
+
+class ForecastOutputSample(models.Model):
+    forecastinput = models.ForeignKey(ForecastInput, on_delete=models.CASCADE)
+    completion_duration = models.PositiveSmallIntegerField()
+    output_message = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.output_message
