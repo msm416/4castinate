@@ -18,11 +18,14 @@
 
 {{ forecast_weeks |json_script:"weeks"}}
 {{ forecast_weeks_counts |json_script:"weeks_counts"}}
+{{ debug_weeks_aux |json_script:"debug_weeks_aux"}}
 
 <script>
     var ctx = document.getElementById('myChart').getContext('2d');
     var weeks = JSON.parse(document.getElementById('weeks').textContent);
     var weeks_counts = JSON.parse(document.getElementById('weeks_counts').textContent);
+    var debug_weeks_aux = JSON.parse(document.getElementById('debug_weeks_aux').textContent);
+
     var chart = new Chart(ctx, {
         // The type of chart we want to create
         type: 'line',
@@ -30,7 +33,7 @@
         data: {
             labels: weeks,
             datasets: [{
-                label: "DISTRIBUTION",
+                label: debug_weeks_aux,
                 backgroundColor: 'rgb(255, 99, 132)',
                 borderColor: 'rgb(255, 99, 132)',
                 data: weeks_counts

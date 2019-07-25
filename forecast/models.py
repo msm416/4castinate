@@ -43,7 +43,7 @@ class ForecastInput(models.Model):
     throughput_lower_bound = models.PositiveSmallIntegerField(default=1)
     throughput_upper_bound = models.PositiveSmallIntegerField(default=5)
     is_selected = models.BooleanField(default=False)
-    nb_of_tests = models.PositiveSmallIntegerField(default=10)
+    nb_of_tests = models.PositiveSmallIntegerField(default=100)
 
     def __str__(self):
         return self.forecastinput_text
@@ -55,7 +55,8 @@ class ForecastInput(models.Model):
     # throughput_period_length=1, throughput_lower_bound=1, throughput_upper_bound=1)
 
     def generate_forecast_output(self):
-        if self.forecastoutputsample_set.count() >= self.nb_of_tests:
+        # This function should run only once per ForecastInput
+        if self.forecastoutputsample_set.count() != 0:
             return
         for i in range(self.nb_of_tests):
             start_time = time.time()

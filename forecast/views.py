@@ -19,14 +19,19 @@ def detail(request, team_id):
 def results(request, team_id, forecastinput_id):
     team = get_object_or_404(Team, pk=team_id)
     forecastoutputsamples = []
-    for sample in ForecastOutputSample.objects.all():
+    for sample in ForecastOutputSample.objects.filter(forecastinput=forecastinput_id):
         forecastoutputsamples.append(sample.completion_duration)
     forecastoutputsamples = sorted(Counter(forecastoutputsamples).items())
+    weeks = [k for (k, v) in forecastoutputsamples]
+    weeks_counts = [v for (k, v) in forecastoutputsamples]
 
     return render(request, 'forecast/results.html', {
         'team': team,
-        'forecast_weeks': [k for (k, v) in forecastoutputsamples],
-        'forecast_weeks_counts': [v for (k, v) in forecastoutputsamples],
+        'forecast_weeks': weeks,
+        'forecast_weeks_counts': [x / sum(weeks_counts) for x in weeks_counts],
+        'debug_weeks_aux': str(sum(weeks_counts)),
+
+        ##TODO: remove debug_weeks_aux when done with debugging this feature
     })
 
 
