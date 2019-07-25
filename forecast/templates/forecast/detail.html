@@ -3,15 +3,15 @@
 
 {% block content %}
 
-<h1>{{ team.team_text }}</h1>
+<h1>{{ team.description }}</h1>
 
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
 <form action="{% url 'forecast:estimate' team.id %}" method="post">
     {% csrf_token %}
-    {% for forecastinput in team.forecastinput_set.all %}
-    <input type="radio" name="forecastinput" id="forecastinput{{ forloop.counter }}" value="{{ forecastinput.id }}">
-    <label for="forecastinput{{ forloop.counter }}">{{ forecastinput.forecastinput_text }}</label><br>
+    {% for form in team.form_set.all %}
+    <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
+    <label for="form{{ forloop.counter }}">{{ form.description }}</label><br>
     {% endfor %}
     <input type="submit" value="Estimate">
 </form>
