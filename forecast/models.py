@@ -10,25 +10,23 @@ from django.utils import timezone
 
 
 class Team(models.Model):
-    team_text = models.CharField(max_length=200)
+    description = models.CharField(max_length=200)
     pub_date = models.DateTimeField('date created')
 
     def __str__(self):
-        return self.team_text
+        return self.description
 
     def was_published_recently(self):
         return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
 
 
-class TeamData(models.Model):
-    # An instance of TeamData could be a sprint
+class Iteration(models.Model):
+    # An instance of Iteration could be a sprint
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    teamdata_text = models.CharField(max_length=200)
-    votes = models.IntegerField(default=0)
-    # TODO: remove votes
+    description = models.CharField(max_length=200)
 
     def __str__(self):
-        return self.teamdata_text
+        return self.description
 
 
 class ForecastInput(models.Model):

@@ -3,14 +3,7 @@
 
 {% block content %}
 
-<h1>{{ team.team_text }}</h1>
-
-<ul>
-    {% for teamdata in team.teamdata_set.all %}
-    <li>{{ teamdata.teamdata_text }} -- {{ teamdata.votes }} vote{{ teamdata.votes|pluralize }}</li>
-    {% endfor %}
-
-</ul>
+<h1>{{ team.description }}</h1>
 
 <canvas id="myChart"></canvas>
 

@@ -2,7 +2,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from .models import Team, TeamData, ForecastInput, ForecastOutputSample
+from .models import Team, Iteration, ForecastInput, ForecastOutputSample
 from collections import Counter
 
 def index(request):
