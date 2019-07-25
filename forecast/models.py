@@ -29,9 +29,9 @@ class Iteration(models.Model):
         return self.description
 
 
-class ForecastInput(models.Model):
+class Form(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    forecastinput_text = models.CharField(max_length=200)
+    description = models.CharField(max_length=200)
     start_date = models.DateField(default=timezone.now())
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
@@ -41,22 +41,17 @@ class ForecastInput(models.Model):
     throughput_lower_bound = models.PositiveSmallIntegerField(default=1)
     throughput_upper_bound = models.PositiveSmallIntegerField(default=5)
     is_selected = models.BooleanField(default=False)
-    nb_of_tests = models.PositiveSmallIntegerField(default=100)
+    test_count = models.PositiveSmallIntegerField(default=100)
 
     def __str__(self):
-        return self.forecastinput_text
+        return self.description
 
-    # t is a team
-    # t.forecastinput_set.create(forecastinput_text='Sheet 1',
-    # start_date=datetime.date.today(), wip_lower_bound=20,
-    # wip_upper_bound=30, split_factor_lower_bound=1.00, split_factor_upper_bound=1.00,
-    # throughput_period_length=1, throughput_lower_bound=1, throughput_upper_bound=1)
-
-    def generate_forecast_output(self):
-        # This function should run only once per ForecastInput
-        if self.forecastoutputsample_set.count() != 0:
+    # One test => One Output instance is created
+    def gen_output(self):
+        # Run only once per Form
+        if self.output_set.count() != 0:
             return
-        for i in range(self.nb_of_tests):
+        for i in range(self.test_count):
             start_time = time.time()
             wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
             split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)
@@ -68,16 +63,16 @@ class ForecastInput(models.Model):
                    + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
                    + "Elapsed time was: " + str(end_time - start_time) + "seconds."
 
-            forecastoutputsample = ForecastOutputSample(forecastinput=self,
-                                                        completion_duration=completion_duration,
-                                                        output_message=msg)
-            forecastoutputsample.save()
+            output = Output(form=self,
+                            completion_duration=completion_duration,
+                            message=msg)
+            output.save()
 
 
-class ForecastOutputSample(models.Model):
-    forecastinput = models.ForeignKey(ForecastInput, on_delete=models.CASCADE)
+class Output(models.Model):
+    form = models.ForeignKey(Form, on_delete=models.CASCADE)
     completion_duration = models.PositiveSmallIntegerField()
-    output_message = models.CharField(max_length=200)
+    message = models.CharField(max_length=200)
 
     def __str__(self):
-        return self.output_message
+        return self.message
