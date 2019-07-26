@@ -25,12 +25,22 @@ def results(request, team_id, form_id):
     weeks_to_frequency = sorted(Counter(outputs).items())
     weeks = [k for (k, v) in weeks_to_frequency]
     weeks_frequency = [v for (k, v) in weeks_to_frequency]
+    weeks_frequency_sum = sum(weeks_frequency)
+
+    outputs.sort()
+    fifth_centile = 0
+    centile_values = []
+    while fifth_centile <= weeks_frequency_sum:
+        centile_values.append(outputs[fifth_centile])
+        fifth_centile += int(weeks_frequency_sum / 20 - 1)
 
     return render(request, 'forecast/results.html', {
         'team': team,
         'weeks': weeks,
-        'weeks_frequency': [x / sum(weeks_frequency) for x in weeks_frequency],
-        'weeks_frequency_sum': str(sum(weeks_frequency)),
+        'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
+        'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
+        'centile_indices': [5*i for i in range(0, 21)],
+        'centile_values': centile_values
     })
 
 
