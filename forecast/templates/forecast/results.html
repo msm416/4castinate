@@ -7,11 +7,24 @@
 
 <canvas id="myChart"></canvas>
 
+<canvas id="myLikelihoodTable"></canvas>
+
+<!--{% if outputs %}-->
+<!--<ul>-->
+<!--    {% for output in outputs %}-->
+<!--        <li> {{ output }}</li>-->
+<!--    {% endfor %}-->
+<!--</ul>-->
+<!--{% endif %}-->
+
 <a href="{% url 'forecast:detail' team.id %}">Estimate again?</a>
 
 {{ weeks |json_script:"weeks"}}
 {{ weeks_frequency |json_script:"weeks_frequency"}}
 {{ weeks_frequency_sum |json_script:"weeks_frequency_sum"}}
+{{ centile_indices |json_script:"centile_indices"}}
+{{ centile_values |json_script:"centile_values"}}
+
 
 <script>
     var ctx = document.getElementById('myChart').getContext('2d');
@@ -34,8 +47,71 @@
         },
 
         // Configuration options go here
-        options: {}
+        options: {
+            title: {
+                display: true,
+                text: 'Test Results - Discrete Probability Distribution'
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Probability'
+                    }
+                }],
+                xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Week'
+                    }
+                }]
+            }
+        }
     });
 </script>
+
+<script>
+    var ctx = document.getElementById('myLikelihoodTable').getContext('2d');
+    var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+    var centile_indices = JSON.parse(document.getElementById('centile_indices').textContent);
+    var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+
+
+    var myLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: centile_values,
+            datasets:[{
+                label:weeks_frequency_sum,
+                data:centile_indices,
+            fill:false,
+            borderColor:'rgb(75, 192, 192)',
+            lineTension:0.1
+            }]
+        },
+        options: {
+            title: {
+                display: true,
+                text: 'Forecast Completion Date - Likelihood Graph'
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Likelihood'
+                    }
+                }],
+                xAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Week'
+                    }
+                }]
+            }
+        }
+    });
+</script>
+
+
 
 {% endblock %}
