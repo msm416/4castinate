@@ -1,9 +1,14 @@
+import json
+
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from .models import Team, Iteration, Form, Output
 from collections import Counter
+
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 
 def index(request):
@@ -65,3 +70,11 @@ def estimate(request, team_id):
         return HttpResponseRedirect(
             reverse('forecast:results',
                     args=(team.id, selected_form.id)))
+
+
+@require_POST
+@csrf_exempt
+def webhook(request):
+    data = json.loads(request.body)
+    # process_webhook(data)
+    return 200, 'Processed.'
