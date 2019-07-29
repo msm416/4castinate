@@ -1,4 +1,5 @@
 import json
+import random
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -33,11 +34,17 @@ def results(request, team_id, form_id):
     weeks_frequency_sum = sum(weeks_frequency)
 
     outputs.sort()
-    fifth_centile = 0
+    centile_indices = []
     centile_values = []
-    while fifth_centile <= weeks_frequency_sum:
-        centile_values.append(outputs[fifth_centile])
-        fifth_centile += int(weeks_frequency_sum / 20 - 1)
+
+    fifth_centile = 0
+# while fifth_centile <= weeks_frequency_sum:
+    #     centile_values.append(outputs[fifth_centile])
+    #     fifth_centile += int(weeks_frequency_sum / 20)
+
+    for i in range(0, 21):
+        centile_indices.append(5 * i)
+        centile_values.append(outputs[int((weeks_frequency_sum - 1) * 5 * i / 100)])
 
     return render(request, 'forecast/results.html', {
         'team': team,
@@ -75,6 +82,11 @@ def estimate(request, team_id):
 @require_POST
 @csrf_exempt
 def webhook(request):
-    data = json.loads(request.body)
-    # process_webhook(data)
-    return 200, 'Processed.'
+    # data = json.loads(request.body)
+    team = get_object_or_404(Team, pk=1)
+
+    if Form.objects.count() < 10:
+        aux = random.randint(0, 10000)
+        team.form_set.create(description=str(aux))
+
+    return render(request, 'forecast/detail.html', {'team': team})
