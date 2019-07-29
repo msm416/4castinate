@@ -1,3 +1,6 @@
+# CURL OUTPUT
+output_from_curl.txt
+
 # Elastic Beanstalk files
 .elasticbeanstalk/
 
