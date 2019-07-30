@@ -10,6 +10,10 @@ urlpatterns = [
     # ex: /forecast/5/
     path('<int:team_id>/results/<int:form_id>/', views.results, name='results'),
     # ex: /forecast/5/results/2
-    path('<int:team_id>/estimate/', views.estimate, name='estimate')
+    path('<int:team_id>/estimate/', views.estimate, name='estimate'),
     # ex: /forecast/5/estimate/
+
+    path('webhook/', views.webhook, name='webhook')
+    # ex: /forecast/webhook/
+    # THIS IS A JIRA WEBHOOK ENDPOINT
 ]
