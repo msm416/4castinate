@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block title %}My amazing index{% endblock %}
 
-{% block content %}
+{% block body %}
 
 <div class="container">
     <h1>Pick your team</h1>
+    <h3>Total number of teams in database: {{latest_team_list.count}}</h3>
     <input class="form-control" id="myInput" type="text" placeholder="Search by anything...">
     <br>
     <table class="table table-bordered table-striped">
@@ -31,8 +32,6 @@
         {% endfor %}
         </tbody>
     </table>
-
-    <p>Note that we start the search in tbody, to prevent filtering the table headers.</p>
 </div>
 
 <script>
