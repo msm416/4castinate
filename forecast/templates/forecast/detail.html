@@ -19,7 +19,8 @@
             <tr>
                 <th>Choose </th>
                 <th>Form </th>
-                <th>Last Fetch Date</th>
+                <th>Number of Simulations</th>
+                <th>Historical data</th>
             </tr>
             </thead>
             <tbody id="myTable">
@@ -32,7 +33,14 @@
                     <label for="form{{ forloop.counter }}"> {{ form.description }} </label>
                 </td>
                 <td>
-                    Never
+                    {{form.output_count}}
+                </td>
+                <td>
+                    {% if form.throughput_from_data %}
+                        Yes
+                    {% else %}
+                        No - High/Low Guess
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

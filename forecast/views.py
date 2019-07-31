@@ -64,7 +64,6 @@ def estimate(request, team_id):
             'error_message': "You didn't select a forecast input.",
         })
     else:
-        selected_form.is_selected = True
         selected_form.save()
         selected_form.gen_output()
         # Always return an HttpResponseRedirect after successfully dealing
