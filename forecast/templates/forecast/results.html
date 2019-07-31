@@ -3,9 +3,13 @@
 
 {% block body %}
 
-<h1>{{ team.description }}</h1>
+<h1>{{ team.description }} - {{ form.description }}</h1>
 
-<h2> <a href="{% url 'forecast:detail' team.id %}">Estimate again?</a> </h2>
+<h2> Estimate another:
+    <a href="{% url 'forecast:detail' team.id %}"> form?</a>
+    <a href="{% url 'forecast:index' %}"> team?</a>
+</h2>
+
 
 <canvas id="myChart"></canvas>
 

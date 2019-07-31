@@ -1,19 +1,58 @@
 {% extends "base.html" %}
 {% block title %}My amazing detail{% endblock %}
 
+
 {% block body %}
 
-<h1>{{ team.description }}</h1>
+<div class="container">
+    <h1>Choose form</h1>
+    <h3>Total number of forms for {{team.description}}: {{team.form_set.count}}</h3>
 
-{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
+    <br>
 
-<form action="{% url 'forecast:estimate' team.id %}" method="post">
-    {% csrf_token %}
-    {% for form in team.form_set.all %}
-    <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
-    <label for="form{{ forloop.counter }}">{{ form.description }}</label><br>
-    {% endfor %}
-    <input type="submit" value="Estimate">
-</form>
+    <form action="{% url 'forecast:estimate' team.id %}" method="post">
+        {% csrf_token %}
+
+        <table class="table table-bordered table-striped">
+            <thead>
+            <tr>
+                <th>Choose </th>
+                <th>Form </th>
+                <th>Last Fetch Date</th>
+            </tr>
+            </thead>
+            <tbody id="myTable">
+            {% for form in team.form_set.all %}
+            <tr>
+                <td>
+                    <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
+                </td>
+                <td>
+                    <label for="form{{ forloop.counter }}"> {{ form.description }} </label>
+                </td>
+                <td>
+                    Never
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <input type="submit" value="Estimate {{ team.description }}">
+    </form>
+    {% if error_message %}<p><strong>Warning: {{ error_message }}</strong></p>{% endif %}
+</div>
+
+<script>
+    $(document).ready(function(){
+        $("#myInput").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $("#myTable tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });
+</script>
 
 {% endblock %}

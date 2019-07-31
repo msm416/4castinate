@@ -25,6 +25,7 @@ def detail(request, team_id):
 
 def results(request, team_id, form_id):
     team = get_object_or_404(Team, pk=team_id)
+    form = get_object_or_404(Form, pk=form_id)
     outputs = []
     for sample in Output.objects.filter(form=form_id):
         outputs.append(sample.completion_duration)
@@ -37,17 +38,13 @@ def results(request, team_id, form_id):
     centile_indices = []
     centile_values = []
 
-    fifth_centile = 0
-# while fifth_centile <= weeks_frequency_sum:
-    #     centile_values.append(outputs[fifth_centile])
-    #     fifth_centile += int(weeks_frequency_sum / 20)
-
     for i in range(0, 21):
         centile_indices.append(5 * i)
         centile_values.append(outputs[int((weeks_frequency_sum - 1) * 5 * i / 100)])
 
     return render(request, 'forecast/results.html', {
         'team': team,
+        'form': form,
         'weeks': weeks,
         'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
         'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
@@ -59,8 +56,7 @@ def results(request, team_id, form_id):
 def estimate(request, team_id):
     team = get_object_or_404(Team, pk=team_id)
     try:
-        selected_form = \
-            team.form_set.get(pk=request.POST['form'])
+        selected_form = team.form_set.get(pk=request.POST['form'])
     except (KeyError, Form.DoesNotExist):
         # Redisplay the team voting form.
         return render(request, 'forecast/detail.html', {
