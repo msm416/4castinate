@@ -67,6 +67,7 @@ class Form(models.Model):
                             completion_duration=completion_duration,
                             message=msg)
             output.save()
+            # TODO: REMOVE CONFUSING MSG / RENAME OUTPUT MODEL
 
 
 class Output(models.Model):

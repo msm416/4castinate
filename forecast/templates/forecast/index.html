@@ -1,16 +1,48 @@
 {% extends "base.html" %}
 {% block title %}My amazing index{% endblock %}
 
-{% block content %}
+{% block body %}
 
-{% if latest_team_list %}
-<ul>
-    {% for team in latest_team_list %}
-    <li><a href="{% url 'forecast:detail' team.id %}">{{ team.description }}</a></li>
-    {% endfor %}
-</ul>
-{% else %}
-<p>No Forecasts are available.</p>
-{% endif %}
+<div class="container">
+    <h1>Choose team </h1>
+    <h3>Total number of teams in database: {{latest_team_list.count}}</h3>
+    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
+    <br>
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>Team Name</th>
+            <th>Data Sources</th>
+            <th>Last Fetch Date</th>
+        </tr>
+        </thead>
+        <tbody id="myTable">
+        {% for team in latest_team_list %}
+        <tr>
+            <td>
+                <a href="{% url 'forecast:detail' team.id %}">{{ team.description }}</a>
+            </td>
+            <td>
+                Jira Trello Asana
+            </td>
+            <td>
+                Never
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function(){
+        $("#myInput").on("keyup", function() {
+            var value = $(this).val().toLowerCase();
+            $("#myTable tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+    });
+</script>
 
 {% endblock %}
