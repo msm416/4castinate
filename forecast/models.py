@@ -22,8 +22,14 @@ class Team(models.Model):
 
 class Iteration(models.Model):
     # An instance of Iteration could be a sprint
+    # duration = 1 week
+    # source = Jira / Trello / None
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
+
+    # Default: Iteration does not come from some external source
+    source = models.CharField(max_length=200, default='None')
+    throughput = models.PositiveSmallIntegerField(default=3)
 
     def __str__(self):
         return self.description
@@ -37,10 +43,19 @@ class Form(models.Model):
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
     split_factor_lower_bound = models.FloatField(default=1.00)
     split_factor_upper_bound = models.FloatField(default=3.00)
+
+    # Default: all sprints are of 1 week
     throughput_period_length = models.PositiveSmallIntegerField(default=1)
+
     throughput_lower_bound = models.PositiveSmallIntegerField(default=1)
     throughput_upper_bound = models.PositiveSmallIntegerField(default=5)
-    is_selected = models.BooleanField(default=False)
+
+    # Default: we consider forms that don't use historical data
+    throughput_from_data = models.BooleanField(default=False)
+
+    # PK of Iteration object that represents the start point (we consider
+    # Iteration objects until the most recent Iteration - i.e. present)
+    throughput_from_data_start_date = models.DateField(default=timezone.now)
     output_count = models.PositiveSmallIntegerField(default=100)
 
     def __str__(self):
