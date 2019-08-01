@@ -18,7 +18,7 @@
             <thead>
             <tr>
                 <th>Choose </th>
-                <th>Form </th>
+                <th>Form (Hover for details)</th>
                 <th>Number of Simulations</th>
                 <th>Historical data</th>
             </tr>
@@ -30,7 +30,9 @@
                     <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
                 </td>
                 <td>
-                    <label for="form{{ forloop.counter }}"> {{ form.description }} </label>
+                    <label for="form{{ forloop.counter }}" >
+                        <a href="#" data-toggle="tooltip" title="{{ form.description }}"> {{ form.description }} </a>
+                    </label>
                 </td>
                 <td>
                     {{form.output_count}}
