@@ -3,149 +3,149 @@
 
 {% block body %}
 
-<h1>{{ team.description }} - {{ form.description }}</h1>
+    <h1>{{ team.description }} - {{ form.description }}</h1>
 
-<h2> Estimate another:
-    <a href="{% url 'forecast:detail' team.id %}"> form?</a>
-    <a href="{% url 'forecast:index' %}"> team?</a>
-</h2>
+    <h2> Estimate another:
+        <a href="{% url 'forecast:detail' team.id %}"> form?</a>
+        <a href="{% url 'forecast:index' %}"> team?</a>
+    </h2>
 
 
-<canvas id="myChart"></canvas>
+    <canvas id="myChart"></canvas>
 
-<canvas id="myLikelihoodTable"></canvas>
+    <canvas id="myLikelihoodTable"></canvas>
 
-{{ weeks |json_script:"weeks"}}
-{{ weeks_frequency |json_script:"weeks_frequency"}}
-{{ weeks_frequency_sum |json_script:"weeks_frequency_sum"}}
-{{ centile_indices |json_script:"centile_indices"}}
-{{ centile_values |json_script:"centile_values"}}
+    {{ weeks |json_script:"weeks"}}
+    {{ weeks_frequency |json_script:"weeks_frequency"}}
+    {{ weeks_frequency_sum |json_script:"weeks_frequency_sum"}}
+    {{ centile_indices |json_script:"centile_indices"}}
+    {{ centile_values |json_script:"centile_values"}}
 
-<script>
-    //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
-    var ctx = document.getElementById('myChart').getContext('2d');
-    var weeks = JSON.parse(document.getElementById('weeks').textContent);
-    var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
-    var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+    <script>
+        //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var weeks = JSON.parse(document.getElementById('weeks').textContent);
+        var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
+        var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
 
-    var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
-    gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
-    gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
-    gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
+        var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+        gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
+        gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
+        gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
 
-    var gradientFill = ctx.createLinearGradient(0, 0, $(window).width(), 0);
-    gradientFill.addColorStop(0, "rgba(244,29,49,0.6)");
-    gradientFill.addColorStop(0.5, "rgba(244,215,28,0.6)");
-    gradientFill.addColorStop(1, "rgba(120,244,31,0.6)");
+        var gradientFill = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+        gradientFill.addColorStop(0, "rgba(244,29,49,0.6)");
+        gradientFill.addColorStop(0.5, "rgba(244,215,28,0.6)");
+        gradientFill.addColorStop(1, "rgba(120,244,31,0.6)");
 
-    var chart = new Chart(ctx, {
-        // The type of chart we want to create
-        type: 'line',
-        // The data for our dataset
-        data: {
-            labels: weeks,
-            datasets: [{
-                label: weeks_frequency_sum,
-                borderColor: gradientStroke,
-                pointBorderColor: gradientStroke,
-                pointBackgroundColor: gradientStroke,
-                pointHoverBackgroundColor: gradientStroke,
-                pointHoverBorderColor: gradientStroke,
-                pointBorderWidth: 10,
-                pointHoverRadius: 10,
-                pointHoverBorderWidth: 1,
-                pointRadius: 3,
-                fill: true,
-                backgroundColor: gradientFill,
-                borderWidth: 4,
-                data: weeks_frequency
-            }]
-        },
-
-        // Configuration options go here
-        options: {
-            title: {
-                display: true,
-                text: 'Test Results - Discrete Probability Distribution'
-            },
-            scales: {
-                yAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Probability'
-                    }
-                }],
-                xAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Week'
-                    }
+        var chart = new Chart(ctx, {
+            // The type of chart we want to create
+            type: 'line',
+            // The data for our dataset
+            data: {
+                labels: weeks,
+                datasets: [{
+                    label: weeks_frequency_sum,
+                    borderColor: gradientStroke,
+                    pointBorderColor: gradientStroke,
+                    pointBackgroundColor: gradientStroke,
+                    pointHoverBackgroundColor: gradientStroke,
+                    pointHoverBorderColor: gradientStroke,
+                    pointBorderWidth: 10,
+                    pointHoverRadius: 10,
+                    pointHoverBorderWidth: 1,
+                    pointRadius: 3,
+                    fill: true,
+                    backgroundColor: gradientFill,
+                    borderWidth: 4,
+                    data: weeks_frequency
                 }]
-            }
-        }
-    });
-</script>
-
-<script>
-    //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
-    var ctx = document.getElementById('myLikelihoodTable').getContext('2d');
-    var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
-    var centile_indices = JSON.parse(document.getElementById('centile_indices').textContent);
-    var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
-
-    var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
-    gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
-    gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
-    gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
-
-    var gradientFill = ctx.createLinearGradient(0, 0, $(window).width(), 0);
-    gradientFill.addColorStop(0, "rgba(244,29,49,0.6)");
-    gradientFill.addColorStop(0.5, "rgba(244,215,28,0.6)");
-    gradientFill.addColorStop(1, "rgba(120,244,31,0.6)");
-
-    var myLineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: centile_values,
-            datasets:[{
-                label:weeks_frequency_sum,
-                borderColor: gradientStroke,
-                pointBorderColor: gradientStroke,
-                pointBackgroundColor: gradientStroke,
-                pointHoverBackgroundColor: gradientStroke,
-                pointHoverBorderColor: gradientStroke,
-                pointBorderWidth: 10,
-                pointHoverRadius: 10,
-                pointHoverBorderWidth: 1,
-                pointRadius: 3,
-                fill: true,
-                backgroundColor: gradientFill,
-                borderWidth: 4,
-                data:centile_indices,
-            lineTension:0.1
-            }]
-        },
-        options: {
-            title: {
-                display: true,
-                text: 'Forecast Completion Date - Likelihood Graph'
             },
-            scales: {
-                yAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Likelihood'
-                    }
-                }],
-                xAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Week'
-                    }
-                }]
+
+            // Configuration options go here
+            options: {
+                title: {
+                    display: true,
+                    text: 'Test Results - Discrete Probability Distribution'
+                },
+                scales: {
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Probability'
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Week'
+                        }
+                    }]
+                }
             }
-        }
-    });
-</script>
+        });
+    </script>
+
+    <script>
+        //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
+        var ctx = document.getElementById('myLikelihoodTable').getContext('2d');
+        var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+        var centile_indices = JSON.parse(document.getElementById('centile_indices').textContent);
+        var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+
+        var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+        gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
+        gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
+        gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
+
+        var gradientFill = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+        gradientFill.addColorStop(0, "rgba(244,29,49,0.6)");
+        gradientFill.addColorStop(0.5, "rgba(244,215,28,0.6)");
+        gradientFill.addColorStop(1, "rgba(120,244,31,0.6)");
+
+        var myLineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: centile_values,
+                datasets:[{
+                    label:weeks_frequency_sum,
+                    borderColor: gradientStroke,
+                    pointBorderColor: gradientStroke,
+                    pointBackgroundColor: gradientStroke,
+                    pointHoverBackgroundColor: gradientStroke,
+                    pointHoverBorderColor: gradientStroke,
+                    pointBorderWidth: 10,
+                    pointHoverRadius: 10,
+                    pointHoverBorderWidth: 1,
+                    pointRadius: 3,
+                    fill: true,
+                    backgroundColor: gradientFill,
+                    borderWidth: 4,
+                    data:centile_indices,
+                lineTension:0.1
+                }]
+            },
+            options: {
+                title: {
+                    display: true,
+                    text: 'Forecast Completion Date - Likelihood Graph'
+                },
+                scales: {
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Likelihood'
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Week'
+                        }
+                    }]
+                }
+            }
+        });
+    </script>
 
 {% endblock %}

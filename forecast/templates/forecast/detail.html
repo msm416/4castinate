@@ -4,7 +4,6 @@
 
 {% block body %}
 
-<div class="container">
     <h1>Choose form</h1>
     <h3>Total number of forms for {{team.description}}: {{team.form_set.count}}</h3>
 
@@ -12,57 +11,57 @@
     <br>
 
     <form action="{% url 'forecast:estimate' team.id %}" method="post">
-        {% csrf_token %}
+    {% csrf_token %}
 
-        <table class="table table-bordered table-striped">
-            <thead>
-            <tr>
-                <th>Choose </th>
-                <th>Form (Hover for details)</th>
-                <th>Number of Simulations</th>
-                <th>Historical data</th>
-            </tr>
-            </thead>
-            <tbody id="myTable">
-            {% for form in team.form_set.all %}
-            <tr>
-                <td>
-                    <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
-                </td>
-                <td>
-                    <label for="form{{ forloop.counter }}" >
-                        <a href="#" data-toggle="tooltip" title="{{ form.description }}"> {{ form.description }} </a>
-                    </label>
-                </td>
-                <td>
-                    {{form.output_count}}
-                </td>
-                <td>
-                    {% if form.throughput_from_data %}
-                        Yes
-                    {% else %}
-                        No - High/Low Guess
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <table class="table table-bordered table-striped">
+    <thead>
+    <tr>
+    <th>Choose </th>
+    <th>Form (Hover for details)</th>
+    <th>Number of Simulations</th>
+    <th>Historical data</th>
+    </tr>
+    </thead>
+    <tbody id="myTable">
+    {% for form in team.form_set.all %}
+    <tr>
+    <td>
+    <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
+    </td>
+    <td>
+    <label for="form{{ forloop.counter }}" >
+    <a href="#" data-toggle="tooltip" title="{{ form.description }}"> {{ form.description }} </a>
+    </label>
+    </td>
+    <td>
+    {{form.output_count}}
+    </td>
+    <td>
+    {% if form.throughput_from_data %}
+    Yes
+    {% else %}
+    No - High/Low Guess
+    {% endif %}
+    </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
 
-        <input type="submit" value="Estimate {{ team.description }}">
+    <input type="submit" value="Estimate {{ team.description }}">
     </form>
     {% if error_message %}<p><strong>Warning: {{ error_message }}</strong></p>{% endif %}
-</div>
 
-<script>
+
+    <script>
     $(document).ready(function(){
-        $("#myInput").on("keyup", function() {
-            var value = $(this).val().toLowerCase();
-            $("#myTable tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
-        });
+    $("#myInput").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#myTable tr").filter(function() {
+    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
     });
-</script>
+    });
+    });
+    </script>
 
 {% endblock %}
