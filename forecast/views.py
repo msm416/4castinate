@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from .models import Team, Iteration, Form, Output
+from .models import Team, Form, Simulation
 from collections import Counter
 
 from django.views.decorators.csrf import csrf_exempt
@@ -26,21 +26,21 @@ def detail(request, team_id):
 def results(request, team_id, form_id):
     team = get_object_or_404(Team, pk=team_id)
     form = get_object_or_404(Form, pk=form_id)
-    outputs = []
-    for sample in Output.objects.filter(form=form_id):
-        outputs.append(sample.completion_duration)
-    weeks_to_frequency = sorted(Counter(outputs).items())
+    simulations = []
+    for sample in Simulation.objects.filter(form=form_id):
+        simulations.append(sample.completion_duration)
+    weeks_to_frequency = sorted(Counter(simulations).items())
     weeks = [k for (k, v) in weeks_to_frequency]
     weeks_frequency = [v for (k, v) in weeks_to_frequency]
     weeks_frequency_sum = sum(weeks_frequency)
 
-    outputs.sort()
+    simulations.sort()
     centile_indices = []
     centile_values = []
 
     for i in range(0, 21):
         centile_indices.append(5 * i)
-        centile_values.append(outputs[int((weeks_frequency_sum - 1) * 5 * i / 100)])
+        centile_values.append(simulations[int((weeks_frequency_sum - 1) * 5 * i / 100)])
 
     return render(request, 'forecast/results.html', {
         'team': team,
@@ -65,7 +65,7 @@ def estimate(request, team_id):
         })
     else:
         selected_form.save()
-        selected_form.gen_output()
+        selected_form.gen_simulations()
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
