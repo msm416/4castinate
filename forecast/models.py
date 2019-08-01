@@ -26,6 +26,7 @@ class Iteration(models.Model):
     # source = Jira / Trello / None
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
+    start_date = models.DateField(default=timezone.now)
 
     # Default: Iteration does not come from some external source
     source = models.CharField(max_length=200, default='None')
@@ -61,6 +62,17 @@ class Form(models.Model):
     def __str__(self):
         return self.description
 
+    def get_throughput_avg(self):
+        cnt = 0
+        throughput = 0
+        for iteration in self.team.iteration_set.all():
+            # We're keeping track of the iterations that are not just a couple
+            # days after the form's start date (cause we don't want partial iterations)
+            if self.start_date - iteration.start_date >= datetime.timedelta(days=7):
+                throughput += iteration.throughput
+                cnt += 1
+        return throughput/cnt
+
     # One test => One Output instance is created
     def gen_output(self):
         # Run only once per Form
@@ -70,19 +82,21 @@ class Form(models.Model):
             start_time = time.time()
             wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
             split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)
-            throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound)
+            throughput = (self.get_throughput_avg() if self.throughput_from_data
+                          else random.uniform(self.throughput_lower_bound, self.throughput_upper_bound))
 
             completion_duration = int((wip * split_rate) / throughput)
             end_time = time.time()
             msg = "In " + str(completion_duration) + " weeks we're done for this sprint. #Tasks is: " \
-                   + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
-                   + "Elapsed time was: " + str(end_time - start_time) + "seconds."
+                  + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
+                  + "Elapsed time was: " + str(end_time - start_time) + "seconds."
 
             output = Output(form=self,
                             completion_duration=completion_duration,
                             message=msg)
             output.save()
             # TODO: REMOVE CONFUSING MSG / RENAME OUTPUT MODEL
+            # TODO: NOW THROUGHPUT IS CONSTANT WHEN DATA INVOLVED. DO WE WANT THAT?
 
 
 class Output(models.Model):
