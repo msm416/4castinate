@@ -5,12 +5,12 @@
 {% block body %}
 
     <h1>Choose form</h1>
-    <h3>Total number of forms for {{team.description}}: {{team.form_set.count}}</h3>
+    <h3>Total number of forms for {{board.description}}: {{board.form_set.count}}</h3>
 
     <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
     <br>
 
-    <form action="{% url 'forecast:estimate' team.id %}" method="post">
+    <form action="{% url 'forecast:estimate' board.id %}" method="post">
         {% csrf_token %}
 
         <table class="table table-bordered table-striped">
@@ -23,7 +23,7 @@
                 </tr>
             </thead>
             <tbody id="myTable">
-                {% for form in team.form_set.all %}
+                {% for form in board.form_set.all %}
                     <tr>
                         <td>
                             <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
@@ -49,7 +49,7 @@
             </tbody>
         </table>
 
-        <input type="submit" value="Estimate {{ team.description }}">
+        <input type="submit" value="Estimate {{ board.description }}">
     </form>
     {% if error_message %}
         <p>
