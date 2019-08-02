@@ -74,6 +74,10 @@ def estimate(request, board_id):
                     args=(board.id, selected_form.id)))
 
 
+def fetch(request):
+    return HttpResponseRedirect(reverse('forecast:index'))
+
+
 @require_POST
 @csrf_exempt
 def webhook(request):

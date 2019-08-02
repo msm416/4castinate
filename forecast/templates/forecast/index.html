@@ -4,7 +4,23 @@
 {% block body %}
 
     <h1>Choose board </h1>
-    <h3>Total number of boards in database: {{latest_board_list.count}}</h3>
+    <br>
+    <div class="row">
+        <div class="col">
+            <h3>Total number of boards in database: {{latest_board_list.count}}</h3>
+        </div>
+        <div class="col"></div>
+        <div class="col">
+            <span class="float-right">
+                <form action="{% url 'forecast:fetch'%}" method="post">
+                    {% csrf_token %}
+
+                    <input class="btn btn-dark" type="submit" name="fetch_button" value="Fetch Boards"/>
+                </form>
+            </span>
+        </div>
+    </div>
+    <br>
     <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
     <br>
     <table class="table table-bordered table-striped">
