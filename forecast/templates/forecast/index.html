@@ -3,23 +3,23 @@
 
 {% block body %}
 
-    <h1>Choose team </h1>
-    <h3>Total number of teams in database: {{latest_team_list.count}}</h3>
+    <h1>Choose board </h1>
+    <h3>Total number of boards in database: {{latest_board_list.count}}</h3>
     <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
     <br>
     <table class="table table-bordered table-striped">
         <thead>
         <tr>
-            <th>Team Name</th>
+            <th>Board Name</th>
             <th>Data Sources</th>
             <th>Last Fetch Date</th>
         </tr>
         </thead>
         <tbody id="myTable">
-        {% for team in latest_team_list %}
+        {% for board in latest_board_list %}
         <tr>
             <td>
-                <a href="{% url 'forecast:detail' team.id %}">{{ team.description }}</a>
+                <a href="{% url 'forecast:detail' board.id %}">{{ board.description }}</a>
             </td>
             <td>
                 Jira Trello Asana

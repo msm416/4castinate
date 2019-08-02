@@ -9,7 +9,7 @@ from django.db import models
 from django.utils import timezone
 
 
-class Team(models.Model):
+class Board(models.Model):
     description = models.CharField(max_length=200)
     pub_date = models.DateTimeField('date created')
 
@@ -24,7 +24,7 @@ class Iteration(models.Model):
     # An instance of Iteration could be a sprint
     # duration = 1 week
     # source = Jira / Trello / None
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
     start_date = models.DateField(default=timezone.now)
 
@@ -37,7 +37,7 @@ class Iteration(models.Model):
 
 
 class Form(models.Model):
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
     start_date = models.DateField(default=timezone.now)
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
@@ -65,7 +65,7 @@ class Form(models.Model):
     def get_throughput_avg(self):
         cnt = 0
         throughput = 0
-        for iteration in self.team.iteration_set.all():
+        for iteration in self.board.iteration_set.all():
             # We're keeping track of the iterations that are not just a couple
             # days after the form's start date (cause we don't want partial iterations)
             if self.start_date - iteration.start_date >= datetime.timedelta(days=7):

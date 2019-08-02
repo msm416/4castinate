@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from .models import Team, Form, Simulation
+from .models import Board, Form, Simulation
 from collections import Counter
 
 from django.views.decorators.csrf import csrf_exempt
@@ -13,18 +13,18 @@ from django.views.decorators.http import require_POST
 
 
 def index(request):
-    latest_team_list = Team.objects.order_by('-pub_date')[:5]
-    context = {'latest_team_list': latest_team_list}
+    latest_board_list = Board.objects.order_by('-pub_date')[:5]
+    context = {'latest_board_list': latest_board_list}
     return render(request, 'forecast/index.html', context)
 
 
-def detail(request, team_id):
-    team = get_object_or_404(Team, pk=team_id)
-    return render(request, 'forecast/detail.html', {'team': team})
+def detail(request, board_id):
+    board = get_object_or_404(Board, pk=board_id)
+    return render(request, 'forecast/detail.html', {'board': board})
 
 
-def results(request, team_id, form_id):
-    team = get_object_or_404(Team, pk=team_id)
+def results(request, board_id, form_id):
+    board = get_object_or_404(Board, pk=board_id)
     form = get_object_or_404(Form, pk=form_id)
     simulations = []
     for sample in Simulation.objects.filter(form=form_id):
@@ -43,7 +43,7 @@ def results(request, team_id, form_id):
         centile_values.append(simulations[int((weeks_frequency_sum - 1) * 5 * i / 100)])
 
     return render(request, 'forecast/results.html', {
-        'team': team,
+        'board': board,
         'form': form,
         'weeks': weeks,
         'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
@@ -53,14 +53,14 @@ def results(request, team_id, form_id):
     })
 
 
-def estimate(request, team_id):
-    team = get_object_or_404(Team, pk=team_id)
+def estimate(request, board_id):
+    board = get_object_or_404(Board, pk=board_id)
     try:
-        selected_form = team.form_set.get(pk=request.POST['form'])
+        selected_form = board.form_set.get(pk=request.POST['form'])
     except (KeyError, Form.DoesNotExist):
-        # Redisplay the team voting form.
+        # Redisplay the board voting form.
         return render(request, 'forecast/detail.html', {
-            'team': team,
+            'board': board,
             'error_message': "You didn't select a forecast input.",
         })
     else:
@@ -71,17 +71,17 @@ def estimate(request, team_id):
         # user hits the Back button.
         return HttpResponseRedirect(
             reverse('forecast:results',
-                    args=(team.id, selected_form.id)))
+                    args=(board.id, selected_form.id)))
 
 
 @require_POST
 @csrf_exempt
 def webhook(request):
     # data = json.loads(request.body)
-    team = get_object_or_404(Team, pk=1)
+    board = get_object_or_404(Board, pk=1)
 
     if Form.objects.count() < 10:
         aux = random.randint(0, 10000)
-        team.form_set.create(description=str(aux))
+        board.form_set.create(description=str(aux))
 
-    return render(request, 'forecast/detail.html', {'team': team})
+    return render(request, 'forecast/detail.html', {'board': board})
