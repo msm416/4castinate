@@ -1,10 +1,12 @@
-import json
 import random
+import json
+import requests
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
+from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
 from .models import Board, Form, Simulation
 from collections import Counter
 
@@ -64,7 +66,6 @@ def estimate(request, board_id):
             'error_message': "You didn't select a forecast input.",
         })
     else:
-        selected_form.save()
         selected_form.gen_simulations()
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
@@ -74,7 +75,28 @@ def estimate(request, board_id):
                     args=(board.id, selected_form.id)))
 
 
+def fetch_and_process_jira_boards():
+    url = JIRA_URL
+
+    auth = requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN)
+
+    headers = {
+        "Accept": "application/json"
+    }
+
+    response = requests.request(
+        "GET",
+        url,
+        headers=headers,
+        auth=auth
+    )
+
+    print(json.dumps(json.loads(response.text),
+                     sort_keys=True, indent=4, separators=(",", ": ")))
+
+
 def fetch(request):
+    fetch_and_process_jira_boards()
     return HttpResponseRedirect(reverse('forecast:index'))
 
 
