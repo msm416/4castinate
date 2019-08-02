@@ -71,7 +71,7 @@ class Form(models.Model):
             if self.start_date - iteration.start_date >= datetime.timedelta(days=7):
                 throughput += iteration.throughput
                 cnt += 1
-        return throughput/cnt
+        return -1 if cnt == 0 else throughput/cnt
 
     # One test => One Simulation instance is created
     def gen_simulations(self):
@@ -92,10 +92,9 @@ class Form(models.Model):
                   + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
                   + "Elapsed time was: " + str(end_time - start_time) + "seconds."
 
-            simulation = Simulation(form=self,
-                            completion_duration=completion_duration,
-                            message=msg)
+            simulation = Simulation(form=self, completion_duration=completion_duration, message=msg)
             simulation.save()
+            # TODO: Should we save a thing in the DB for each iteration???
             # TODO: NOW THROUGHPUT IS CONSTANT WHEN DATA INVOLVED. DO WE WANT THAT?
 
 
