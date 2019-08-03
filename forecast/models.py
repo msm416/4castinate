@@ -11,6 +11,9 @@ from django.utils import timezone
 
 class Board(models.Model):
     description = models.CharField(max_length=200)
+    data_sources = models.CharField(max_length=200, default='None')
+    project_name = models.CharField(max_length=200, default='None')
+    board_type = models.CharField(max_length=200, default='Hybrid')
     pub_date = models.DateTimeField('date created')
 
     def __str__(self):

@@ -99,7 +99,9 @@ def fetch_and_process_jira_boards():
 
     for board in response_boards:
         if Board.objects.filter(description=board['name']).count() == 0:
-            Board(description=board['name'], pub_date=timezone.now()).save()
+            Board(description=board['name'], pub_date=timezone.now(),
+                  project_name=board['location']['name'],
+                  data_sources='JIRA', board_type=board['type']).save()
 
 
 def fetch(request):
