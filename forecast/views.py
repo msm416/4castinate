@@ -76,32 +76,68 @@ def estimate(request, board_id):
                     args=(board.id, selected_form.id)))
 
 
-def fetch_and_process_jira_boards():
-    url = JIRA_URL
-
-    auth = requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN)
-
-    headers = {
-        "Accept": "application/json"
-    }
+def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
 
     response = requests.request(
         "GET",
-        url,
-        headers=headers,
-        auth=auth,
+        f"{JIRA_URL}/{board_jira_id}/backlog",
+        headers={"Accept": "application/json"},
+        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
         verify=False
     )
 
-    response = json.loads(response.text)
+    response_as_dict = json.loads(response.text)
 
-    response_boards = response['values']
+    if 'issues' not in response_as_dict:
+        return
+    if not response_as_dict['issues']:
+        return
+
+    # TODO: UNDERSTAND FORMAT AND WHY 0
+    closed_sprints = response_as_dict['issues'][0]['fields']['closedSprints']
+
+    board = Board.objects.get(description=board_name)
+
+    # TODO: MODEL IN-PROGRESS SPRINT (at every time, there is at most
+    #  one in-progress sprint and if it is closed, act accordingly)
+    for sprint in closed_sprints:
+        if board\
+                .iteration_set\
+                .filter(description=sprint['name'])\
+                .count() == 0:
+            board\
+                .iteration_set\
+                .create(description=sprint['name'],
+                        source='JIRA')
+
+
+def fetch_and_process_jira_boards():
+
+    response = requests.request(
+        "GET",
+        JIRA_URL,
+        headers={"Accept": "application/json"},
+        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
+        verify=False
+    )
+
+    response_as_dict = json.loads(response.text)
+
+    response_boards = response_as_dict['values']
 
     for board in response_boards:
-        if Board.objects.filter(description=board['name']).count() == 0:
-            Board(description=board['name'], pub_date=timezone.now(),
-                  project_name=board['location']['name'],
-                  data_sources='JIRA', board_type=board['type']).save()
+        if Board\
+                .objects\
+                .filter(description=board['name'])\
+                .count() == 0:
+            new_board = Board(description=board['name'],
+                              pub_date=timezone.now(),
+                              project_name=board['location']['name'],
+                              data_sources='JIRA',
+                              board_type=board['type'])
+            new_board.save()
+
+        fetch_and_process_jira_closed_sprints(board['id'], board['name'])
 
 
 def fetch(request):

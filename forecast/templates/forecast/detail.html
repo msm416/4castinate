@@ -6,8 +6,10 @@
 
     <h1>Choose form</h1>
     <h3>Total number of forms for {{board.description}}: {{board.form_set.count}}</h3>
+    <h5>Total number of iterations for {{board.description}}: {{board.iteration_set.count}}</h5>
 
-    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
+
+<input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
     <br>
 
     <form action="{% url 'forecast:estimate' board.id %}" method="post">
