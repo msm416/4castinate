@@ -88,7 +88,8 @@ def fetch_and_process_jira_boards():
         "GET",
         url,
         headers=headers,
-        auth=auth
+        auth=auth,
+        verify=False
     )
 
     print(json.dumps(json.loads(response.text),
