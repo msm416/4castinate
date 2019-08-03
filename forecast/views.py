@@ -5,6 +5,7 @@ import requests
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils import timezone
 
 from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
 from .models import Board, Form, Simulation
@@ -92,8 +93,13 @@ def fetch_and_process_jira_boards():
         verify=False
     )
 
-    print(json.dumps(json.loads(response.text),
-                     sort_keys=True, indent=4, separators=(",", ": ")))
+    response = json.loads(response.text)
+
+    response_boards = response['values']
+
+    for board in response_boards:
+        if Board.objects.filter(description=board['name']).count() == 0:
+            Board(description=board['name'], pub_date=timezone.now()).save()
 
 
 def fetch(request):
