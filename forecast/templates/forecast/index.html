@@ -27,7 +27,9 @@
         <thead>
         <tr>
             <th>Board Name</th>
+            <th>Project Name</th>
             <th>Data Sources</th>
+            <th>Board Type</th>
             <th>Last Fetch Date</th>
         </tr>
         </thead>
@@ -38,7 +40,13 @@
                 <a href="{% url 'forecast:detail' board.id %}">{{ board.description }}</a>
             </td>
             <td>
-                Jira Trello Asana
+                {{ board.project_name }}
+            </td>
+            <td>
+                {{ board.data_sources }}
+            </td>
+            <td>
+                {{ board.board_type }}
             </td>
             <td>
                 Never

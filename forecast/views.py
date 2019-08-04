@@ -5,6 +5,7 @@ import requests
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils import timezone
 
 from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
 from .models import Board, Form, Simulation
@@ -75,24 +76,100 @@ def estimate(request, board_id):
                     args=(board.id, selected_form.id)))
 
 
-def fetch_and_process_jira_boards():
-    url = JIRA_URL
+def fetch_and_process_jira_sprint_issues(sprint_id):
+    # TODO: REFACTOR URL (i.e. change JIRA_URL var)
+    response = requests.request(
+        "GET",
+        f"https://4cast.atlassian.net/rest/agile/1.0/sprint/{sprint_id}/issue",
+        headers={"Accept": "application/json"},
+        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
+        verify=False
+    )
 
-    auth = requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN)
+    response_as_dict = json.loads(response.text)
 
-    headers = {
-        "Accept": "application/json"
-    }
+    throughput = 0
+
+    for issue in response_as_dict['issues']:
+        if issue['fields']['resolution'] is None:
+            # TODO: WHAT IS THIS? RUNNING SPRINT?
+            continue
+
+        if str(issue['fields']['resolution']['name']) == "Done":
+            throughput += 1
+
+    return throughput
+
+
+def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
 
     response = requests.request(
         "GET",
-        url,
-        headers=headers,
-        auth=auth
+        f"{JIRA_URL}/{board_jira_id}/backlog",
+        headers={"Accept": "application/json"},
+        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
+        verify=False
     )
 
-    print(json.dumps(json.loads(response.text),
-                     sort_keys=True, indent=4, separators=(",", ": ")))
+    response_as_dict = json.loads(response.text)
+
+    if 'issues' not in response_as_dict:
+        return
+    if not response_as_dict['issues']:
+        return
+
+    # TODO: UNDERSTAND FORMAT AND WHY 0. Possibly wrong way to search for closed sprints
+    closed_sprints = response_as_dict['issues'][0]['fields']['closedSprints']
+
+    board = Board.objects.get(description=board_name)
+
+    # TODO: DURATION OF SPRINT
+    for sprint in closed_sprints:
+        if board\
+                .iteration_set\
+                .filter(description=sprint['name'])\
+                .count() == 0:
+
+            throughput = fetch_and_process_jira_sprint_issues(sprint['id'])
+            if throughput == 0:
+                continue
+
+            board\
+                .iteration_set\
+                .create(description=sprint['name'],
+                        source='JIRA',
+                        throughput=throughput)
+
+
+def fetch_and_process_jira_boards():
+
+    response = requests.request(
+        "GET",
+        JIRA_URL,
+        headers={"Accept": "application/json"},
+        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
+        verify=False
+    )
+
+    response_as_dict = json.loads(response.text)
+
+    response_boards = response_as_dict['values']
+
+    for board in response_boards:
+        if Board\
+                .objects\
+                .filter(description=board['name'])\
+                .count() == 0:
+            new_board = Board(description=board['name'],
+                              pub_date=timezone.now(),
+                              project_name=board['location']['name'],
+                              data_sources='JIRA',
+                              board_type=board['type'])
+            new_board.save()
+
+        fetch_and_process_jira_closed_sprints(board['id'], board['name'])
+        # TODO: MODEL IN-PROGRESS SPRINT (at every time, there is at most
+        #  one in-progress sprint and if it is closed, act accordingly)
 
 
 def fetch(request):
