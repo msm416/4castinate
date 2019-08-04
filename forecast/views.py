@@ -76,6 +76,31 @@ def estimate(request, board_id):
                     args=(board.id, selected_form.id)))
 
 
+def fetch_and_process_jira_sprint_issues(sprint_id):
+    # TODO: REFACTOR URL (i.e. change JIRA_URL var)
+    response = requests.request(
+        "GET",
+        f"https://4cast.atlassian.net/rest/agile/1.0/sprint/{sprint_id}/issue",
+        headers={"Accept": "application/json"},
+        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
+        verify=False
+    )
+
+    response_as_dict = json.loads(response.text)
+
+    throughput = 0
+
+    for issue in response_as_dict['issues']:
+        if issue['fields']['resolution'] is None:
+            # TODO: WHAT IS THIS? RUNNING SPRINT?
+            continue
+
+        if str(issue['fields']['resolution']['name']) == "Done":
+            throughput += 1
+
+    return throughput
+
+
 def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
 
     response = requests.request(
@@ -93,22 +118,27 @@ def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
     if not response_as_dict['issues']:
         return
 
-    # TODO: UNDERSTAND FORMAT AND WHY 0
+    # TODO: UNDERSTAND FORMAT AND WHY 0. Possibly wrong way to search for closed sprints
     closed_sprints = response_as_dict['issues'][0]['fields']['closedSprints']
 
     board = Board.objects.get(description=board_name)
 
-    # TODO: MODEL IN-PROGRESS SPRINT (at every time, there is at most
-    #  one in-progress sprint and if it is closed, act accordingly)
+    # TODO: DURATION OF SPRINT
     for sprint in closed_sprints:
         if board\
                 .iteration_set\
                 .filter(description=sprint['name'])\
                 .count() == 0:
+
+            throughput = fetch_and_process_jira_sprint_issues(sprint['id'])
+            if throughput == 0:
+                continue
+
             board\
                 .iteration_set\
                 .create(description=sprint['name'],
-                        source='JIRA')
+                        source='JIRA',
+                        throughput=throughput)
 
 
 def fetch_and_process_jira_boards():
@@ -138,6 +168,8 @@ def fetch_and_process_jira_boards():
             new_board.save()
 
         fetch_and_process_jira_closed_sprints(board['id'], board['name'])
+        # TODO: MODEL IN-PROGRESS SPRINT (at every time, there is at most
+        #  one in-progress sprint and if it is closed, act accordingly)
 
 
 def fetch(request):
