@@ -37,6 +37,7 @@
             <th>Project Name</th>
             <th>Data Sources</th>
             <th>Board Type</th>
+            <th># of Iterations</th>
             <th>Last Fetch Date</th>
             <th>Pub Date</th>
         </tr>
@@ -57,7 +58,10 @@
                 {{ board.board_type }}
             </td>
             <td>
-                Never
+                {{ board.iteration_set.count }}
+            </td>
+            <td>
+                {{ board.fetch_date }}
             </td>
             <td>
                 {{ board.pub_date }}

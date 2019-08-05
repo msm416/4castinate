@@ -18,9 +18,9 @@
     <tr>
         <th>Iteration Name</th>
         <th>Parent Board</th>
-        <th>Start Date</th>
         <th>Source</th>
         <th>Throughput</th>
+        <th>Start Date</th>
     </tr>
     </thead>
     <tbody id="myTable">
@@ -33,13 +33,13 @@
             {{ iteration.board.description }}
         </td>
         <td>
-            {{ iteration.start_date }}
-        </td>
-        <td>
             {{ iteration.source }}
         </td>
         <td>
             {{ iteration.throughput }}
+        </td>
+        <td>
+            {{ iteration.start_date }}
         </td>
     </tr>
     {% endfor %}

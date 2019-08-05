@@ -37,7 +37,7 @@ def jira_get_sprint_issues(sprint_id):
     return throughput
 
 
-def jira_get_closed_sprints(board_jira_id, board_name):
+def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
     # TODO: Getting closed_sprints in an indirect way (and maybe wrong as well). Maybe a more specific request exists?
     # GET issues for backlog
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-backlog-get
@@ -89,6 +89,9 @@ def jira_get_closed_sprints(board_jira_id, board_name):
                         source='JIRA',
                         throughput=throughput)
 
+    board.fetch_date = fetch_date
+    board.save()
+
 
 def jira_get_boards():
     # GET all boards
@@ -107,18 +110,23 @@ def jira_get_boards():
 
     response_boards = response_as_dict['values']
 
+    fetch_date = timezone.now()
+
     for board in response_boards:
         if Board \
                 .objects \
                 .filter(description=board['name']) \
                 .count() == 0:
-            new_board = Board(description=board['name'],
-                              pub_date=timezone.now(),
-                              project_name=board['location']['name'],
-                              data_sources='JIRA',
-                              board_type=board['type'])
-            new_board.save()
+            Board(description=board['name'],
+                  pub_date=fetch_date,
+                  project_name=board['location']['name'],
+                  data_sources='JIRA',
+                  board_type=board['type']).save()
 
-        jira_get_closed_sprints(board['id'], board['name'])
+        jira_get_closed_sprints(board['id'], board['name'], fetch_date)
+
+        new_board = Board.objects.get(description=board['name'])
+        new_board.fetch_date = fetch_date
+        new_board.save()
         # TODO: MODEL IN-PROGRESS SPRINT (at every time, there is at most
         #  one in-progress sprint and if it is closed, act accordingly)
