@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
 from forecast.models import Board
+from datetime import datetime
 
 
 def jira_get_sprint_issues(sprint_id):
@@ -68,11 +69,15 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
     for issue in response_as_dict['issues']:
         if 'closedSprints' in issue['fields']:
             for closed_sprint in issue['fields']['closedSprints']:
+                start_date = datetime.strptime(closed_sprint['startDate'].split("T")[0], "%Y-%m-%d")
+                complete_date = datetime.strptime(closed_sprint['completeDate'].split("T")[0], "%Y-%m-%d")
+                duration = (start_date - complete_date).days
+                duration = 1 if duration is 0 else duration
+                closed_sprint['duration'] = duration
                 closed_sprints[closed_sprint['name']] = closed_sprint
 
     board = Board.objects.get(description=board_name)
 
-    # TODO: DURATION OF SPRINT
     for sprint in closed_sprints.values():
         if board \
                 .iteration_set \
@@ -87,7 +92,8 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
                 .iteration_set \
                 .create(description=sprint['name'],
                         source='JIRA',
-                        throughput=throughput)
+                        throughput=throughput,
+                        duration=sprint['duration'])
 
     board.fetch_date = fetch_date
     board.save()

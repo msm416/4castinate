@@ -5,6 +5,8 @@ import time
 from django.db import models
 from django.utils import timezone
 
+WEEK_IN_DAYS = 7
+
 
 class Board(models.Model):
     description = models.CharField(max_length=200)
@@ -23,11 +25,12 @@ class Board(models.Model):
 
 class Iteration(models.Model):
     # An instance of Iteration could be a sprint
-    # duration = 1 week
+    # Default duration = 1 week (7days)
     # source = Jira / Trello / None
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
     start_date = models.DateField(default=timezone.now)
+    duration = models.FloatField(default=WEEK_IN_DAYS)
 
     # Default: Iteration does not come from some external source
     source = models.CharField(max_length=200, default='None')
@@ -69,8 +72,8 @@ class Form(models.Model):
         for iteration in self.board.iteration_set.all():
             # We're keeping track of the iterations that are not just a couple
             # days after the form's start date (cause we don't want partial iterations)
-            if self.start_date - iteration.start_date >= datetime.timedelta(days=7):
-                throughput += iteration.throughput
+            if self.start_date - iteration.start_date >= datetime.timedelta(days=WEEK_IN_DAYS):
+                throughput += (iteration.throughput * WEEK_IN_DAYS / iteration.duration)
                 cnt += 1
         return -1 if cnt == 0 else throughput/cnt
 
@@ -87,10 +90,10 @@ class Form(models.Model):
         for i in range(self.simulation_count):
             wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
             split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)
-            throughput = (self.get_throughput_avg() if self.throughput_from_data
-                          else random.uniform(self.throughput_lower_bound, self.throughput_upper_bound))
+            weekly_throughput = (self.get_throughput_avg() if self.throughput_from_data
+                                 else random.uniform(self.throughput_lower_bound, self.throughput_upper_bound))
 
-            completion_duration = int((wip * split_rate) / throughput)
+            completion_duration = int((wip * split_rate) / weekly_throughput)
             if i == 0:
                 durations = str(completion_duration)
             else:
