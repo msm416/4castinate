@@ -80,7 +80,7 @@ def fetch_and_process_jira_sprint_issues(sprint_id):
     # TODO: REFACTOR URL (i.e. change JIRA_URL var)
     response = requests.request(
         "GET",
-        f"https://4cast.atlassian.net/rest/agile/1.0/sprint/{sprint_id}/issue",
+        f"{JIRA_URL}/sprint/{sprint_id}/issue",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
         verify=False
@@ -105,7 +105,7 @@ def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
 
     response = requests.request(
         "GET",
-        f"{JIRA_URL}/{board_jira_id}/backlog",
+        f"{JIRA_URL}/board/{board_jira_id}/backlog",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
         verify=False
@@ -145,7 +145,7 @@ def fetch_and_process_jira_boards():
 
     response = requests.request(
         "GET",
-        JIRA_URL,
+        f"{JIRA_URL}/board",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
         verify=False
