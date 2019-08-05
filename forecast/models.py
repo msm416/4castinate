@@ -78,9 +78,13 @@ class Form(models.Model):
     def gen_simulations(self):
         # TODO: Recompute this in data forms
         # Run only once per Form
+        durations = ""
         if self.simulation_set.count() != 0:
             return
+
+        print(f"{self.simulation_count} sim count")
         for i in range(self.simulation_count):
+
             start_time = time.time()
             wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
             split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)
@@ -93,15 +97,23 @@ class Form(models.Model):
                   + str(wip * split_rate) + " and throughput is: " + str(throughput) + ".\n" \
                   + "Elapsed time was: " + str(end_time - start_time) + "seconds."
 
-            simulation = Simulation(form=self, completion_duration=completion_duration, message=msg)
-            simulation.save()
-            # TODO: Should we save a thing in the DB for each iteration???
-            # TODO: NOW THROUGHPUT IS CONSTANT WHEN DATA INVOLVED. DO WE WANT THAT?
+            # simulation = Simulation(form=self, completion_duration=completion_duration, message=msg)
+            # simulation.save()
+
+            if i == 0:
+                durations = str(completion_duration)
+            else:
+                durations = ';'.join([durations, str(completion_duration)])
+
+        simulation = Simulation(form=self, completion_duration=0,
+                                message="ABC", durations=durations)
+        simulation.save()
 
 
 class Simulation(models.Model):
     form = models.ForeignKey(Form, on_delete=models.CASCADE)
     completion_duration = models.PositiveSmallIntegerField()
+    durations = models.TextField(null=True)
     message = models.CharField(max_length=200)
 
     def __str__(self):

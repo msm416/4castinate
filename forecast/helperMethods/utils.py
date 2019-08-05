@@ -6,7 +6,14 @@ def aggregate_simulations(form_id):
     simulations = []
     for sample in Simulation.objects.filter(form=form_id):
         simulations.append(sample.completion_duration)
+
+    simulations = [int(x) for x in
+                   Simulation.objects.get(form=form_id).durations.split(";")]
+
     weeks_to_frequency = sorted(Counter(simulations).items())
+    for w in weeks_to_frequency:
+        print(w)
+
     weeks = [k for (k, v) in weeks_to_frequency]
     weeks_frequency = [v for (k, v) in weeks_to_frequency]
     weeks_frequency_sum = sum(weeks_frequency)
