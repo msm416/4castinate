@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
 from forecast.helperMethods.utils import aggregate_simulations
-from .models import Board, Form
+from .models import Board, Form, Iteration
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -39,6 +39,12 @@ def results(request, board_id, form_id):
     })
 
 
+def iterations(request):
+    iteration_list = Iteration.objects.order_by('-start_date').order_by('board__description')
+    context = {'iteration_list': iteration_list}
+    return render(request, 'forecast/iterations.html', context)
+
+
 def estimate(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
     try:
@@ -62,6 +68,7 @@ def estimate(request, board_id):
 def fetch(request):
     jira_get_boards()
     return HttpResponseRedirect(reverse('forecast:index'))
+
 
 
 @require_POST

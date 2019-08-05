@@ -26,7 +26,7 @@
 ##### 5.1.2 Edit the environment file with the needed vars (paste them at the end of the file, one per line):
        export SECRET_KEY='<your secret Django key>'
        export API_TOKEN='<jira_api_token>'
-       export JIRA_URL='https://<your_jira_domain>.atlassian.net/rest/agile/1.0/board'
+       export JIRA_URL='https://<your_jira_domain>.atlassian.net/rest/agile/1.0'
        export JIRA_EMAIL='<jira_user_email>'
 ##### 5.1.3 Deactivate environment:
        deactivate

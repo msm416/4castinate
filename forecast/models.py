@@ -1,9 +1,6 @@
 import datetime
 import random
 import time
-import numpy as np
-import matplotlib.pyplot as plt
-import mpld3
 
 from django.db import models
 from django.utils import timezone

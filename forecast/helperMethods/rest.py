@@ -28,7 +28,7 @@ def jira_get_sprint_issues(sprint_id):
 
     for issue in response_as_dict['issues']:
         if issue['fields']['resolution'] is None:
-            # TODO: WHAT IS THIS? RUNNING SPRINT?
+            # TODO: INVESTIGATE - IS THIS BACKLOG ISSUE (ISSUE THAT WAS IN SPRINT BUT NOW IS IN BACKLOG?)
             continue
 
         if str(issue['fields']['resolution']['name']) == "Done":
@@ -38,7 +38,7 @@ def jira_get_sprint_issues(sprint_id):
 
 
 def jira_get_closed_sprints(board_jira_id, board_name):
-    # TODO: Getting closed_sprints in an indirect way. Maybe a more specific request exists?
+    # TODO: Getting closed_sprints in an indirect way (and maybe wrong as well). Maybe a more specific request exists?
     # GET issues for backlog
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-backlog-get
     # Description: Returns all issues from the board's backlog, for the given board ID.
@@ -63,7 +63,6 @@ def jira_get_closed_sprints(board_jira_id, board_name):
     if not response_as_dict['issues']:
         return
 
-    # TODO: RIGHT WAY TO NOT MISS ANY CLOSE SPRINTS? BETTER GET FOR THIS?
     closed_sprints = {}
 
     for issue in response_as_dict['issues']:
