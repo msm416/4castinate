@@ -23,24 +23,31 @@
 #### 5.1 Set environment variables in your virtualenv
 ##### 5.1.1 Open the environment file:
        open ~/.virtualenvs/django-dev-env/bin/activate
-##### 5.1.2 Edit the environment file with the needed vars (paste them at the end of the file, one per line):
+##### 5.1.2 Edit the environment file with the needed variables (paste them at the end of the file, one per line). If you don't want to fetch data from Jira, just export the 3 Jira Variables as given below (and ignore step 5.1.6):
        export SECRET_KEY='<your secret Django key>'
+
        export API_TOKEN='<jira_api_token>'
-       export JIRA_URL='https://<your_jira_domain>.atlassian.net/rest/agile/1.0'
+       export JIRA_URL='https://<your_jira_domain>.atlassian.net/rest/agile/1.0/board'
        export JIRA_EMAIL='<jira_user_email>'
+     
 ##### 5.1.3 Deactivate environment:
        deactivate
 ##### 5.1.4 Activate it back to reload the new changes:
        workon django-dev-env
 
-       At this point, you can verify each with running e.g.:
+##### 5.1.5 To verify that the variables are set up, run this for each of them:
        echo $SECRET_KEY
+
+##### 5.1.6 To verify that the Jira variables are correct, run this and [check the response](https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-get):
+       curl --request GET \
+       --url $JIRA_URL/board \
+       --user $JIRA_EMAIL:$API_TOKEN \
+       --header 'Accept: application/json'
+      
 #### 5.2 Run the app on localhost:
        python manage.py runserver
-####   Note: If you install other dependencies (i.e. pip install), before you commit, do:
-       pip freeze > requirements.txt
-
-       in order to update the new requirements.
+     
+       
 ### 6. Deploy the app with eb cli. 
 #### 6.1 Follow steps [1-3](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy). The *EB CLI init* steps you'll have to perform just at the time when you clone the repo:
 #### 6.2 Set EB environment variables. This has to be done for each new environment you make on AWS EB:
@@ -53,3 +60,6 @@
 #### 6.4 Access the website manually / from eb cli [step 7](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy):
        eb open
 ### 7. [Cleanup](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-stopping).
+
+### 8. Note: If you install other dependencies (i.e. pip install), before you commit, do:
+       pip freeze > requirements.txt
