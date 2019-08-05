@@ -77,7 +77,6 @@ def estimate(request, board_id):
 
 
 def fetch_and_process_jira_sprint_issues(sprint_id):
-    # TODO: REFACTOR URL (i.e. change JIRA_URL var)
     response = requests.request(
         "GET",
         f"{JIRA_URL}/sprint/{sprint_id}/issue",
@@ -118,13 +117,18 @@ def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
     if not response_as_dict['issues']:
         return
 
-    # TODO: UNDERSTAND FORMAT AND WHY 0. Possibly wrong way to search for closed sprints
-    closed_sprints = response_as_dict['issues'][0]['fields']['closedSprints']
+    # TODO: RIGHT WAY TO NOT MISS ANY CLOSE SPRINTS? BETTER GET FOR THIS?
+    closed_sprints = {}
+
+    for issue in response_as_dict['issues']:
+        if 'closedSprints' in issue['fields']:
+            for closed_sprint in issue['fields']['closedSprints']:
+                closed_sprints[closed_sprint['name']] = closed_sprint
 
     board = Board.objects.get(description=board_name)
 
     # TODO: DURATION OF SPRINT
-    for sprint in closed_sprints:
+    for sprint in closed_sprints.values():
         if board\
                 .iteration_set\
                 .filter(description=sprint['name'])\
