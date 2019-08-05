@@ -77,6 +77,12 @@ def estimate(request, board_id):
 
 
 def fetch_and_process_jira_sprint_issues(sprint_id):
+    # GET issues for sprint
+    # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-sprint-sprintId-issue-get
+    # Description: Returns all issues in a sprint, for a given sprint ID.
+    # This only includes issues that the user has permission to view.
+    # By default, the returned issues are ordered by rank.
+
     response = requests.request(
         "GET",
         f"{JIRA_URL}/sprint/{sprint_id}/issue",
@@ -101,6 +107,14 @@ def fetch_and_process_jira_sprint_issues(sprint_id):
 
 
 def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
+    # GET issues for backlog
+    # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-backlog-get
+    # Description: Returns all issues from the board's backlog, for the given board ID.
+    # This only includes issues that the user has permission to view.
+    # The backlog contains incomplete issues that are not assigned to any future or active sprint.
+    # Note, if the user does not have permission to view the board, no issues will be returned at all.
+    # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
+    # By default, the returned issues are ordered by rank.
 
     response = requests.request(
         "GET",
@@ -146,6 +160,9 @@ def fetch_and_process_jira_closed_sprints(board_jira_id, board_name):
 
 
 def fetch_and_process_jira_boards():
+    # GET all boards
+    # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-get
+    # Description: Returns all boards. This only includes boards that the user has permission to view.
 
     response = requests.request(
         "GET",
