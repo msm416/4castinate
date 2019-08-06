@@ -6,21 +6,23 @@ from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
 from forecast.helperMethods.utils import aggregate_simulations
-from .models import Board, Form, Iteration
+from .models import Board, Form, Iteration, LONG_TIME_AGO
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 
 def index(request):
-    latest_board_list = Board.objects.order_by('-pub_date')[:5]
+    latest_board_list = Board.objects.order_by('-creation_date')
     context = {'latest_board_list': latest_board_list}
     return render(request, 'forecast/index.html', context)
 
 
 def detail(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
-    return render(request, 'forecast/detail.html', {'board': board})
+    latest_form_list = board.form_set.order_by('-creation_date')
+    context = {'board': board, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
+    return render(request, 'forecast/detail.html', context)
 
 
 def results(request, board_id, form_id):
@@ -53,7 +55,7 @@ def estimate(request, board_id):
         # Redisplay the form selection template.
         return render(request, 'forecast/detail.html', {
             'board': board,
-            'error_message': "You didn't select a form!",
+            'error_message': "You didn't choose a form!",
         })
     else:
         selected_form.gen_simulations()

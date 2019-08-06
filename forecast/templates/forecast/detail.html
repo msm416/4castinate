@@ -31,7 +31,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Create Form </b>
+                        <b> Create Form (click to collapse)</b>
                     </button>
                 </h5>
             </div>
@@ -39,63 +39,65 @@
             <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"
                  data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
-                        <div class="container">
-                            <form action="{% url 'forecast:create_form' board.id%}" method="post">
-                                {% csrf_token %}
-                                <div class="form-row">
-                                    <div class="form-group col-md-2">
-                                        <label for="wip_lower_bound">WIP - Low</label>
-                                        <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="20">
-                                    </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="wip_upper_bound">WIP - High</label>
-                                        <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
-                                    </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="split_factor_lower_bound">Split Rate - Low</label>
-                                        <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="1.00">
-                                    </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="split_factor_upper_bound">Split Rate - High</label>
-                                        <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
-                                    </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="throughput_lower_bound">Throughput - Low</label>
-                                        <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1">
-                                    </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="throughput_upper_bound">Throughput - High</label>
-                                        <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5">
-                                    </div>
+                    <div class="container">
+                        <form action="{% url 'forecast:create_form' board.id%}" method="post">
+                            {% csrf_token %}
+                            <div class="form-row">
+                                <div class="form-group col-md-2">
+                                    <label for="wip_lower_bound">WIP - Low</label>
+                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="20">
                                 </div>
-                                <div class="form-row">
-                                    <div class="form-group col-md-4">
-                                        <label for="description">Form name</label>
-                                        <input type="text" class="form-control" name="description" id="description" value="New Form">
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="simulation_count">Simulation count</label>
-                                        <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="100">
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="throughput_from_data">Throughput Source</label>
-                                        <select name="throughput_from_data" id="throughput_from_data" class="form-control">
-                                            <option id="inputOptionForm" selected>Form Input</option>
-                                            <option id="inputOptionData" >Historical Data</option>
-                                        </select>
-                                    </div>
+                                <div class="form-group col-md-2">
+                                    <label for="wip_upper_bound">WIP - High</label>
+                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-4"></div>
-                                    <div class="col-md-4" align="center">
-                                        <button type="submit" class="btn btn-primary">Create</button>
-                                    </div>
-                                    <div class="col-md-4"></div>
+                                <div class="form-group col-md-2">
+                                    <label for="split_factor_lower_bound">Split Rate - Low</label>
+                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="1.00">
                                 </div>
-                            </form>
-
-                        </div>
-
+                                <div class="form-group col-md-2">
+                                    <label for="split_factor_upper_bound">Split Rate - High</label>
+                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="throughput_lower_bound">Throughput - Low</label>
+                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1.00">
+                                </div>
+                                <div class="form-group col-md-2">
+                                    <label for="throughput_upper_bound">Throughput - High</label>
+                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5.00">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="description">Form name</label>
+                                    <input type="text" class="form-control" name="description" id="description" value="New Form">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="simulation_count">Simulation count</label>
+                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="100">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="throughput_from_data">Throughput Source</label>
+                                    <select name="throughput_from_data" id="throughput_from_data" class="form-control">
+                                        <option id="inputOptionForm" selected>Form Input</option>
+                                        <option id="inputOptionData" >Historical Data</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="creation_date">Consider data starting from</label>
+                                    <input type="date" name="creation_date" class="form-control" id="creation_date" value="{{LONG_TIME_AGO}}">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4"></div>
+                                <div class="col-md-4" align="center">
+                                    <button type="submit" class="btn btn-secondary">Create</button>
+                                </div>
+                                <div class="col-md-4"></div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,11 +117,13 @@
                     <th>Choose </th>
                     <th>Form (Hover for details)</th>
                     <th>Number of Simulations</th>
+                    <th>Average throughput</th>
                     <th>Historical data</th>
+                    <th>(DB) Creation date</th>
                 </tr>
             </thead>
             <tbody id="myTable">
-                {% for form in board.form_set.all %}
+                {% for form in latest_form_list %}
                     <tr>
                         <td>
                             <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
@@ -135,22 +139,45 @@
                         </td>
                         <td>
                             {% if form.throughput_from_data %}
-                                Yes
+                                {{ form.get_throughput_avg }}
                             {% else %}
-                                No - High/Low Guess
+                                Guess in range [{{ form.throughput_lower_bound}}, {{ form.throughput_upper_bound }}]
                             {% endif %}
                         </td>
+                        <td>
+                            {% if form.throughput_from_data %}
+                                Yes
+                            {% else %}
+                                No
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ form.creation_date }}
+                        </td>
+
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-
-        <input type="submit" value="Estimate {{ board.description }}">
+        <div class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-4" align="center">
+                <button type="submit" class="btn btn-secondary"> Estimate </button>
+            </div>
+            <div class="col-md-4"></div>
+        </div>
     </form>
     {% if error_message %}
-        <p>
-            <strong> Warning: {{ error_message }} </strong>
-        </p>
+        <br>
+        <div class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-4" align="center">
+                <p>
+                    <strong> Warning: {{ error_message }} </strong>
+                </p>
+            </div>
+            <div class="col-md-4"></div>
+        </div>
     {% endif %}
 
 

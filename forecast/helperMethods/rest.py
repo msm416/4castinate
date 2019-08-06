@@ -127,7 +127,7 @@ def jira_get_boards():
                 .filter(description=board['name']) \
                 .count() == 0:
             Board(description=board['name'],
-                  pub_date=fetch_date,
+                  creation_date=fetch_date,
                   project_name=board['location']['name'],
                   data_sources='JIRA',
                   board_type=board['type']).save()
