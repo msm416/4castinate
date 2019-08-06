@@ -61,28 +61,32 @@
                                 </div>
                                 <div class="form-group col-md-2">
                                     <label for="throughput_lower_bound">Throughput - Low</label>
-                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1">
+                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1.00">
                                 </div>
                                 <div class="form-group col-md-2">
                                     <label for="throughput_upper_bound">Throughput - High</label>
-                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5">
+                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5.00">
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label for="description">Form name</label>
                                     <input type="text" class="form-control" name="description" id="description" value="New Form">
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label for="simulation_count">Simulation count</label>
                                     <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="100">
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label for="throughput_from_data">Throughput Source</label>
                                     <select name="throughput_from_data" id="throughput_from_data" class="form-control">
                                         <option id="inputOptionForm" selected>Form Input</option>
                                         <option id="inputOptionData" >Historical Data</option>
                                     </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="creation_date">Consider data starting from</label>
+                                    <input type="date" name="creation_date" class="form-control" id="creation_date" value="{{LONG_TIME_AGO}}">
                                 </div>
                             </div>
                             <div class="row">

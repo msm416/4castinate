@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
 from forecast.helperMethods.utils import aggregate_simulations
-from .models import Board, Form, Iteration
+from .models import Board, Form, Iteration, LONG_TIME_AGO
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -21,7 +21,7 @@ def index(request):
 def detail(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
     latest_form_list = board.form_set.order_by('-creation_date')
-    context = {'board': board, 'latest_form_list': latest_form_list}
+    context = {'board': board, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
     return render(request, 'forecast/detail.html', context)
 
 
