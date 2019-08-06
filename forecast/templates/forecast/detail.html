@@ -5,8 +5,26 @@
 {% block body %}
 
     <h1>Choose form</h1>
-    <h3>Total number of forms for {{board.description}}: {{board.form_set.count}}</h3>
-    <h5>Total number of iterations for {{board.description}}: {{board.iteration_set.count}}</h5>
+    <br>
+    <div class="row">
+        <div class="col-md-auto">
+            <h3>Total number of forms for {{board.description}}: {{board.form_set.count}}</h3>
+        </div>
+        <div class="col"></div>
+        <div class="col-md-auto">
+                 <span class="float-right">
+                    <a href="{% url 'forecast:iterations' %}" class="btn btn-secondary" role="button">
+                        View Iterations
+                    </a>
+                 </span>
+        </div>
+        <div class="col-md-auto">
+                <span class="float-right">
+
+                </span>
+        </div>
+    </div>
+    <br>
 
 
 <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">

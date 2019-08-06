@@ -6,11 +6,18 @@
     <h1>Choose board </h1>
     <br>
     <div class="row">
-        <div class="col">
+        <div class="col-md-auto">
             <h3>Total number of boards in database: {{latest_board_list.count}}</h3>
         </div>
         <div class="col"></div>
-        <div class="col">
+        <div class="col-md-auto">
+             <span class="float-right">
+                <a href="{% url 'forecast:iterations' %}" class="btn btn-secondary" role="button">
+                    View Iterations
+                </a>
+             </span>
+        </div>
+        <div class="col-md-auto">
             <span class="float-right">
                 <form action="{% url 'forecast:fetch'%}" method="post">
                     {% csrf_token %}
@@ -30,7 +37,9 @@
             <th>Project Name</th>
             <th>Data Sources</th>
             <th>Board Type</th>
+            <th># of Iterations</th>
             <th>Last Fetch Date</th>
+            <th>Pub Date</th>
         </tr>
         </thead>
         <tbody id="myTable">
@@ -49,7 +58,13 @@
                 {{ board.board_type }}
             </td>
             <td>
-                Never
+                {{ board.iteration_set.count }}
+            </td>
+            <td>
+                {{ board.fetch_date }}
+            </td>
+            <td>
+                {{ board.pub_date }}
             </td>
         </tr>
         {% endfor %}
