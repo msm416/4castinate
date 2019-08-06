@@ -112,8 +112,13 @@ class Form(models.Model):
 
         end_time = time.time()
         msg = f"Elapsed time is: {str(end_time - start_time)} seconds."
-        simulation = Simulation(form=self, message=msg, durations=durations)
-        simulation.save()
+
+        # Delete previous Simulation (if it exists)
+        # TODO: ONE TO ONE FORM-SIMULATION
+        self.simulation_set.all().delete()
+
+        # Create new Simulation
+        self.simulation_set.create(form=self, message=msg, durations=durations)
 
 
 class Simulation(models.Model):
