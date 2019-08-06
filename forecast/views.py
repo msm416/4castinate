@@ -67,8 +67,33 @@ def estimate(request, board_id):
 
 def fetch(request):
     jira_get_boards()
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
     return HttpResponseRedirect(reverse('forecast:index'))
 
+
+def create_form(request, board_id):
+    board = get_object_or_404(Board, pk=board_id)
+    throughput_from_data = True \
+        if request.POST['throughput_from_data'] == "Historical Data" \
+        else False
+    board.form_set.create(
+        description=request.POST['description'],
+        throughput_from_data=throughput_from_data,
+        wip_lower_bound=request.POST['wip_lower_bound'],
+        wip_upper_bound=request.POST['wip_upper_bound'],
+        split_factor_lower_bound=request.POST['split_factor_lower_bound'],
+        split_factor_upper_bound=request.POST['split_factor_upper_bound'],
+        throughput_lower_bound=request.POST['throughput_lower_bound'],
+        throughput_upper_bound=request.POST['throughput_upper_bound'],
+        simulation_count=request.POST['simulation_count'])
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
+    return HttpResponseRedirect(reverse('forecast:detail', args=(board_id,)))
 
 
 @require_POST

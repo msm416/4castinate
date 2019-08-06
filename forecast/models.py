@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import random
 import time
 
@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 WEEK_IN_DAYS = 7
+LONG_TIME_AGO = datetime.strptime("13/12/1110", "%d/%m/%Y")
 
 
 class Board(models.Model):
@@ -20,7 +21,7 @@ class Board(models.Model):
         return self.description
 
     def was_published_recently(self):
-        return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
+        return self.pub_date >= timezone.now() - timedelta(days=1)
 
 
 class Iteration(models.Model):
@@ -29,7 +30,8 @@ class Iteration(models.Model):
     # source = Jira / Trello / None
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
-    start_date = models.DateField(default=timezone.now)
+    creation_date = models.DateField(default=timezone.now)
+    start_date = models.DateTimeField(default=timezone.now)
     duration = models.FloatField(default=WEEK_IN_DAYS)
 
     # Default: Iteration does not come from some external source
@@ -43,12 +45,13 @@ class Iteration(models.Model):
 class Form(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
-    start_date = models.DateField(default=timezone.now)
+    start_date = models.DateTimeField(default=LONG_TIME_AGO)
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
     split_factor_lower_bound = models.FloatField(default=1.00)
     split_factor_upper_bound = models.FloatField(default=3.00)
 
+    # TODO: CLEAN FORM
     # Default: all sprints are of 1 week
     throughput_period_length = models.PositiveSmallIntegerField(default=1)
 
@@ -70,9 +73,7 @@ class Form(models.Model):
         cnt = 0
         throughput = 0
         for iteration in self.board.iteration_set.all():
-            # We're keeping track of the iterations that are not just a couple
-            # days after the form's start date (cause we don't want partial iterations)
-            if self.start_date - iteration.start_date >= datetime.timedelta(days=WEEK_IN_DAYS):
+            if self.start_date <= iteration.start_date:
                 throughput += (iteration.throughput * WEEK_IN_DAYS / iteration.duration)
                 cnt += 1
         return -1 if cnt == 0 else throughput/cnt

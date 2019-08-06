@@ -74,6 +74,8 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
                 duration = (start_date - complete_date).days
                 duration = 1 if duration is 0 else duration
                 closed_sprint['duration'] = duration
+                closed_sprint['start_date'] = start_date
+                # closed_sprint['complete_date'] = complete_date
                 closed_sprints[closed_sprint['name']] = closed_sprint
 
     board = Board.objects.get(description=board_name)
@@ -93,7 +95,8 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
                 .create(description=sprint['name'],
                         source='JIRA',
                         throughput=throughput,
-                        duration=sprint['duration'])
+                        duration=sprint['duration'],
+                        start_date=sprint['start_date'])
 
     board.fetch_date = fetch_date
     board.save()

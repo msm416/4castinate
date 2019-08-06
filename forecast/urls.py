@@ -16,6 +16,8 @@ urlpatterns = [
     # ex: /forecast/5/results/2
     path('<int:board_id>/estimate/', views.estimate, name='estimate'),
     # ex: /forecast/5/estimate/
+    path('<int:board_id>/create-form/', views.create_form, name='create_form'),
+    # ex: /forecast/5/create-form/
 
     path('webhook/', views.webhook, name='webhook')
     # ex: /forecast/webhook/
