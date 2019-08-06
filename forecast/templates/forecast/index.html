@@ -39,7 +39,7 @@
             <th>Board Type</th>
             <th># of Iterations</th>
             <th>Last Fetch Date</th>
-            <th>Pub Date</th>
+            <th>(DB) Creation Date</th>
         </tr>
         </thead>
         <tbody id="myTable">
@@ -64,7 +64,7 @@
                 {{ board.fetch_date }}
             </td>
             <td>
-                {{ board.pub_date }}
+                {{ board.creation_date }}
             </td>
         </tr>
         {% endfor %}

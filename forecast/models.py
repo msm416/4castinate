@@ -14,14 +14,14 @@ class Board(models.Model):
     data_sources = models.CharField(max_length=200, default='None')
     project_name = models.CharField(max_length=200, default='None')
     board_type = models.CharField(max_length=200, default='Hybrid')
-    pub_date = models.DateTimeField('date created')
+    creation_date = models.DateTimeField('date created')
     fetch_date = models.DateTimeField(null=True)
 
     def __str__(self):
         return self.description
 
     def was_published_recently(self):
-        return self.pub_date >= timezone.now() - timedelta(days=1)
+        return self.creation_date >= timezone.now() - timedelta(days=1)
 
 
 class Iteration(models.Model):
@@ -30,9 +30,9 @@ class Iteration(models.Model):
     # source = Jira / Trello / None
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
-    creation_date = models.DateField(default=timezone.now)
+    creation_date = models.DateTimeField(default=timezone.now)
     start_date = models.DateTimeField(default=timezone.now)
-    duration = models.FloatField(default=WEEK_IN_DAYS)
+    duration = models.PositiveSmallIntegerField(default=WEEK_IN_DAYS)
 
     # Default: Iteration does not come from some external source
     source = models.CharField(max_length=200, default='None')
@@ -45,6 +45,7 @@ class Iteration(models.Model):
 class Form(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
+    creation_date = models.DateTimeField(default=timezone.now)
     start_date = models.DateTimeField(default=LONG_TIME_AGO)
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
