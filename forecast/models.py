@@ -10,7 +10,7 @@ LONG_TIME_AGO = "1011-12-13"
 
 
 class Board(models.Model):
-    description = models.CharField(max_length=200)
+    name = models.CharField(max_length=200)
     data_sources = models.CharField(max_length=200, default='None')
     project_name = models.CharField(max_length=200, default='None')
     board_type = models.CharField(max_length=200, default='Hybrid')
@@ -18,14 +18,14 @@ class Board(models.Model):
     fetch_date = models.DateTimeField(null=True)
 
     def __str__(self):
-        return self.description
+        return self.name
 
     def was_published_recently(self):
         return self.creation_date >= timezone.now() - timedelta(days=1)
 
 
 class Backlog(models.Model):
-    description = models.CharField(max_length=200, default="Backlog")
+    name = models.CharField(max_length=200, default="Backlog")
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     issues = models.IntegerField(default=20)
     epics = models.TextField(default='')
@@ -33,7 +33,7 @@ class Backlog(models.Model):
 
 class Issue(models.Model):
     backlog = models.ForeignKey(Backlog, on_delete=models.CASCADE)
-    description = models.CharField(max_length=200, default="some issue")
+    name = models.CharField(max_length=200, default="some issue")
     epic = models.CharField(max_length=200, default='None')
 
 
@@ -41,7 +41,7 @@ class Iteration(models.Model):
     # An instance of Iteration could be a sprint
     # source = Jira / Trello / None
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
-    description = models.CharField(max_length=200)
+    name = models.CharField(max_length=200)
     creation_date = models.DateTimeField(default=timezone.now)
     start_date = models.DateTimeField(default=timezone.now)
     duration = models.PositiveSmallIntegerField(default=WEEK_IN_DAYS)
@@ -54,12 +54,12 @@ class Iteration(models.Model):
     source_id = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
-        return self.description
+        return self.name
 
 
 class Form(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
-    description = models.CharField(max_length=200)
+    name = models.CharField(max_length=200)
 
     creation_date = models.DateTimeField(default=timezone.now)
     start_date = models.DateTimeField(default=datetime.strptime(LONG_TIME_AGO, "%Y-%m-%d"))
@@ -85,11 +85,13 @@ class Form(models.Model):
     simulation_count = models.PositiveSmallIntegerField(default=100)
 
     def __str__(self):
-        return self.description
+        return self.name
 
+    # Returns always >= 0
     def get_throughput_avg(self):
         cnt = 0
         throughput = 0
+        # TODO: CONSIDER START_DATE
         for iteration in self.board.iteration_set.filter(state='closed').all():
             if iteration.throughput == 0:
                 continue
@@ -98,20 +100,18 @@ class Form(models.Model):
                 cnt += 1
         return 0 if cnt == 0 else throughput/cnt
 
-    # One test => One Simulation instance is created
+    # One test => One Simulation instance is created.
+    # Each form has at most one Simulation. Subsequent calls will overwrite the Simulation
+    # for data forms, and will return the same simulation for non-data forms.
     def gen_simulations(self):
-        # TODO: Recompute this in data forms
-        # Run only once per Form
 
         throughput_avg = self.get_throughput_avg()
 
         if self.throughput_from_data:
-            if self.throughput_lower_bound == throughput_avg:
-                return
-            else:
-                self.throughput_lower_bound = throughput_avg
-                self.throughput_upper_bound = throughput_avg
-                self.save()
+            # TODO: figure how to avoid recomputing simulation (but NOT 'if th_l_b == g_th_avg()')
+            self.throughput_lower_bound = throughput_avg
+            self.throughput_upper_bound = throughput_avg
+            self.save()
         else:
             if self.simulation_set.exists():
                 return

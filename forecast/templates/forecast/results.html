@@ -3,7 +3,7 @@
 
 {% block body %}
 
-    <h1>{{ board.description }} - {{ form.description }}</h1>
+    <h1>{{ board.name }} - {{ form.name }}</h1>
     <h2> Estimate another:
         <a href="{% url 'forecast:detail' board.id %}"> form?</a>
         <a href="{% url 'forecast:index' %}"> board?</a>

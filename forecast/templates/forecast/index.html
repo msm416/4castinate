@@ -46,7 +46,7 @@
         {% for board in latest_board_list %}
         <tr>
             <td>
-                <a href="{% url 'forecast:detail' board.id %}">{{ board.description }}</a>
+                <a href="{% url 'forecast:detail' board.id %}">{{ board.name }}</a>
             </td>
             <td>
                 {{ board.project_name }}

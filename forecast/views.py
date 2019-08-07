@@ -42,22 +42,25 @@ def results(request, board_id, form_id):
 
 
 def iterations(request):
-    iteration_list = Iteration.objects.order_by('-start_date').order_by('board__description')
+    iteration_list = Iteration.objects.order_by('-start_date').order_by('board__name')
     context = {'iteration_list': iteration_list}
     return render(request, 'forecast/iterations.html', context)
 
 
 def estimate(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
+    latest_form_list = board.form_set.order_by('-creation_date')
+    context = {'board': board, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
     try:
         selected_form = board.form_set.get(pk=request.POST['form'])
     except (KeyError, Form.DoesNotExist):
         # Redisplay the form selection template.
-        return render(request, 'forecast/detail.html', {
-            'board': board,
-            'error_message': "You didn't choose a form!",
-        })
+        context['error_message'] = "You didn't choose an existing form!"
+        return render(request, 'forecast/detail.html', context)
     else:
+        if selected_form.throughput_lower_bound <= 0:
+            context['error_message'] = "Selected form has invalid throughput!"
+            return render(request, 'forecast/detail.html', context)
         selected_form.gen_simulations()
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
@@ -82,7 +85,7 @@ def create_form(request, board_id):
         if request.POST['throughput_from_data'] == "Historical Data" \
         else False
     board.form_set.create(
-        description=request.POST['description'],
+        name=request.POST['name'],
         throughput_from_data=throughput_from_data,
         wip_lower_bound=request.POST['wip_lower_bound'],
         wip_upper_bound=request.POST['wip_upper_bound'],
@@ -106,6 +109,6 @@ def webhook(request):
 
     if Form.objects.count() < 10:
         aux = random.randint(0, 10000)
-        board.form_set.create(description=str(aux))
+        board.form_set.create(name=str(aux))
 
     return render(request, 'forecast/detail.html', {'board': board})
