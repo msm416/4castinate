@@ -20,6 +20,8 @@
         <th>Parent Board</th>
         <th>Source</th>
         <th>Throughput</th>
+        <th>Source</th>
+        <th>State</th>
         <th>Start Date</th>
     </tr>
     </thead>
@@ -27,16 +29,22 @@
     {% for iteration in iteration_list %}
     <tr>
         <td>
-            {{ iteration.description }}
+            {{ iteration.name }}
         </td>
         <td>
-            {{ iteration.board.description }}
+            {{ iteration.board.name }}
         </td>
         <td>
             {{ iteration.source }}
         </td>
         <td>
             {{ iteration.throughput }}
+        </td>
+        <td>
+            {{ iteration.source }}
+        </td>
+        <td>
+            {{ iteration.state }}
         </td>
         <td>
             {{ iteration.start_date }}

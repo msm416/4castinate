@@ -8,7 +8,7 @@
     <br>
     <div class="row">
         <div class="col-md-auto">
-            <h3>Total number of forms for {{board.description}}: {{board.form_set.count}}</h3>
+            <h3>Total number of forms for {{board.name}}: {{board.form_set.count}}</h3>
         </div>
         <div class="col"></div>
         <div class="col-md-auto">
@@ -70,12 +70,12 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-3">
-                                    <label for="description">Form name</label>
-                                    <input type="text" class="form-control" name="description" id="description" value="New Form">
+                                    <label for="name">Form name</label>
+                                    <input type="text" class="form-control" name="name" id="name" value="New Form">
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label for="simulation_count">Simulation count</label>
-                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="100">
+                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="1000">
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label for="throughput_from_data">Throughput Source</label>
@@ -115,10 +115,12 @@
             <thead>
                 <tr>
                     <th>Choose </th>
-                    <th>Form (Hover for details)</th>
-                    <th>Number of Simulations</th>
-                    <th>Average throughput</th>
-                    <th>Historical data</th>
+                    <th>Name</th>
+                    <th>#Sim</th>
+                    <th>WIP</th>
+                    <th>S_RATE</th>
+                    <th>Throughput</th>
+                    <th>Data?</th>
                     <th>(DB) Creation date</th>
                 </tr>
             </thead>
@@ -130,18 +132,24 @@
                         </td>
                         <td>
                             <label for="form{{ forloop.counter }}" data-toggle="tooltip"
-                                   title="{{ form.description }}">
-                                {{ form.description }}
+                                   title="{{ form.name }}">
+                                {{ form.name }}
                             </label>
                         </td>
                         <td>
                             {{form.simulation_count}}
                         </td>
                         <td>
+                            [{{form.wip_lower_bound}}, {{form.wip_upper_bound}}]
+                        </td>
+                        <td>
+                            [{{form.split_factor_lower_bound}}, {{form.split_factor_upper_bound}}]
+                        </td>
+                        <td>
                             {% if form.throughput_from_data %}
-                                {{ form.get_throughput_avg }}
+                                [{{ form.get_throughput_avg }}, {{ form.get_throughput_avg }}]
                             {% else %}
-                                Guess in range [{{ form.throughput_lower_bound}}, {{ form.throughput_upper_bound }}]
+                                [{{ form.throughput_lower_bound}}, {{ form.throughput_upper_bound }}]
                             {% endif %}
                         </td>
                         <td>
@@ -167,6 +175,7 @@
             <div class="col-md-4"></div>
         </div>
     </form>
+
     {% if error_message %}
         <br>
         <div class="row">
