@@ -51,7 +51,7 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
 
     response = requests.request(
         "GET",
-        f"{JIRA_URL}/board/{board_jira_id}/backlog",
+        f"{JIRA_URL}/board/{board_jira_id}/sprint",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
         verify=False
@@ -59,31 +59,34 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
 
     response_as_dict = json.loads(response.text)
 
-    if 'issues' not in response_as_dict:
+    if 'errorMessages' in response_as_dict:
+        # Non Scrum/Simple Jira board. Nothing to be done.
+        print(response_as_dict['errorMessages'])
         return
-    if not response_as_dict['issues']:
+
+    if not response_as_dict['values']:
         return
 
     closed_sprints = {}
 
-    for issue in response_as_dict['issues']:
-        if 'closedSprints' in issue['fields']:
-            for closed_sprint in issue['fields']['closedSprints']:
-                start_date = datetime.strptime(closed_sprint['startDate'].split("T")[0], "%Y-%m-%d")
-                complete_date = datetime.strptime(closed_sprint['completeDate'].split("T")[0], "%Y-%m-%d")
-                duration = (start_date - complete_date).days
-                duration = 1 if duration is 0 else duration
-                closed_sprint['duration'] = duration
-                closed_sprint['start_date'] = start_date
-                # closed_sprint['complete_date'] = complete_date
-                closed_sprints[closed_sprint['name']] = closed_sprint
+    for sprint in response_as_dict['values']:
+        if sprint['state'] != "closed":
+            continue
+        start_date = datetime.strptime(sprint['startDate'].split("T")[0], "%Y-%m-%d")
+        complete_date = datetime.strptime(sprint['completeDate'].split("T")[0], "%Y-%m-%d")
+        duration = (start_date - complete_date).days
+        duration = 1 if duration is 0 else duration
+        sprint['duration'] = duration
+        sprint['start_date'] = start_date
+        # closed_sprint['complete_date'] = complete_date
+        closed_sprints[sprint['name']] = sprint
 
     board = Board.objects.get(description=board_name)
 
     for sprint in closed_sprints.values():
         if not board \
                 .iteration_set \
-                .filter(description=sprint['name'], start_date=sprint['start_date']) \
+                .filter(description=sprint['name'], source_id=sprint['id']) \
                 .exists():
 
             throughput = jira_get_sprint_issues(sprint['id'])
@@ -96,7 +99,8 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
                         source='JIRA',
                         throughput=throughput,
                         duration=sprint['duration'],
-                        start_date=sprint['start_date'])
+                        start_date=sprint['start_date'],
+                        source_id=sprint['id'])
 
     board.fetch_date = fetch_date
     board.save()

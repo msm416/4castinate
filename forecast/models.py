@@ -24,6 +24,19 @@ class Board(models.Model):
         return self.creation_date >= timezone.now() - timedelta(days=1)
 
 
+class Backlog(models.Model):
+    description = models.CharField(max_length=200, default="Backlog")
+    board = models.ForeignKey(Board, on_delete=models.CASCADE)
+    issues = models.IntegerField(default=20)
+    epics = models.TextField(default='')
+
+
+class Issue(models.Model):
+    backlog = models.ForeignKey(Backlog, on_delete=models.CASCADE)
+    description = models.CharField(max_length=200, default="some issue")
+    epic = models.CharField(max_length=200, default='None')
+
+
 class Iteration(models.Model):
     # An instance of Iteration could be a sprint
     # Default duration = 1 week (7days)
@@ -33,10 +46,13 @@ class Iteration(models.Model):
     creation_date = models.DateTimeField(default=timezone.now)
     start_date = models.DateTimeField(default=timezone.now)
     duration = models.PositiveSmallIntegerField(default=WEEK_IN_DAYS)
+    throughput = models.PositiveSmallIntegerField(default=3)
 
     # Default: Iteration does not come from some external source
     source = models.CharField(max_length=200, default='None')
-    throughput = models.PositiveSmallIntegerField(default=3)
+    active = models.BooleanField(default=False)
+    # Id of Iteration on the Board
+    source_id = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
         return self.description
@@ -45,16 +61,18 @@ class Iteration(models.Model):
 class Form(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
+
     creation_date = models.DateTimeField(default=timezone.now)
     start_date = models.DateTimeField(default=datetime.strptime(LONG_TIME_AGO, "%Y-%m-%d"))
+
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
+
+    # Default: we consider forms that don't use wip from backlog
+    wip_from_backlog = models.BooleanField(default=False)
+
     split_factor_lower_bound = models.FloatField(default=1.00)
     split_factor_upper_bound = models.FloatField(default=3.00)
-
-    # TODO: CLEAN FORM
-    # Default: all sprints are of 1 week
-    throughput_period_length = models.PositiveSmallIntegerField(default=1)
 
     throughput_lower_bound = models.FloatField(default=1.00)
     throughput_upper_bound = models.FloatField(default=5.00)
@@ -73,7 +91,7 @@ class Form(models.Model):
     def get_throughput_avg(self):
         cnt = 0
         throughput = 0
-        for iteration in self.board.iteration_set.all():
+        for iteration in self.board.iteration_set.filter(active=False).all():
             if self.start_date <= iteration.start_date:
                 throughput += (iteration.throughput * WEEK_IN_DAYS / iteration.duration)
                 cnt += 1
@@ -123,7 +141,7 @@ class Form(models.Model):
 
 class Simulation(models.Model):
     form = models.ForeignKey(Form, on_delete=models.CASCADE)
-    durations = models.TextField(null=True)
+    durations = models.TextField(default='')
     message = models.CharField(max_length=200)
 
     def __str__(self):
