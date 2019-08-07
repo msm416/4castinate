@@ -39,7 +39,6 @@ class Issue(models.Model):
 
 class Iteration(models.Model):
     # An instance of Iteration could be a sprint
-    # Default duration = 1 week (7days)
     # source = Jira / Trello / None
     board = models.ForeignKey(Board, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
@@ -50,7 +49,7 @@ class Iteration(models.Model):
 
     # Default: Iteration does not come from some external source
     source = models.CharField(max_length=200, default='None')
-    active = models.BooleanField(default=False)
+    state = models.CharField(max_length=200, default='INVALID_STATE')
     # Id of Iteration on the Board
     source_id = models.PositiveSmallIntegerField(default=0)
 
@@ -91,11 +90,13 @@ class Form(models.Model):
     def get_throughput_avg(self):
         cnt = 0
         throughput = 0
-        for iteration in self.board.iteration_set.filter(active=False).all():
+        for iteration in self.board.iteration_set.filter(state='closed').all():
+            if iteration.throughput == 0:
+                continue
             if self.start_date <= iteration.start_date:
                 throughput += (iteration.throughput * WEEK_IN_DAYS / iteration.duration)
                 cnt += 1
-        return -1 if cnt == 0 else throughput/cnt
+        return 0 if cnt == 0 else throughput/cnt
 
     # One test => One Simulation instance is created
     def gen_simulations(self):

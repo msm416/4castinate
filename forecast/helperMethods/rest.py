@@ -40,7 +40,7 @@ def jira_get_sprint_issues(sprint_id):
     return throughput
 
 
-def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
+def jira_get_sprints(board_jira_id, board_name, fetch_date):
     # TODO: Getting closed_sprints in an indirect way (and maybe wrong as well). Maybe a more specific request exists?
     # GET issues for backlog
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-backlog-get
@@ -69,31 +69,32 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
     if not response_as_dict['values']:
         return
 
-    closed_sprints = {}
+    sprints = {}
 
     for sprint in response_as_dict['values']:
         if sprint['state'] != "closed":
-            continue
-        start_date = datetime.strptime(sprint['startDate'], JIRA_DATE_FORMAT)
-        complete_date = datetime.strptime(sprint['completeDate'], JIRA_DATE_FORMAT)
-        duration = (complete_date - start_date).days
-        duration = 1 if duration is 0 else duration
-        sprint['duration'] = duration
-        sprint['start_date'] = start_date
-        # closed_sprint['complete_date'] = complete_date
-        closed_sprints[sprint['name']] = sprint
+            # TODO: Refactor this. For now, we add some invalid values for these fields
+            sprint['duration'] = 1
+            sprint['start_date'] = timezone.now()
+        else:
+            start_date = datetime.strptime(sprint['startDate'], JIRA_DATE_FORMAT)
+            complete_date = datetime.strptime(sprint['completeDate'], JIRA_DATE_FORMAT)
+            duration = (complete_date - start_date).days
+            duration = 1 if duration is 0 else duration
+            sprint['duration'] = duration
+            sprint['start_date'] = start_date
+            # closed_sprint['complete_date'] = complete_date
+        sprints[sprint['name']] = sprint
 
     board = Board.objects.get(description=board_name)
 
-    for sprint in closed_sprints.values():
+    for sprint in sprints.values():
         if not board \
                 .iteration_set \
                 .filter(description=sprint['name'], source_id=sprint['id']) \
                 .exists():
 
             throughput = jira_get_sprint_issues(sprint['id'])
-            if throughput == 0:
-                continue
 
             board \
                 .iteration_set \
@@ -102,7 +103,8 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
                         throughput=throughput,
                         duration=sprint['duration'],
                         start_date=sprint['start_date'],
-                        source_id=sprint['id'])
+                        source_id=sprint['id'],
+                        state=sprint['state'])
 
     board.fetch_date = fetch_date
     board.save()
@@ -138,7 +140,7 @@ def jira_get_boards():
                   data_sources='JIRA',
                   board_type=board['type']).save()
 
-        jira_get_closed_sprints(board['id'], board['name'], fetch_date)
+        jira_get_sprints(board['id'], board['name'], fetch_date)
 
         new_board = Board.objects.get(description=board['name'], data_sources='JIRA')
         new_board.fetch_date = fetch_date
