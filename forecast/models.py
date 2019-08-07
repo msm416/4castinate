@@ -14,7 +14,7 @@ class Board(models.Model):
     data_sources = models.CharField(max_length=200, default='None')
     project_name = models.CharField(max_length=200, default='None')
     board_type = models.CharField(max_length=200, default='Hybrid')
-    creation_date = models.DateTimeField('date created')
+    creation_date = models.DateTimeField(default=timezone.now)
     fetch_date = models.DateTimeField(null=True)
 
     def __str__(self):

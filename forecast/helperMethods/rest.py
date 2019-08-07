@@ -81,10 +81,10 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
     board = Board.objects.get(description=board_name)
 
     for sprint in closed_sprints.values():
-        if board \
+        if not board \
                 .iteration_set \
-                .filter(description=sprint['name']) \
-                .count() == 0:
+                .filter(description=sprint['name'], start_date=sprint['start_date']) \
+                .exists():
 
             throughput = jira_get_sprint_issues(sprint['id'])
             if throughput == 0:
@@ -122,10 +122,10 @@ def jira_get_boards():
     fetch_date = timezone.now()
 
     for board in response_boards:
-        if Board \
+        if not Board \
                 .objects \
-                .filter(description=board['name']) \
-                .count() == 0:
+                .filter(description=board['name'], data_sources='JIRA') \
+                .exists():
             Board(description=board['name'],
                   creation_date=fetch_date,
                   project_name=board['location']['name'],
@@ -134,7 +134,7 @@ def jira_get_boards():
 
         jira_get_closed_sprints(board['id'], board['name'], fetch_date)
 
-        new_board = Board.objects.get(description=board['name'])
+        new_board = Board.objects.get(description=board['name'], data_sources='JIRA')
         new_board.fetch_date = fetch_date
         new_board.save()
         # TODO: MODEL IN-PROGRESS SPRINT (at every time, there is at most
