@@ -7,6 +7,8 @@ from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
 from forecast.models import Board
 from datetime import datetime
 
+JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
 
 def jira_get_sprint_issues(sprint_id):
     # GET issues for sprint
@@ -72,9 +74,9 @@ def jira_get_closed_sprints(board_jira_id, board_name, fetch_date):
     for sprint in response_as_dict['values']:
         if sprint['state'] != "closed":
             continue
-        start_date = datetime.strptime(sprint['startDate'].split("T")[0], "%Y-%m-%d")
-        complete_date = datetime.strptime(sprint['completeDate'].split("T")[0], "%Y-%m-%d")
-        duration = (start_date - complete_date).days
+        start_date = datetime.strptime(sprint['startDate'], JIRA_DATE_FORMAT)
+        complete_date = datetime.strptime(sprint['completeDate'], JIRA_DATE_FORMAT)
+        duration = (complete_date - start_date).days
         duration = 1 if duration is 0 else duration
         sprint['duration'] = duration
         sprint['start_date'] = start_date
