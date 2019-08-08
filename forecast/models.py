@@ -24,15 +24,8 @@ class Board(models.Model):
         return self.creation_date >= timezone.now() - timedelta(days=1)
 
 
-class Backlog(models.Model):
-    name = models.CharField(max_length=200, default="Backlog")
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
-    issues = models.IntegerField(default=20)
-    epics = models.TextField(default='')
-
-
 class Issue(models.Model):
-    backlog = models.ForeignKey(Backlog, on_delete=models.CASCADE)
+    board = models.ForeignKey(Board, on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=200, default="some issue")
     epic = models.CharField(max_length=200, default='None')
 
@@ -67,8 +60,8 @@ class Form(models.Model):
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
 
-    # Default: we consider forms that don't use wip from backlog
-    wip_from_backlog = models.BooleanField(default=False)
+    # Default: we consider forms that don't use historical wip data
+    wip_from_data = models.BooleanField(default=False)
 
     split_factor_lower_bound = models.FloatField(default=1.00)
     split_factor_upper_bound = models.FloatField(default=3.00)
@@ -76,7 +69,7 @@ class Form(models.Model):
     throughput_lower_bound = models.FloatField(default=1.00)
     throughput_upper_bound = models.FloatField(default=5.00)
 
-    # Default: we consider forms that don't use historical data
+    # Default: we consider forms that don't use historical throughput data
     throughput_from_data = models.BooleanField(default=False)
 
     # PK of Iteration object that represents the start point (we consider
