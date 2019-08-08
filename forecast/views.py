@@ -58,7 +58,9 @@ def estimate(request, board_id):
         context['error_message'] = "You didn't choose an existing form!"
         return render(request, 'forecast/detail.html', context)
     else:
-        if selected_form.throughput_lower_bound <= 0:
+        # TODO: make all form checks (on server or client side)
+        if selected_form.throughput_lower_bound <= 0 or \
+                (selected_form.throughput_from_data and selected_form.get_throughput_avg() == 0):
             context['error_message'] = "Selected form has invalid throughput!"
             return render(request, 'forecast/detail.html', context)
         selected_form.gen_simulations()
