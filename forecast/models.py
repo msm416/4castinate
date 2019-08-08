@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-import random
+from numpy import random
 import time
 
 from django.db import models
@@ -110,18 +110,16 @@ class Form(models.Model):
             if self.simulation_set.exists():
                 return
 
-        durations = ""
         start_time = time.time()
-        for i in range(self.simulation_count):
-            wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound)
-            split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound)
-            weekly_throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound)
 
-            completion_duration = int((wip * split_rate) / weekly_throughput)
-            if i == 0:
-                durations = str(completion_duration)
-            else:
-                durations = ';'.join([durations, str(completion_duration)])
+        wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound,
+                             (self.simulation_count,))
+        split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound,
+                                    (self.simulation_count,))
+        weekly_throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound,
+                                           (self.simulation_count,))
+        completion_duration = ((wip * split_rate) / weekly_throughput).astype(int)
+        durations = ';'.join(map(str, completion_duration))
 
         end_time = time.time()
         msg = f"Elapsed time is: {str(end_time - start_time)} seconds."
