@@ -69,15 +69,27 @@ def jira_get_issues(board_jira_id, board_name, fetch_date):
 
     board = Board.objects.get(name=board_name, data_sources='JIRA')
 
-    for issue in response_as_dict['issues']:
-        done = True if issue['fields']['resolution'] else False
-        type = issue['fields']['issuetype']['name']
-        name = issue['fields']['summary']
-        id = issue['id']
-        # TODO: get epic parent properly: it's not necessarily direct parent
-        epic_parent = issue['fields']['parent']['fields']['summary'] if 'parent' in issue['fields'] else 'None'
+    board.issue_set.all().delete()
 
-        # if not board.issue_set.filter(name=name, source_id=id).exists():
+    for issue in response_as_dict['issues']:
+        print("GR%LPKPRGKK$P%GKPRGPRKPGRKRPRGKPRKPGRPKRKGRPKRPGKPRG")
+        state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
+        issue_type = issue['fields']['issuetype']['name']
+        name = issue['fields']['summary']
+        source_id = issue['id']
+        # TODO: get epic parent properly: it's not necessarily direct parent
+        epic_parent = issue['fields']['parent']['fields']['summary'] \
+            if 'parent' in issue['fields'] \
+            else 'None'
+
+        board \
+            .issue_set \
+            .create(name=name,
+                    state=state,
+                    issue_type=issue_type,
+                    epic_parent=epic_parent,
+                    source='JIRA',
+                    source_id=source_id)
 
     return
 
@@ -110,7 +122,8 @@ def jira_get_sprints(board_jira_id, board_name, fetch_date):
 
     for sprint in response_as_dict['values']:
         if sprint['state'] != "closed":
-            # TODO: Refactor this. For now, we add some invalid values for these fields
+            # TODO: Maybe change this. For now, we add some invalid values for these fields.
+            #  This is not intuitive.
             sprint['duration'] = 1
             sprint['start_date'] = timezone.now()
         else:
@@ -125,15 +138,12 @@ def jira_get_sprints(board_jira_id, board_name, fetch_date):
 
     board = Board.objects.get(name=board_name, data_sources='JIRA')
 
+    board.iteration_set.all().delete()
+
     for sprint in sprints.values():
-        board\
-            .iteration_set\
-            .filter(source_id=sprint['id'])\
-            .delete()
 
         throughput = jira_get_sprint_issues_for_throughput(sprint['id'])
 
-        print("WE CREATING!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         board \
             .iteration_set \
             .create(name=sprint['name'],
@@ -143,9 +153,6 @@ def jira_get_sprints(board_jira_id, board_name, fetch_date):
                     start_date=sprint['start_date'],
                     source_id=sprint['id'],
                     state=sprint['state'])
-
-    board.fetch_date = fetch_date
-    board.save()
 
 
 def jira_get_boards():
@@ -181,7 +188,7 @@ def jira_get_boards():
                   board_type=board['type']).save()
 
         jira_get_sprints(board['id'], board['name'], fetch_date)
-        # jira_get_issues(board['id'], board['name'], fetch_date)
+        jira_get_issues(board['id'], board['name'], fetch_date)
 
         the_board = Board.objects.get(name=board['name'], data_sources='JIRA')
         the_board.fetch_date = fetch_date

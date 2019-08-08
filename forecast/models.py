@@ -27,8 +27,11 @@ class Board(models.Model):
 class Issue(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=200, default="some issue")
-    type = models.CharField(max_length=200, default='non-epic')
+    state = models.CharField(max_length=200, default='Done')
+    issue_type = models.CharField(max_length=200, default='non-epic')
     epic_parent = models.CharField(max_length=200, default='None')
+    source = models.CharField(max_length=200, default='None')
+    source_id = models.PositiveSmallIntegerField(default=0)
 
 
 class Iteration(models.Model):

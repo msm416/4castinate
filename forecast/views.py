@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
 from forecast.helperMethods.utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO
+from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -42,9 +42,15 @@ def results(request, board_id, form_id):
 
 
 def iterations(request):
-    iteration_list = Iteration.objects.order_by('-start_date').order_by('board__name')
+    iteration_list = Iteration.objects.order_by('-start_date', 'board__name')
     context = {'iteration_list': iteration_list}
     return render(request, 'forecast/iterations.html', context)
+
+
+def issues(request):
+    issue_list = Issue.objects.order_by('board__name', '-state', 'epic_parent')
+    context = {'issue_list': issue_list}
+    return render(request, 'forecast/issues.html', context)
 
 
 def estimate(request, board_id):
