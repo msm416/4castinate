@@ -147,7 +147,7 @@
                         </td>
                         <td>
                             {% if form.throughput_from_data %}
-                                [{{ form.get_throughput_avg }}, {{ form.get_throughput_avg }}]
+                                {{ form.get_throughput_avg }}
                             {% else %}
                                 [{{ form.throughput_lower_bound}}, {{ form.throughput_upper_bound }}]
                             {% endif %}

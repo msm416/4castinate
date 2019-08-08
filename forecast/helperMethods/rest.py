@@ -11,6 +11,7 @@ JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 def jira_get_sprint_issues_for_throughput(sprint_id):
+    # TODO: Refactor this
     # GET issues for sprint
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-sprint-sprintId-issue-get
     # Description: Returns all issues in a sprint, for a given sprint ID.
@@ -37,6 +38,48 @@ def jira_get_sprint_issues_for_throughput(sprint_id):
             throughput += 1
 
     return throughput
+
+
+def jira_get_issues(board_jira_id, board_name, fetch_date):
+    # Get issues for board
+    # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-issue-get
+    # Description: Returns all issues from a board, for a given board ID.
+    # This only includes issues that the user has permission to view.
+    # An issue belongs to the board if its status is mapped to the board's column.
+    # Epic issues do not belongs to the scrum boards.
+    # Note, if the user does not have permission to view the board, no issues will be returned at all.
+    # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
+    # By default, the returned issues are ordered by rank.
+
+    response = requests.request(
+        "GET",
+        f"{JIRA_URL}/board/{board_jira_id}/issue",
+        headers={"Accept": "application/json"},
+        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
+        verify=False
+    )
+
+    response_as_dict = json.loads(response.text)
+
+    if not response_as_dict['issues']:
+        print("NO ISSUES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        return
+
+    issues = {}
+
+    board = Board.objects.get(name=board_name, data_sources='JIRA')
+
+    for issue in response_as_dict['issues']:
+        done = True if issue['fields']['resolution'] else False
+        type = issue['fields']['issuetype']['name']
+        name = issue['fields']['summary']
+        id = issue['id']
+        # TODO: get epic parent properly: it's not necessarily direct parent
+        epic_parent = issue['fields']['parent']['fields']['summary'] if 'parent' in issue['fields'] else 'None'
+
+        # if not board.issue_set.filter(name=name, source_id=id).exists():
+
+    return
 
 
 def jira_get_sprints(board_jira_id, board_name, fetch_date):
@@ -80,25 +123,26 @@ def jira_get_sprints(board_jira_id, board_name, fetch_date):
             # closed_sprint['complete_date'] = complete_date
         sprints[sprint['name']] = sprint
 
-    board = Board.objects.get(name=board_name)
+    board = Board.objects.get(name=board_name, data_sources='JIRA')
 
     for sprint in sprints.values():
-        if not board \
-                .iteration_set \
-                .filter(name=sprint['name'], source_id=sprint['id']) \
-                .exists():
+        board\
+            .iteration_set\
+            .filter(source_id=sprint['id'])\
+            .delete()
 
-            throughput = jira_get_sprint_issues_for_throughput(sprint['id'])
+        throughput = jira_get_sprint_issues_for_throughput(sprint['id'])
 
-            board \
-                .iteration_set \
-                .create(name=sprint['name'],
-                        source='JIRA',
-                        throughput=throughput,
-                        duration=sprint['duration'],
-                        start_date=sprint['start_date'],
-                        source_id=sprint['id'],
-                        state=sprint['state'])
+        print("WE CREATING!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        board \
+            .iteration_set \
+            .create(name=sprint['name'],
+                    source='JIRA',
+                    throughput=throughput,
+                    duration=sprint['duration'],
+                    start_date=sprint['start_date'],
+                    source_id=sprint['id'],
+                    state=sprint['state'])
 
     board.fetch_date = fetch_date
     board.save()
@@ -124,6 +168,8 @@ def jira_get_boards():
     fetch_date = timezone.now()
 
     for board in response_boards:
+        # TODO: filter by board id
+        #  and add id field in model (i.e. when the name changes, overwrite the existing board)
         if not Board \
                 .objects \
                 .filter(name=board['name'], data_sources='JIRA') \
@@ -135,6 +181,7 @@ def jira_get_boards():
                   board_type=board['type']).save()
 
         jira_get_sprints(board['id'], board['name'], fetch_date)
+        # jira_get_issues(board['id'], board['name'], fetch_date)
 
         the_board = Board.objects.get(name=board['name'], data_sources='JIRA')
         the_board.fetch_date = fetch_date
