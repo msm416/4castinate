@@ -54,6 +54,6 @@ class BoardIndexViewTests(TestCase):
 
 
 class JiraAPITests(TestCase):
-    def test_jira_get_data_and_process(self):
+    def test_jira_get_data_and_populate_db(self):
         self.assertEqual(1, 1)
         # self.assertEqual(jira_get_boards(), 200)
