@@ -1,6 +1,7 @@
 # 4castinate
 ## About
-### Automated forecasting tool for Agile Teams. Developed at [FundingCircle](https://www.fundingcircle.com/uk/).
+### Automated forecasting tool for Agile Teams. 
+### Developed at [FundingCircle](https://www.fundingcircle.com/uk/). Inspired by [FocusedObjective](http://focusedobjective.com/story-size-estimates-matter-experiment/).
 ## How to use
 ### 0. Prerequisites:
        - Python 3.6

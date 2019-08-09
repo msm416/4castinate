@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
 from forecast.helperMethods.utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO
+from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -42,9 +42,15 @@ def results(request, board_id, form_id):
 
 
 def iterations(request):
-    iteration_list = Iteration.objects.order_by('-start_date').order_by('board__name')
+    iteration_list = Iteration.objects.order_by('-start_date', 'board__name')
     context = {'iteration_list': iteration_list}
     return render(request, 'forecast/iterations.html', context)
+
+
+def issues(request):
+    issue_list = Issue.objects.order_by('board__name', '-state', 'epic_parent')
+    context = {'issue_list': issue_list}
+    return render(request, 'forecast/issues.html', context)
 
 
 def estimate(request, board_id):
@@ -58,7 +64,9 @@ def estimate(request, board_id):
         context['error_message'] = "You didn't choose an existing form!"
         return render(request, 'forecast/detail.html', context)
     else:
-        if selected_form.throughput_lower_bound <= 0:
+        # TODO: make all form checks (on server or client side)
+        if selected_form.throughput_lower_bound <= 0 or \
+                (selected_form.throughput_from_data and selected_form.get_throughput_avg() == 0):
             context['error_message'] = "Selected form has invalid throughput!"
             return render(request, 'forecast/detail.html', context)
         selected_form.gen_simulations()

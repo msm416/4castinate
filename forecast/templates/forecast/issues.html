@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}My amazing iterations{% endblock %}
+{% block title %}My amazing issues{% endblock %}
 
 {% block body %}
 
-<h1>Iterations </h1>
+<h1>Issues </h1>
 <br>
 <div class="row">
     <div class="col">
-        <h3>Total number of iterations in database: {{iteration_list.count}}</h3>
+        <h3>Total number of issues in database: {{issue_list.count}}</h3>
     </div>
 </div>
 <br>
@@ -16,38 +16,34 @@
 <table class="table table-bordered table-striped">
     <thead>
     <tr>
-        <th>Iteration Name</th>
+        <th>Issue Name</th>
         <th>Parent Board</th>
-        <th>Source</th>
-        <th>Issues Done</th>
-        <th>Source</th>
         <th>State</th>
-        <th>Start Date</th>
+        <th>Issues Type</th>
+        <th>Epic</th>
+        <th>Source</th>
     </tr>
     </thead>
     <tbody id="myTable">
-    {% for iteration in iteration_list %}
+    {% for issue in issue_list %}
     <tr>
         <td>
-            {{ iteration.name }}
+            {{ issue.name }}
         </td>
         <td>
-            {{ iteration.board.name }}
+            {{ issue.board.name }}
         </td>
         <td>
-            {{ iteration.source }}
+            {{ issue.state }}
         </td>
         <td>
-            {{ iteration.throughput }}
+            {{ issue.issue_type }}
         </td>
         <td>
-            {{ iteration.source }}
+            {{ issue.epic_parent }}
         </td>
         <td>
-            {{ iteration.state }}
-        </td>
-        <td>
-            {{ iteration.start_date }}
+            {{ issue.source }}
         </td>
     </tr>
     {% endfor %}
