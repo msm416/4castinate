@@ -21,7 +21,8 @@ class Board(models.Model):
         return self.name
 
     def was_published_recently(self):
-        return self.creation_date >= timezone.now() - timedelta(days=1)
+        now = timezone.now()
+        return now - timedelta(days=1) <= self.creation_date <= now
 
 
 class Issue(models.Model):
