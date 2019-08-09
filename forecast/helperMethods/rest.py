@@ -62,7 +62,6 @@ def jira_get_issues(board_jira_id, board_name):
     response_as_dict = json.loads(response.text)
 
     if not response_as_dict['issues']:
-        print("NO ISSUES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return
 
     issues = {}
@@ -72,7 +71,6 @@ def jira_get_issues(board_jira_id, board_name):
     board.issue_set.all().delete()
 
     for issue in response_as_dict['issues']:
-        print("GR%LPKPRGKK$P%GKPRGPRKPGRKRPRGKPRKPGRPKRKGRPKRPGKPRG")
         state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
         issue_type = issue['fields']['issuetype']['name']
         name = issue['fields']['summary']
@@ -199,6 +197,8 @@ def jira_get_boards():
             continue
         the_board.fetch_date = fetch_date
         the_board.save()
+
+    return response.status_code
 
 
 def get_epic_names(board_id, board_name):
