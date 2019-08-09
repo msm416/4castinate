@@ -40,7 +40,7 @@ def jira_get_sprint_issues_for_throughput(sprint_id):
     return throughput
 
 
-def jira_get_issues(board_jira_id, board_name, fetch_date):
+def jira_get_issues(board_jira_id, board_name):
     # Get issues for board
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-issue-get
     # Description: Returns all issues from a board, for a given board ID.
@@ -94,7 +94,7 @@ def jira_get_issues(board_jira_id, board_name, fetch_date):
     return
 
 
-def jira_get_sprints(board_jira_id, board_name, fetch_date):
+def jira_get_sprints(board_jira_id, board_name):
     # GET all sprints
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-sprint-get
     # Description:  Returns all sprints from a board, for a given board ID.
@@ -187,9 +187,19 @@ def jira_get_boards():
                   data_sources='JIRA',
                   board_type=board['type']).save()
 
-        jira_get_sprints(board['id'], board['name'], fetch_date)
-        jira_get_issues(board['id'], board['name'], fetch_date)
+        jira_get_sprints(board['id'], board['name'])
+        jira_get_issues(board['id'], board['name'])
 
         the_board = Board.objects.get(name=board['name'], data_sources='JIRA')
+
+        epic_names = get_epic_names(board['id'], board['name'])
+
+        for epic_name in epic_names:
+            # TODO:
+            continue
         the_board.fetch_date = fetch_date
         the_board.save()
+
+
+def get_epic_names(board_id, board_name):
+    return {}
