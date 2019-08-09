@@ -1,5 +1,7 @@
 import random
 
+from django.utils import timezone
+
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -13,7 +15,9 @@ from django.views.decorators.http import require_POST
 
 
 def index(request):
-    latest_board_list = Board.objects.order_by('-creation_date')
+    latest_board_list = Board.objects\
+                             .filter(creation_date__lte=timezone.now())\
+                             .order_by('-creation_date')
     context = {'latest_board_list': latest_board_list}
     return render(request, 'forecast/index.html', context)
 

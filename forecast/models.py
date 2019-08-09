@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from numpy import random
 import time
 
@@ -20,9 +20,6 @@ class Board(models.Model):
     def __str__(self):
         return self.name
 
-    def was_published_recently(self):
-        return self.creation_date >= timezone.now() - timedelta(days=1)
-
 
 class Issue(models.Model):
     board = models.ForeignKey(Board, on_delete=models.CASCADE, null=True)
@@ -32,6 +29,9 @@ class Issue(models.Model):
     epic_parent = models.CharField(max_length=200, default='None')
     source = models.CharField(max_length=200, default='None')
     source_id = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self):
+        return self.name
 
 
 class Iteration(models.Model):
