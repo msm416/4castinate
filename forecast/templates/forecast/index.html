@@ -11,13 +11,6 @@
         </div>
         <div class="col"></div>
         <div class="col-md-auto">
-             <span class="float-right">
-                <a href="{% url 'forecast:iterations' %}" class="btn btn-secondary" role="button">
-                    View Iterations
-                </a>
-             </span>
-        </div>
-        <div class="col-md-auto">
             <span class="float-right">
                 <form action="{% url 'forecast:fetch'%}" method="post">
                     {% csrf_token %}

@@ -46,9 +46,14 @@
        --header 'Accept: application/json'
       
 #### 5.2 Run the app on localhost:
-       python manage.py runserver
+         python manage.py runserver
      
-       
+#### 5.3 Test the app:
+         python manage.py test forecast
+#### 5.4 Test the app with code coverage:
+         coverage run --source='./forecast' manage.py test forecast
+####     Followed by:
+         coverage report
 ### 6. Deploy the app with eb cli. 
 #### 6.1 Follow steps [1-3](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy). The *EB CLI init* steps you'll have to perform just at the time when you clone the repo:
 #### 6.2 Set EB environment variables. This has to be done for each new environment you make on AWS EB:
@@ -60,7 +65,7 @@
        eb deploy
 #### 6.4 Access the website manually / from eb cli [step 7](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy):
        eb open
-### 7. [Cleanup](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-stopping).
+#### 6.5 [Cleanup](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-stopping).
 
-### 8. Note: If you install other dependencies (i.e. pip install), before you commit, do:
+### 7. Note: If you install other dependencies (i.e. pip install), before you commit, do:
        pip freeze > requirements.txt

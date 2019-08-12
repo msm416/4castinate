@@ -1,4 +1,5 @@
 from datetime import timedelta
+import time
 
 from django.utils import timezone
 from django.urls import reverse
@@ -14,13 +15,30 @@ NOTE: METHODS RUN AGAINST A FAKE DB. DB FLUSHES AFTER EACH METHOD.
 
 
 class FormModelTests(TestCase):
-    def test_get_throughput_avg_no_iterations(self):
+    def create_iterations(self, board, nb_of_iter, state, now):
+        for i in range(1, nb_of_iter + 1):
+            board.iteration_set.create(start_date=(now - timedelta(seconds=i)), throughput=i, state=state)
+            board.iteration_set.create(start_date=(now + timedelta(seconds=i)), throughput=i, state=state)
+
+    def test_get_throughput_avg_no_closed_iterations(self):
         """
-        No iterations means 0 throughput.
+        No closed iterations means 0 throughput.
         """
+        now = timezone.now()
         board = Board.objects.create(name="Some board")
         form = Form.objects.create(board=board, name="Some form")
+
+        self.create_iterations(board, 10, 'NON-CLOSED STATE', now)
         self.assertIs(form.get_throughput_avg(), 0)
+
+    def test_get_throughput_avg_start_date_filter(self):
+        now = timezone.now()
+        board = Board.objects.create(name="Some board")
+        form = Form.objects.create(board=board, name="Some form", start_date=now, throughput_from_data=True)
+
+        self.assertEqual(form.get_throughput_avg(), 0)
+        self.create_iterations(board, 10, 'closed', now)
+        self.assertEqual(form.get_throughput_avg(), 11/2)
 
 
 class BoardIndexViewTests(TestCase):
@@ -56,4 +74,10 @@ class BoardIndexViewTests(TestCase):
 class JiraAPITests(TestCase):
     def test_jira_get_data_and_populate_db(self):
         self.assertEqual(1, 1)
-        # self.assertEqual(jira_get_boards(), 200)
+        start_time = time.time()
+        self.assertEqual(jira_get_boards(), 200)
+        end_time = time.time()
+        print(f"{end_time - start_time} - ACTUAL TIME IT TOOK TO FETCH DATA FROM JIRA")
+        # TODO: (AFTER HIDDEN SPRINT) make check whether all sprint throughputs = all done issues
+
+    # TODO: ASSERT CONSECUTIVE GETS THAT DON"T CHANGE THE BOARD

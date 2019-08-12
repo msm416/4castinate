@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 
 from django.utils import timezone
 
@@ -18,14 +19,15 @@ def index(request):
     latest_board_list = Board.objects\
                              .filter(creation_date__lte=timezone.now())\
                              .order_by('-creation_date')
-    context = {'latest_board_list': latest_board_list}
+    context = {'latest_board_list': latest_board_list, 'nbar': 'index'}
     return render(request, 'forecast/index.html', context)
 
 
 def detail(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
     latest_form_list = board.form_set.order_by('-creation_date')
-    context = {'board': board, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
+    context = {'board': board, 'latest_form_list': latest_form_list,
+               'LONG_TIME_AGO': LONG_TIME_AGO, 'nbar': 'detail'}
     return render(request, 'forecast/detail.html', context)
 
 
@@ -33,27 +35,29 @@ def results(request, board_id, form_id):
     board = get_object_or_404(Board, pk=board_id)
     form = get_object_or_404(Form, pk=form_id)
     centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(form_id)
-
-    return render(request, 'forecast/results.html', {
+    context = {
         'board': board,
         'form': form,
         'weeks': weeks,
         'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
         'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
         'centile_indices': [5*i for i in range(0, 21)],
-        'centile_values': centile_values
-    })
+        'centile_values': centile_values,
+        'nbar': 'results'
+    }
+
+    return render(request, 'forecast/results.html', context)
 
 
 def iterations(request):
     iteration_list = Iteration.objects.order_by('-start_date', 'board__name')
-    context = {'iteration_list': iteration_list}
+    context = {'iteration_list': iteration_list, 'nbar': 'iterations'}
     return render(request, 'forecast/iterations.html', context)
 
 
 def issues(request):
     issue_list = Issue.objects.order_by('board__name', '-state', 'epic_parent')
-    context = {'issue_list': issue_list}
+    context = {'issue_list': issue_list, 'nbar': 'issues'}
     return render(request, 'forecast/issues.html', context)
 
 
@@ -66,12 +70,14 @@ def estimate(request, board_id):
     except (KeyError, Form.DoesNotExist):
         # Redisplay the form selection template.
         context['error_message'] = "You didn't choose an existing form!"
+        context['nbar'] = 'detail'
         return render(request, 'forecast/detail.html', context)
     else:
         # TODO: make all form checks (on server or client side)
         if selected_form.throughput_lower_bound <= 0 or \
                 (selected_form.throughput_from_data and selected_form.get_throughput_avg() == 0):
             context['error_message'] = "Selected form has invalid throughput!"
+            context['nbar'] = 'detail'
             return render(request, 'forecast/detail.html', context)
         selected_form.gen_simulations()
         # Always return an HttpResponseRedirect after successfully dealing
@@ -93,18 +99,24 @@ def fetch(request):
 
 def create_form(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
+    start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
     throughput_from_data = True \
         if request.POST['throughput_from_data'] == "Historical Data" \
         else False
+    wip_from_data = True \
+        if request.POST['wip_from_data'] == "Historical Data" \
+        else False
     board.form_set.create(
-        name=request.POST['name'],
-        throughput_from_data=throughput_from_data,
         wip_lower_bound=request.POST['wip_lower_bound'],
         wip_upper_bound=request.POST['wip_upper_bound'],
-        split_factor_lower_bound=request.POST['split_factor_lower_bound'],
-        split_factor_upper_bound=request.POST['split_factor_upper_bound'],
+        wip_from_data=wip_from_data,
         throughput_lower_bound=request.POST['throughput_lower_bound'],
         throughput_upper_bound=request.POST['throughput_upper_bound'],
+        throughput_from_data=throughput_from_data,
+        start_date=start_date,
+        split_factor_lower_bound=request.POST['split_factor_lower_bound'],
+        split_factor_upper_bound=request.POST['split_factor_upper_bound'],
+        name=request.POST['name'],
         simulation_count=request.POST['simulation_count'])
 
     # Always return an HttpResponseRedirect after successfully dealing
@@ -123,4 +135,5 @@ def webhook(request):
         aux = random.randint(0, 10000)
         board.form_set.create(name=str(aux))
 
-    return render(request, 'forecast/detail.html', {'board': board})
+    context = {'board': board, 'nbar': 'webhook'}
+    return render(request, 'forecast/detail.html', context)

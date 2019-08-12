@@ -47,7 +47,8 @@ class Iteration(models.Model):
     # Default: Iteration does not come from some external source
     source = models.CharField(max_length=200, default='None')
     state = models.CharField(max_length=200, default='INVALID_STATE')
-    # Id of Iteration on the Board
+
+    # Id of Iteration on JIRA (Unique for boards)
     source_id = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
@@ -88,8 +89,11 @@ class Form(models.Model):
     def get_throughput_avg(self):
         cnt = 0
         throughput = 0
-        # TODO: CONSIDER START_DATE
-        for iteration in self.board.iteration_set.filter(state='closed').all():
+        for iteration in self.board\
+                             .iteration_set\
+                             .filter(state='closed',
+                                     start_date__gte=self.start_date)\
+                             .all():
             if iteration.throughput == 0:
                 continue
             if self.start_date <= iteration.start_date:
