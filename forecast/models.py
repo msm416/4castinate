@@ -47,7 +47,8 @@ class Iteration(models.Model):
     # Default: Iteration does not come from some external source
     source = models.CharField(max_length=200, default='None')
     state = models.CharField(max_length=200, default='INVALID_STATE')
-    # Id of Iteration on the Board
+
+    # Id of Iteration on JIRA (Unique for boards)
     source_id = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):

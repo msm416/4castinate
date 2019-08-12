@@ -78,3 +78,6 @@ class JiraAPITests(TestCase):
         self.assertEqual(jira_get_boards(), 200)
         end_time = time.time()
         print(f"{end_time - start_time} - ACTUAL TIME IT TOOK TO FETCH DATA FROM JIRA")
+        # TODO: (AFTER HIDDEN SPRINT) make check whether all sprint throughputs = all done issues
+
+    # TODO: ASSERT CONSECUTIVE GETS THAT DON"T CHANGE THE BOARD
