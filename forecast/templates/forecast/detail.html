@@ -52,8 +52,8 @@
                                     <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label for="wip_from_issues">WIP - Source</label>
-                                    <select name="wip_from_issues" id="wip_from_issues" class="form-control">
+                                    <label for="wip_from_data">WIP - Source</label>
+                                    <select name="wip_from_data" id="wip_from_data" class="form-control">
                                         <option id="inputWipOptionForm" selected>Form Input</option>
                                         <option id="inputWipOptionData">Historical Data</option>
                                     </select>
@@ -81,8 +81,8 @@
                                     </select>
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label for="creation_date">STARTING FROM </label>
-                                    <input type="date" name="creation_date" class="form-control" id="creation_date" value="{{LONG_TIME_AGO}}">
+                                    <label for="start_date">STARTING FROM </label>
+                                    <input type="date" name="start_date" class="form-control" id="start_date" value="{{LONG_TIME_AGO}}">
                                 </div>
                             </div>
                             <div class="form-row">
@@ -135,6 +135,7 @@
                     <th>S_Rate</th>
                     <th>TPut</th>
                     <th>Data?</th>
+                    <th>Start date</th>
                     <th>(DB) Creation date</th>
                 </tr>
             </thead>
@@ -172,6 +173,9 @@
                             {% else %}
                                 No
                             {% endif %}
+                        </td>
+                        <td>
+                            {{ form.start_date }}
                         </td>
                         <td>
                             {{ form.creation_date }}

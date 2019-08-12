@@ -89,7 +89,11 @@ class Form(models.Model):
         cnt = 0
         throughput = 0
         # TODO: CONSIDER START_DATE
-        for iteration in self.board.iteration_set.filter(state='closed').all():
+        for iteration in self.board\
+                             .iteration_set\
+                             .filter(state='closed',
+                                     start_date__gte=self.start_date)\
+                             .all():
             if iteration.throughput == 0:
                 continue
             if self.start_date <= iteration.start_date:

@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 
 from django.utils import timezone
 
@@ -98,18 +99,24 @@ def fetch(request):
 
 def create_form(request, board_id):
     board = get_object_or_404(Board, pk=board_id)
+    start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
     throughput_from_data = True \
         if request.POST['throughput_from_data'] == "Historical Data" \
         else False
+    wip_from_data = True \
+        if request.POST['wip_from_data'] == "Historical Data" \
+        else False
     board.form_set.create(
-        name=request.POST['name'],
-        throughput_from_data=throughput_from_data,
         wip_lower_bound=request.POST['wip_lower_bound'],
         wip_upper_bound=request.POST['wip_upper_bound'],
-        split_factor_lower_bound=request.POST['split_factor_lower_bound'],
-        split_factor_upper_bound=request.POST['split_factor_upper_bound'],
+        wip_from_data=wip_from_data,
         throughput_lower_bound=request.POST['throughput_lower_bound'],
         throughput_upper_bound=request.POST['throughput_upper_bound'],
+        throughput_from_data=throughput_from_data,
+        start_date=start_date,
+        split_factor_lower_bound=request.POST['split_factor_lower_bound'],
+        split_factor_upper_bound=request.POST['split_factor_upper_bound'],
+        name=request.POST['name'],
         simulation_count=request.POST['simulation_count'])
 
     # Always return an HttpResponseRedirect after successfully dealing
