@@ -88,7 +88,6 @@ class Form(models.Model):
     def get_throughput_avg(self):
         cnt = 0
         throughput = 0
-        # TODO: CONSIDER START_DATE
         for iteration in self.board\
                              .iteration_set\
                              .filter(state='closed',
