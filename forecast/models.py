@@ -86,6 +86,7 @@ class Form(models.Model):
         return self.name
 
     # Returns always >= 0
+    # Returns the average weekly throughput
     def get_throughput_avg(self):
         cnt = 0
         throughput = 0

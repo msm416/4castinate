@@ -43,12 +43,17 @@ def jira_get_issues(board_jira_id, board):
 
     print(f"{time.time() - pre_issues_fetch} DELETE ISSUES, FETCH AND LOAD")
 
+    hidden_throughput = 0
+    hidden_id = -1
+    hidden_duration = 7
+    # TODO: duration, start_date
+
     for issue in response_as_dict['issues']:
         state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
         issue_type = issue['fields']['issuetype']['name']
         name = issue['fields']['summary']
         source_id = issue['id']
-        # TODO: get epic parent properly: it's not necessarily direct parent (and even this might be wrong)
+        # TODO: get epic parent (if any) properly: it's not necessarily direct parent (and even this might be wrong)
         epic_parent = issue['fields']['parent']['fields']['summary'] \
             if 'parent' in issue['fields'] \
             else 'None'
@@ -64,14 +69,19 @@ def jira_get_issues(board_jira_id, board):
         issue_fields = issue['fields']
 
         if state != 'Done':
+            # DON"T CONSIDER ONGOING ISSUES IN THROUGHPUT
+            continue
+
+        if issue_type == "Epic":
+            # DON"T CONSIDER EPIC ISSUES IN THROUGHPUT
             continue
 
         if 'closedSprints' not in issue_fields:
             # TODO: Create HIDDEN_SPRINT(ITERATION) FOR TASKS THAT ARE FINISHED OUTSIDE A SPRINT
             #       Set of issues to Hidden sprint created at the same time as iterations
+            hidden_throughput += 1
             continue
 
-        # TODO: CHECK IF INDEX 0 IS SPRINT WHERE WE COMPLETED THE ISSUE
         sprint = issue_fields['closedSprints'][0]
         start_date = datetime.strptime(sprint['startDate'], JIRA_DATE_FORMAT)
         complete_date = datetime.strptime(sprint['completeDate'], JIRA_DATE_FORMAT)
@@ -90,10 +100,20 @@ def jira_get_issues(board_jira_id, board):
 
         sprints_bulk_dict[sprint_id] = [sprint_obj,
                                         1 + (sprints_bulk_dict[sprint_id][1]
-                                             if sprint_id in sprints_bulk_dict and issue_type != "Epic"
+                                             if sprint_id in sprints_bulk_dict
                                              else 0)]
+
     for sprint, throughput in sprints_bulk_dict.values():
         sprint.throughput = throughput
+
+    sprints_bulk_dict[hidden_id] = [(Iteration(board=board,
+                                               name=f"QUASI-ITERATION - {board.name}",
+                                               source='JIRA',
+                                               throughput=hidden_throughput,
+                                               duration=hidden_duration,
+                                               # start_date=sprint['startDate'],
+                                               source_id=hidden_id,
+                                               state='closed')), hidden_throughput]
 
     board.issue_set.all().delete()
 

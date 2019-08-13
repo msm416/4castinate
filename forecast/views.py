@@ -50,7 +50,7 @@ def results(request, board_id, form_id):
 
 
 def iterations(request):
-    iteration_list = Iteration.objects.order_by('-start_date', 'board__name')
+    iteration_list = Iteration.objects.order_by('board__name', '-start_date')
     context = {'iteration_list': iteration_list, 'nbar': 'iterations'}
     return render(request, 'forecast/iterations.html', context)
 
