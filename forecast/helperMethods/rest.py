@@ -5,13 +5,13 @@ import time
 from django.utils import timezone
 
 from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
-from forecast.models import Board, Iteration, Issue
+from forecast.models import Board, Iteration, Issue, LONG_TIME_AGO
 from datetime import datetime
 
 JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-def jira_get_issues(board_jira_id, board):
+def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date):
     # Get issues for board
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-issue-get
     # Description: Returns all issues from a board, for a given board ID.
@@ -22,15 +22,12 @@ def jira_get_issues(board_jira_id, board):
     # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
     # By default, the returned issues are ordered by rank.
 
-    pre_issues_fetch = time.time()
-
     response = requests.request(
         "GET",
         f"{JIRA_URL}/board/{board_jira_id}/issue",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
-        verify=False
-    )
+        verify=False)
 
     response_as_dict = json.loads(response.text)
 
@@ -41,12 +38,14 @@ def jira_get_issues(board_jira_id, board):
 
     issues_bulk = []
 
-    print(f"{time.time() - pre_issues_fetch} DELETE ISSUES, FETCH AND LOAD")
+    print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET ISSUES CALL")
 
     hidden_throughput = 0
     hidden_id = -1
-    hidden_duration = 7
-    # TODO: duration, start_date
+    hidden_duration = 0
+    # TODO: hidden_duration for kanban boards (currently is 0)
+    #       Also design partial hidden iteration throughput
+    #       (currently,you either take the throughput as a whole or not)
 
     for issue in response_as_dict['issues']:
         state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
@@ -77,8 +76,7 @@ def jira_get_issues(board_jira_id, board):
             continue
 
         if 'closedSprints' not in issue_fields:
-            # TODO: Create HIDDEN_SPRINT(ITERATION) FOR TASKS THAT ARE FINISHED OUTSIDE A SPRINT
-            #       Set of issues to Hidden sprint created at the same time as iterations
+            # ADD TO HIDDEN SPRINT ALL THOSE ISSUES
             hidden_throughput += 1
             continue
 
@@ -105,27 +103,25 @@ def jira_get_issues(board_jira_id, board):
 
     for sprint, throughput in sprints_bulk_dict.values():
         sprint.throughput = throughput
+        hidden_duration += sprint.duration
 
     sprints_bulk_dict[hidden_id] = [(Iteration(board=board,
                                                name=f"QUASI-ITERATION - {board.name}",
                                                source='JIRA',
                                                throughput=hidden_throughput,
                                                duration=hidden_duration,
-                                               # start_date=sprint['startDate'],
                                                source_id=hidden_id,
-                                               state='closed')), hidden_throughput]
+                                               state='closed',
+                                               start_date=datetime.strptime(LONG_TIME_AGO, "%Y-%m-%d"))),
+                                    hidden_throughput]
 
     board.issue_set.all().delete()
 
-    Issue.objects.bulk_create(issues_bulk, 10000)
+    Issue.objects.bulk_create(issues_bulk)
 
     board.iteration_set.all().delete()
 
-    Iteration.objects.bulk_create([sprint for sprint, throughput in sprints_bulk_dict.values()], 10000)
-
-    print(f"{time.time() - pre_issues_fetch} CREATING ISSUES")
-
-    return
+    Iteration.objects.bulk_create([sprint for sprint, throughput in sprints_bulk_dict.values()])
 
 
 def jira_get_boards():
@@ -140,9 +136,11 @@ def jira_get_boards():
         f"{JIRA_URL}/board",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
-        verify=False
-    )
+        verify=False)
+
     response_as_dict = json.loads(response.text)
+
+    print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
 
     response_boards = response_as_dict['values']
 
@@ -152,26 +150,29 @@ def jira_get_boards():
 
     boards_bulk = []
 
-    print(f"{time.time() - start_get_all_boards_time} DELETE BOARDS, FETCH AND LOAD")
+    print(f"{time.time() - start_get_all_boards_time} DELETED PREVIOUS JIRA BOARDS")
 
     for board in response_boards:
-        # TODO: filter by board id
-        #  and add id field in model (i.e. when the name changes, overwrite the existing board)
 
         board_obj = Board(name=board['name'],
                           creation_date=fetch_date,
                           project_name=board['location']['name'],
                           data_sources='JIRA',
-                          board_type=board['type'])
+                          board_type=board['type'],
+                          source_id=board['id'])
 
         boards_bulk.append(board_obj)
 
-    Board.objects.bulk_create(boards_bulk, 10000)
+    Board.objects.bulk_create(boards_bulk)
+
+    print(f"{time.time() - start_get_all_boards_time} CREATED NEW JIRA BOARDS")
 
     for board in response_boards:
-        print(f"{time.time() - start_get_all_boards_time} CREATE EVERYTHING FOR BOARD {board['id']}")
-        # TODO: get by source_id
-        jira_get_issues(board['id'], Board.objects.get(data_sources='JIRA', name=board['name']))
+        print(f"{time.time() - start_get_all_boards_time} CREATING EVERYTHING FOR BOARD {board['id']}")
+        jira_get_issues(board['id'],
+                        Board.objects.get(data_sources='JIRA', source_id=board['id']),
+                        start_get_all_boards_time,
+                        fetch_date)
         print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR BOARD {board['id']}")
 
     print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING - WE'RE DONE")

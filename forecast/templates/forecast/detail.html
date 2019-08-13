@@ -133,7 +133,7 @@
                     <th>#Sim</th>
                     <th>WIP</th>
                     <th>S_Rate</th>
-                    <th>TPut</th>
+                    <th>TPut_Rate</th>
                     <th>Data?</th>
                     <th>Start date</th>
                     <th>(DB) Creation date</th>
@@ -162,7 +162,7 @@
                         </td>
                         <td>
                             {% if form.throughput_from_data %}
-                                {{ form.get_throughput_avg }}
+                                {{ form.get_throughput_rate_avg }}
                             {% else %}
                                 [{{ form.throughput_lower_bound}}, {{ form.throughput_upper_bound }}]
                             {% endif %}
