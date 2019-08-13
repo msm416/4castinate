@@ -5,7 +5,7 @@ import time
 from django.utils import timezone
 
 from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
-from forecast.models import Board, Iteration, Issue, LONG_TIME_AGO
+from forecast.models import Board, Iteration, Issue, LONG_TIME_AGO, Form
 from datetime import datetime
 
 JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -38,6 +38,11 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
 
     issues_bulk = []
 
+    # {'Epic parent's name': 'WIP of Epic'}
+    epic_parents_dict = {}
+
+    epic_parents_forms_bulk = []
+
     print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET ISSUES CALL")
 
     hidden_throughput = 0
@@ -52,10 +57,16 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
         issue_type = issue['fields']['issuetype']['name']
         name = issue['fields']['summary']
         source_id = issue['id']
-        # TODO: get epic parent (if any) properly: it's not necessarily direct parent (and even this might be wrong)
-        epic_parent = issue['fields']['parent']['fields']['summary'] \
-            if 'parent' in issue['fields'] \
-            else 'None'
+
+        # TODO: get epic parent (if any) properly:
+        #       it's not necessarily direct parent (and even this might be wrong)
+
+        if 'parent' in issue['fields']:
+            epic_parent = issue['fields']['parent']['fields']['summary']
+            if state == 'Ongoing':
+                epic_parents_dict[epic_parent] = epic_parents_dict.get(epic_parent, 0) + 1
+        else:
+            epic_parent = 'None'
 
         issues_bulk.append(Issue(board=board,
                                  name=name,
@@ -115,6 +126,14 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
                                                start_date=datetime.strptime(LONG_TIME_AGO, "%Y-%m-%d"))),
                                     hidden_throughput]
 
+    for epic_parent, wip in epic_parents_dict.items():
+        epic_parents_forms_bulk.append(Form(board=board,
+                                            name=f"AUTO-FORM - {epic_parent} - {board.name}",
+                                            wip_from_data=True,
+                                            wip_lower_bound=wip,
+                                            wip_upper_bound=wip,
+                                            throughput_from_data=False))
+
     board.issue_set.all().delete()
 
     Issue.objects.bulk_create(issues_bulk)
@@ -123,6 +142,10 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
 
     Iteration.objects.bulk_create([sprint for sprint, throughput in sprints_bulk_dict.values()])
 
+    board.form_set.all().delete()
+
+    Form.objects.bulk_create(epic_parents_forms_bulk)
+
 
 def jira_get_boards():
     # GET all boards
@@ -130,6 +153,8 @@ def jira_get_boards():
     # Description: Returns all boards. This only includes boards that the user has permission to view.
 
     start_get_all_boards_time = time.time()
+
+    # TODO: FOR SERVER: change url to https://4cast.atlassian.net/rest/agile/latest/board
 
     response = requests.request(
         "GET",
@@ -167,6 +192,7 @@ def jira_get_boards():
 
     print(f"{time.time() - start_get_all_boards_time} CREATED NEW JIRA BOARDS")
 
+    # TODO: see if can loop through boards_bulk instead (so no objects.get())
     for board in response_boards:
         print(f"{time.time() - start_get_all_boards_time} CREATING EVERYTHING FOR BOARD {board['id']}")
         jira_get_issues(board['id'],

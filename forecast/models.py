@@ -87,6 +87,15 @@ class Form(models.Model):
         return self.name
 
     # Returns always >= 0
+    # TODO: implement this for forms that represent epics
+    def get_wip_from_data(self, epic_parent):
+        return Issue.objects\
+            .filter(board__name=self.board.name,
+                    state='Ongoing',
+                    epic_parent=epic_parent)\
+            .count()
+
+    # Returns always >= 0
     # Returns the average weekly throughput
     def get_throughput_rate_avg(self):
         cnt = 0
@@ -108,16 +117,18 @@ class Form(models.Model):
     # for data forms, and will return the same simulation for non-data forms.
     def gen_simulations(self):
 
-        throughput_rate_avg = self.get_throughput_rate_avg()
-
         if self.throughput_from_data:
+            throughput_rate_avg = self.get_throughput_rate_avg()
             # TODO: figure how to avoid recomputing simulation (but NOT 'if th_l_b == g_th_avg()')
             self.throughput_lower_bound = throughput_rate_avg
             self.throughput_upper_bound = throughput_rate_avg
             self.save()
-        else:
-            if self.simulation_set.exists():
-                return
+        # else:
+        #     if self.simulation_set.exists():
+        #         return
+
+        # if self.wip_from_data:
+        #     wip = self.get_wip_from_data()
 
         start_time = time.time()
 
