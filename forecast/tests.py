@@ -30,16 +30,19 @@ class FormModelTests(TestCase):
         form = Form.objects.create(board=board, name="Some form")
 
         self.create_iterations(board, 10, 'NON-CLOSED STATE', now)
-        self.assertIs(form.get_throughput_avg(), 0)
+        self.assertIs(form.get_throughput_rate_avg(), 0)
 
     def test_get_throughput_avg_start_date_filter(self):
+        """
+        If iterations were done before start_date, then we don't consider them.
+        """
         now = timezone.now()
         board = Board.objects.create(name="Some board")
         form = Form.objects.create(board=board, name="Some form", start_date=now, throughput_from_data=True)
 
-        self.assertEqual(form.get_throughput_avg(), 0)
+        self.assertEqual(form.get_throughput_rate_avg(), 0)
         self.create_iterations(board, 10, 'closed', now)
-        self.assertEqual(form.get_throughput_avg(), 11/2)
+        self.assertEqual(form.get_throughput_rate_avg(), 11 / 2)
 
 
 class BoardIndexViewTests(TestCase):
@@ -73,11 +76,16 @@ class BoardIndexViewTests(TestCase):
 
 class JiraAPITests(TestCase):
     def test_jira_get_data_and_populate_db(self):
+        """
+        Fetching is deterministic (and we allow multiple fetches).
+
+        All 'Done' Issues (That aren't EPIC type) are assigned to some Iteration.
+        """
         self.assertEqual(jira_get_boards(), 200)
         first_fetch_nb_iterations = Iteration.objects.all().count()
         first_fetch_nb_issues = Issue.objects.all().count()
 
-        self.assertEqual(Issue.objects.exclude(state='Ongoing')
+        self.assertEqual(Issue.objects.filter(state='Done')
                                       .exclude(issue_type='Epic').count(),
                          Iteration.objects.all()
                                           .aggregate(Sum('throughput'))['throughput__sum'])
