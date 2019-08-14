@@ -16,6 +16,7 @@ class Board(models.Model):
     board_type = models.CharField(max_length=200, default='Hybrid')
     creation_date = models.DateTimeField(default=timezone.now)
     fetch_date = models.DateTimeField(null=True)
+    source_id = models.CharField(max_length=200, default='None')
 
     def __str__(self):
         return self.name
@@ -80,13 +81,23 @@ class Form(models.Model):
     # PK of Iteration object that represents the start point (we consider
     # Iteration objects until the most recent Iteration - i.e. present)
     throughput_from_data_start_date = models.DateField(default=timezone.now)
-    simulation_count = models.PositiveSmallIntegerField(default=100)
+    simulation_count = models.PositiveSmallIntegerField(default=1000)
 
     def __str__(self):
         return self.name
 
     # Returns always >= 0
-    def get_throughput_avg(self):
+    # TODO: implement this for forms that represent epics
+    def get_wip_from_data(self, epic_parent):
+        return Issue.objects\
+            .filter(board__name=self.board.name,
+                    state='Ongoing',
+                    epic_parent=epic_parent)\
+            .count()
+
+    # Returns always >= 0
+    # Returns the average weekly throughput
+    def get_throughput_rate_avg(self):
         cnt = 0
         throughput = 0
         for iteration in self.board\
@@ -94,11 +105,11 @@ class Form(models.Model):
                              .filter(state='closed',
                                      start_date__gte=self.start_date)\
                              .all():
-            if iteration.throughput == 0:
+            if iteration.throughput == 0 or iteration.duration == 0:
                 continue
-            if self.start_date <= iteration.start_date:
-                throughput += (iteration.throughput * WEEK_IN_DAYS / iteration.duration)
-                cnt += 1
+
+            throughput += (iteration.throughput * WEEK_IN_DAYS / iteration.duration)
+            cnt += 1
         return 0 if cnt == 0 else throughput/cnt
 
     # One test => One Simulation instance is created.
@@ -106,16 +117,18 @@ class Form(models.Model):
     # for data forms, and will return the same simulation for non-data forms.
     def gen_simulations(self):
 
-        throughput_avg = self.get_throughput_avg()
-
         if self.throughput_from_data:
+            throughput_rate_avg = self.get_throughput_rate_avg()
             # TODO: figure how to avoid recomputing simulation (but NOT 'if th_l_b == g_th_avg()')
-            self.throughput_lower_bound = throughput_avg
-            self.throughput_upper_bound = throughput_avg
+            self.throughput_lower_bound = throughput_rate_avg
+            self.throughput_upper_bound = throughput_rate_avg
             self.save()
-        else:
-            if self.simulation_set.exists():
-                return
+        # else:
+        #     if self.simulation_set.exists():
+        #         return
+
+        # if self.wip_from_data:
+        #     wip = self.get_wip_from_data()
 
         start_time = time.time()
 

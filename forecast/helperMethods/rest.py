@@ -5,13 +5,13 @@ import time
 from django.utils import timezone
 
 from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
-from forecast.models import Board, Iteration, Issue
+from forecast.models import Board, Iteration, Issue, LONG_TIME_AGO, Form
 from datetime import datetime
 
 JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-def jira_get_issues(board_jira_id, board):
+def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date):
     # Get issues for board
     # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-issue-get
     # Description: Returns all issues from a board, for a given board ID.
@@ -22,15 +22,12 @@ def jira_get_issues(board_jira_id, board):
     # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
     # By default, the returned issues are ordered by rank.
 
-    pre_issues_fetch = time.time()
-
     response = requests.request(
         "GET",
         f"{JIRA_URL}/board/{board_jira_id}/issue",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
-        verify=False
-    )
+        verify=False)
 
     response_as_dict = json.loads(response.text)
 
@@ -41,17 +38,35 @@ def jira_get_issues(board_jira_id, board):
 
     issues_bulk = []
 
-    print(f"{time.time() - pre_issues_fetch} DELETE ISSUES, FETCH AND LOAD")
+    # {'Epic parent's name': 'WIP of Epic'}
+    epic_parents_dict = {}
+
+    epic_parents_forms_bulk = []
+
+    print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET ISSUES CALL")
+
+    hidden_throughput = 0
+    hidden_id = -1
+    hidden_duration = 0
+    # TODO: hidden_duration for kanban boards (currently is 0)
+    #       Also design partial hidden iteration throughput
+    #       (currently,you either take the throughput as a whole or not)
 
     for issue in response_as_dict['issues']:
         state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
         issue_type = issue['fields']['issuetype']['name']
         name = issue['fields']['summary']
         source_id = issue['id']
-        # TODO: get epic parent properly: it's not necessarily direct parent (and even this might be wrong)
-        epic_parent = issue['fields']['parent']['fields']['summary'] \
-            if 'parent' in issue['fields'] \
-            else 'None'
+
+        # TODO: get epic parent (if any) properly:
+        #       it's not necessarily direct parent (and even this might be wrong)
+
+        if 'parent' in issue['fields']:
+            epic_parent = issue['fields']['parent']['fields']['summary']
+            if state == 'Ongoing':
+                epic_parents_dict[epic_parent] = epic_parents_dict.get(epic_parent, 0) + 1
+        else:
+            epic_parent = 'None'
 
         issues_bulk.append(Issue(board=board,
                                  name=name,
@@ -64,14 +79,18 @@ def jira_get_issues(board_jira_id, board):
         issue_fields = issue['fields']
 
         if state != 'Done':
+            # DON"T CONSIDER ONGOING ISSUES IN THROUGHPUT
+            continue
+
+        if issue_type == "Epic":
+            # DON"T CONSIDER EPIC ISSUES IN THROUGHPUT
             continue
 
         if 'closedSprints' not in issue_fields:
-            # TODO: Create HIDDEN_SPRINT(ITERATION) FOR TASKS THAT ARE FINISHED OUTSIDE A SPRINT
-            #       Set of issues to Hidden sprint created at the same time as iterations
+            # ADD TO HIDDEN SPRINT ALL THOSE ISSUES
+            hidden_throughput += 1
             continue
 
-        # TODO: CHECK IF INDEX 0 IS SPRINT WHERE WE COMPLETED THE ISSUE
         sprint = issue_fields['closedSprints'][0]
         start_date = datetime.strptime(sprint['startDate'], JIRA_DATE_FORMAT)
         complete_date = datetime.strptime(sprint['completeDate'], JIRA_DATE_FORMAT)
@@ -90,22 +109,42 @@ def jira_get_issues(board_jira_id, board):
 
         sprints_bulk_dict[sprint_id] = [sprint_obj,
                                         1 + (sprints_bulk_dict[sprint_id][1]
-                                             if sprint_id in sprints_bulk_dict and issue_type != "Epic"
+                                             if sprint_id in sprints_bulk_dict
                                              else 0)]
+
     for sprint, throughput in sprints_bulk_dict.values():
         sprint.throughput = throughput
+        hidden_duration += sprint.duration
+
+    sprints_bulk_dict[hidden_id] = [(Iteration(board=board,
+                                               name=f"QUASI-ITERATION - {board.name}",
+                                               source='JIRA',
+                                               throughput=hidden_throughput,
+                                               duration=hidden_duration,
+                                               source_id=hidden_id,
+                                               state='closed',
+                                               start_date=datetime.strptime(LONG_TIME_AGO, "%Y-%m-%d"))),
+                                    hidden_throughput]
+
+    for epic_parent, wip in epic_parents_dict.items():
+        epic_parents_forms_bulk.append(Form(board=board,
+                                            name=f"AUTO-FORM - {epic_parent} - {board.name}",
+                                            wip_from_data=True,
+                                            wip_lower_bound=wip,
+                                            wip_upper_bound=wip,
+                                            throughput_from_data=False))
 
     board.issue_set.all().delete()
 
-    Issue.objects.bulk_create(issues_bulk, 10000)
+    Issue.objects.bulk_create(issues_bulk)
 
     board.iteration_set.all().delete()
 
-    Iteration.objects.bulk_create([sprint for sprint, throughput in sprints_bulk_dict.values()], 10000)
+    Iteration.objects.bulk_create([sprint for sprint, throughput in sprints_bulk_dict.values()])
 
-    print(f"{time.time() - pre_issues_fetch} CREATING ISSUES")
+    board.form_set.all().delete()
 
-    return
+    Form.objects.bulk_create(epic_parents_forms_bulk)
 
 
 def jira_get_boards():
@@ -115,14 +154,18 @@ def jira_get_boards():
 
     start_get_all_boards_time = time.time()
 
+    # TODO: FOR SERVER: change url to https://4cast.atlassian.net/rest/agile/latest/board
+
     response = requests.request(
         "GET",
         f"{JIRA_URL}/board",
         headers={"Accept": "application/json"},
         auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
-        verify=False
-    )
+        verify=False)
+
     response_as_dict = json.loads(response.text)
+
+    print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
 
     response_boards = response_as_dict['values']
 
@@ -132,26 +175,30 @@ def jira_get_boards():
 
     boards_bulk = []
 
-    print(f"{time.time() - start_get_all_boards_time} DELETE BOARDS, FETCH AND LOAD")
+    print(f"{time.time() - start_get_all_boards_time} DELETED PREVIOUS JIRA BOARDS")
 
     for board in response_boards:
-        # TODO: filter by board id
-        #  and add id field in model (i.e. when the name changes, overwrite the existing board)
 
         board_obj = Board(name=board['name'],
                           creation_date=fetch_date,
                           project_name=board['location']['name'],
                           data_sources='JIRA',
-                          board_type=board['type'])
+                          board_type=board['type'],
+                          source_id=board['id'])
 
         boards_bulk.append(board_obj)
 
-    Board.objects.bulk_create(boards_bulk, 10000)
+    Board.objects.bulk_create(boards_bulk)
 
+    print(f"{time.time() - start_get_all_boards_time} CREATED NEW JIRA BOARDS")
+
+    # TODO: see if can loop through boards_bulk instead (so no objects.get())
     for board in response_boards:
-        print(f"{time.time() - start_get_all_boards_time} CREATE EVERYTHING FOR BOARD {board['id']}")
-        # TODO: get by source_id
-        jira_get_issues(board['id'], Board.objects.get(data_sources='JIRA', name=board['name']))
+        print(f"{time.time() - start_get_all_boards_time} CREATING EVERYTHING FOR BOARD {board['id']}")
+        jira_get_issues(board['id'],
+                        Board.objects.get(data_sources='JIRA', source_id=board['id']),
+                        start_get_all_boards_time,
+                        fetch_date)
         print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR BOARD {board['id']}")
 
     print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING - WE'RE DONE")

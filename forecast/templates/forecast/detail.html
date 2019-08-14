@@ -54,7 +54,7 @@
                                 <div class="form-group col-md-3">
                                     <label for="wip_from_data">WIP - Source</label>
                                     <select name="wip_from_data" id="wip_from_data" class="form-control">
-                                        <option id="inputWipOptionForm" selected>Form Input</option>
+                                        <option id="inputWipOptionForm" selected>Form Data</option>
                                         <option id="inputWipOptionData">Historical Data</option>
                                     </select>
                                 </div>
@@ -76,7 +76,7 @@
                                 <div class="form-group col-md-3">
                                     <label for="throughput_from_data">TPUT - Source</label>
                                     <select name="throughput_from_data" id="throughput_from_data" class="form-control">
-                                        <option id="inputOptionForm" selected>Form Input</option>
+                                        <option id="inputOptionForm" selected>Form Data</option>
                                         <option id="inputOptionData" >Historical Data</option>
                                     </select>
                                 </div>
@@ -132,9 +132,10 @@
                     <th>Name</th>
                     <th>#Sim</th>
                     <th>WIP</th>
+                    <th>WIP_Source</th>
+                    <th>TPut_Rate</th>
+                    <th>TPut_Source</th>
                     <th>S_Rate</th>
-                    <th>TPut</th>
-                    <th>Data?</th>
                     <th>Start date</th>
                     <th>(DB) Creation date</th>
                 </tr>
@@ -155,24 +156,31 @@
                             {{form.simulation_count}}
                         </td>
                         <td>
-                            [{{form.wip_lower_bound}}, {{form.wip_upper_bound}}]
+                            [{{form.wip_lower_bound}},{{form.wip_upper_bound}}]
                         </td>
                         <td>
-                            [{{form.split_factor_lower_bound}}, {{form.split_factor_upper_bound}}]
-                        </td>
-                        <td>
-                            {% if form.throughput_from_data %}
-                                {{ form.get_throughput_avg }}
+                            {% if form.wip_from_data %}
+                                Historical Data
                             {% else %}
-                                [{{ form.throughput_lower_bound}}, {{ form.throughput_upper_bound }}]
+                                Form Data
                             {% endif %}
                         </td>
                         <td>
                             {% if form.throughput_from_data %}
-                                Yes
+                                {{ form.get_throughput_rate_avg }}
                             {% else %}
-                                No
+                                [{{ form.throughput_lower_bound }},{{ form.throughput_upper_bound }}]
                             {% endif %}
+                        </td>
+                        <td>
+                            {% if form.throughput_from_data %}
+                                Historical Data
+                            {% else %}
+                                Form Data
+                            {% endif %}
+                        </td>
+                        <td>
+                            [{{form.split_factor_lower_bound}},{{form.split_factor_upper_bound}}]
                         </td>
                         <td>
                             {{ form.start_date }}

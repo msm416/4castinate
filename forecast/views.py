@@ -50,7 +50,7 @@ def results(request, board_id, form_id):
 
 
 def iterations(request):
-    iteration_list = Iteration.objects.order_by('-start_date', 'board__name')
+    iteration_list = Iteration.objects.order_by('board__name', '-start_date')
     context = {'iteration_list': iteration_list, 'nbar': 'iterations'}
     return render(request, 'forecast/iterations.html', context)
 
@@ -75,7 +75,7 @@ def estimate(request, board_id):
     else:
         # TODO: make all form checks (on server or client side)
         if selected_form.throughput_lower_bound <= 0 or \
-                (selected_form.throughput_from_data and selected_form.get_throughput_avg() == 0):
+                (selected_form.throughput_from_data and selected_form.get_throughput_rate_avg() == 0):
             context['error_message'] = "Selected form has invalid throughput!"
             context['nbar'] = 'detail'
             return render(request, 'forecast/detail.html', context)
