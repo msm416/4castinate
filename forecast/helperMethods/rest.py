@@ -1,14 +1,53 @@
 import json
 import requests
 import time
+import base64
+from urllib.parse import parse_qsl
+
+from tlslite.utils import keyfactory
+import oauth2 as oauth
 
 from django.utils import timezone
 
-from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL
+from ebdjango.settings import API_TOKEN, JIRA_EMAIL, JIRA_URL, JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET
 from forecast.models import Board, Iteration, Issue, LONG_TIME_AGO, Form
 from datetime import datetime
 
 JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+
+class SignatureMethod_RSA_SHA1(oauth.SignatureMethod):
+    name = 'RSA-SHA1'
+
+    def signing_base(self, request, consumer, token):
+        if not hasattr(request, 'normalized_url') or request.normalized_url is None:
+            raise ValueError("Base URL for request is not set.")
+
+        sig = (
+            oauth.escape(request.method),
+            oauth.escape(request.normalized_url),
+            oauth.escape(request.get_normalized_parameters()),
+        )
+
+        key = '%s&' % oauth.escape(consumer.secret)
+        if token:
+            key += oauth.escape(token.secret)
+        raw = '&'.join(sig)
+        return key, raw
+
+    def sign(self, request, consumer, token):
+        """Builds the base signature string."""
+        key, raw = self.signing_base(request, consumer, token)
+
+        with open('forecast/helperMethods/oauth/jira_privatekey.pem', 'r') as f:
+            data = f.read()
+
+        privateKeyString = data.strip()
+
+        privatekey = keyfactory.parsePrivateKey(privateKeyString)
+        signature = privatekey.hashAndSign(bytes(raw, encoding='utf8'))
+
+        return base64.b64encode(signature)
 
 
 def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date):
@@ -22,14 +61,21 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
     # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
     # By default, the returned issues are ordered by rank.
 
-    response = requests.request(
-        "GET",
-        f"{JIRA_URL}/board/{board_jira_id}/issue",
-        headers={"Accept": "application/json"},
-        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
-        verify=False)
+    # response = requests.request(
+    #     "GET",
+    #     f"{JIRA_URL}/board/{board_jira_id}/issue",
+    #     headers={"Accept": "application/json"},
+    #     auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
+    #     verify=False)
 
-    response_as_dict = json.loads(response.text)
+    client = oauth.Client(oauth.Consumer('OauthKey', 'dont_care'),
+                          oauth.Token(JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET))
+    client.set_signature_method(SignatureMethod_RSA_SHA1())
+    client.disable_ssl_certificate_validation = True  # TODO: IS THIS THE RIGHT THING?
+
+    resp_code, response_content = client.request(f"{JIRA_URL}/board/{board_jira_id}/issue", "GET")
+
+    response_as_dict = json.loads(response_content)
 
     if not response_as_dict['issues']:
         return
@@ -156,14 +202,14 @@ def jira_get_boards():
 
     # TODO: FOR SERVER: change url to https://4cast.atlassian.net/rest/agile/latest/board
 
-    response = requests.request(
-        "GET",
-        f"{JIRA_URL}/board",
-        headers={"Accept": "application/json"},
-        auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, API_TOKEN),
-        verify=False)
+    client = oauth.Client(oauth.Consumer('OauthKey', 'dont_care'),
+                          oauth.Token(JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET))
+    client.set_signature_method(SignatureMethod_RSA_SHA1())
+    client.disable_ssl_certificate_validation = True  # TODO: IS THIS THE RIGHT THING?
 
-    response_as_dict = json.loads(response.text)
+    resp_code, response_content = client.request(f"{JIRA_URL}/board", "GET")
+
+    response_as_dict = json.loads(response_content)
 
     print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
 
@@ -202,4 +248,4 @@ def jira_get_boards():
         print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR BOARD {board['id']}")
 
     print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING - WE'RE DONE")
-    return response.status_code
+    return int(resp_code['status'])
