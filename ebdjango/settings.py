@@ -21,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ['SECRET_KEY']
-API_TOKEN = os.environ['API_TOKEN']
+JIRA_API_TOKEN = os.environ['JIRA_API_TOKEN']
 JIRA_EMAIL = os.environ['JIRA_EMAIL']
 JIRA_URL = os.environ['JIRA_URL']
 JIRA_OAUTH_TOKEN = os.environ['JIRA_OAUTH_TOKEN']

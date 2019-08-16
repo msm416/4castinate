@@ -13,7 +13,7 @@
        - virtualenvwrapper
 
        - awsebcli
-### 1. Clone and cd into root (outer 'ebdjango' dir).
+### 1. Clone and cd into root (outer 'ebdjango' dir) - all shell commands below are executed from root
 ### 2. Create a new virtualenv by running: 
        mkvirtualenv django-dev-env
 ### 3. Activate it:                
@@ -21,36 +21,39 @@
 ### 4. Install requirements for your virtualenv:
        pip install -r requirements.txt
 ### 5. Run the application locally:
-#### 5.1 Set environment variables in your virtualenv
-##### 5.1.1 Open the environment file:
+#### 5.1 Set up [OAuth](https://en.wikipedia.org/wiki/OAuth) authentification for Jira REST API - recommended for both Jira Cloud and Jira Server
+#### (skip to 5.2 if you don't want to use Jira REST API)
+#### (skip to 5.2 for [Basic](https://developer.atlassian.com/cloud/jira/platform/jira-rest-api-basic-authentication/) authentification - works only for Jira Cloud, but configuration is much easier)
+##### 5.1.1 Follow [Step 1: Configure Jira](https://developer.atlassian.com/server/jira/platform/oauth/), but put the created files in same directory as 'jira_oauth_script.py' (overwrite the existing files).
+##### 5.1.2 Run the script and follow instructions in the terminal. Remember the contents of 'oauth_token' and 'oauth_token_secret' printed in the terminal. 
+       python forecast/helperMethods/oauth/jira_oauth_script.py 
+#### 5.2 Set environment variables in your virtualenv
+##### 5.2.1 Open the environment file:
        open ~/.virtualenvs/django-dev-env/bin/activate
-##### 5.1.2 Edit the environment file with the needed variables (paste them at the end of the file, one per line). If you don't want to fetch data from Jira, just export the 3 Jira Variables as given below (and ignore step 5.1.6):
+##### 5.2.2 Edit the environment file with the needed variables (paste them at the end of the file, one per line). If you don't want to fetch data from Jira, just export the Jira Variables as given below. If you've opted for OAuth, edit the jira_oauth_token and jira_oauth_token_secret variables (5.1.2). If you've opted for Basic authentification, edit the jira_email and jira_api_token variables. In both cases, edit the jira_url variable and DON'T edit the variables for the other case. Note that you need the SECRET_KEY variable set up properly (it is used [internally](https://docs.djangoproject.com/en/2.2/topics/signing/) by Django):
        export SECRET_KEY='<your secret Django key>'
 
-       export API_TOKEN='<jira_api_token>'
        export JIRA_URL='https://<your_jira_domain>.atlassian.net/rest/agile/1.0/board'
+
        export JIRA_EMAIL='<jira_user_email>'
-     
-##### 5.1.3 Deactivate environment:
+       export JIRA_API_TOKEN='<jira_api_token>'
+
+       export JIRA_OAUTH_TOKEN = <oauth_token>
+       export JIRA_OAUTH_TOKEN_SECRET = <oauth_token_secret>
+##### 5.2.3 Deactivate environment:
        deactivate
-##### 5.1.4 Activate it back to reload the new changes:
+##### 5.2.4 Activate it back to reload the new changes:
        workon django-dev-env
 
-##### 5.1.5 To verify that the variables are set up, run this for each of them:
+##### 5.2.5 To verify that the variables are set up, run this for each of them:
        echo $SECRET_KEY
-
-##### 5.1.6 To verify that the Jira variables are correct, run this and [check the response](https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-get):
-       curl --request GET \
-       --url $JIRA_URL/board \
-       --user $JIRA_EMAIL:$API_TOKEN \
-       --header 'Accept: application/json'
       
-#### 5.2 Run the app on localhost:
+#### 5.3 Run the app on localhost:
          python manage.py runserver
      
-#### 5.3 Test the app:
+#### 5.4 Test the app:
          python manage.py test forecast
-#### 5.4 Test the app with code coverage:
+#### 5.5 Test the app with code coverage:
          coverage run --source='./forecast' manage.py test forecast
 ####     Followed by:
          coverage report
