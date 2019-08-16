@@ -20,11 +20,9 @@ class SignatureMethod_RSA_SHA1(oauth.SignatureMethod):
         if not hasattr(request, 'normalized_url') or request.normalized_url is None:
             raise ValueError("Base URL for request is not set.")
 
-        sig = (
-            oauth.escape(request.method),
-            oauth.escape(request.normalized_url),
-            oauth.escape(request.get_normalized_parameters()),
-        )
+        sig = (oauth.escape(request.method),
+               oauth.escape(request.normalized_url),
+               oauth.escape(request.get_normalized_parameters()),)
 
         key = '%s&' % oauth.escape(consumer.secret)
         if token:
@@ -75,7 +73,9 @@ def get_access_token():
 
     request_token = dict(parse_qsl(content))
 
-    request_token = dict(map(lambda item: (item[0].decode('utf-8'), item[1].decode('utf-8')), request_token.items()))
+    request_token = dict(map(lambda item:
+                             (item[0].decode('utf-8'), item[1].decode('utf-8')),
+                             request_token.items()))
 
     print("Request Token:")
     print("    - oauth_token        = %s" % request_token['oauth_token'])

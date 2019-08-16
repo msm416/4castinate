@@ -21,16 +21,16 @@
 ### 4. Install requirements for your virtualenv:
        pip install -r requirements.txt
 ### 5. Run the application locally:
-#### 5.1 Set up [OAuth](https://en.wikipedia.org/wiki/OAuth) authentification for Jira REST API - recommended for both Jira Cloud and Jira Server
+#### 5.1 Set up [OAuth](https://en.wikipedia.org/wiki/OAuth) authentication for Jira REST API - recommended for both Jira Cloud and Jira Server
 #### (skip to 5.2 if you don't want to use Jira REST API)
-#### (skip to 5.2 for [Basic](https://developer.atlassian.com/cloud/jira/platform/jira-rest-api-basic-authentication/) authentification - works only for Jira Cloud, but configuration is much easier)
+#### (skip to 5.2 for [Basic](https://developer.atlassian.com/cloud/jira/platform/jira-rest-api-basic-authentication/) authentication - works only for Jira Cloud, but configuration is much easier)
 ##### 5.1.1 Follow [Step 1: Configure Jira](https://developer.atlassian.com/server/jira/platform/oauth/), but put the created files in same directory as 'jira_oauth_script.py' (overwrite the existing files).
 ##### 5.1.2 Run the script and follow instructions in the terminal. Remember the contents of 'oauth_token' and 'oauth_token_secret' printed in the terminal. 
        python forecast/helperMethods/oauth/jira_oauth_script.py 
 #### 5.2 Set environment variables in your virtualenv
 ##### 5.2.1 Open the environment file:
        open ~/.virtualenvs/django-dev-env/bin/activate
-##### 5.2.2 Edit the environment file with the needed variables (paste them at the end of the file, one per line). If you don't want to fetch data from Jira, just export the Jira Variables as given below. If you've opted for OAuth, edit the jira_oauth_token and jira_oauth_token_secret variables (5.1.2). If you've opted for Basic authentification, edit the jira_email and jira_api_token variables. In both cases, edit the jira_url variable and DON'T edit the variables for the other case. Note that you need the SECRET_KEY variable set up properly (it is used [internally](https://docs.djangoproject.com/en/2.2/topics/signing/) by Django):
+##### 5.2.2 Edit the environment file with the needed variables (paste them at the end of the file, one per line). If you don't want to fetch data from Jira, just export the Jira Variables as given below. If you've opted for OAuth, edit the jira_oauth_token and jira_oauth_token_secret variables (5.1.2). If you've opted for Basic authentication, edit the jira_email and jira_api_token variables. In both cases, edit the jira_url variable and DON'T edit the variables for the other case. Note that you need the SECRET_KEY variable set up properly (it is used [internally](https://docs.djangoproject.com/en/2.2/topics/signing/) by Django):
        export SECRET_KEY='<your secret Django key>'
 
        export JIRA_URL='https://<your_jira_domain>.atlassian.net/rest/agile/1.0/board'

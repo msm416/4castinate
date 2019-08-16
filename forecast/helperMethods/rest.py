@@ -2,21 +2,43 @@ import json
 import time
 
 import oauth2 as oauth
+import requests
 
 from django.utils import timezone
 
 from ebdjango.settings import JIRA_URL, JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET, JIRA_EMAIL, JIRA_API_TOKEN
-from forecast.helperMethods.oauth.jira_oauth_script import SignatureMethod_RSA_SHA1
+from forecast.helperMethods.oauth.jira_oauth_script import SignatureMethod_RSA_SHA1, create_oauth_client
 from forecast.models import Board, Iteration, Issue, LONG_TIME_AGO, Form
 from datetime import datetime
 
-
 JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
-client = oauth.Client(oauth.Consumer('OauthKey', 'dont_care'),
-                      oauth.Token(JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET))
-client.set_signature_method(SignatureMethod_RSA_SHA1())
-client.disable_ssl_certificate_validation = True  # TODO: IS THIS THE RIGHT THING?
+
+# Figure out what type of authentication method should be used
+def make_get_request(url):
+    if str(JIRA_EMAIL).find('@') == -1:
+        # OAUTH
+        client = create_oauth_client(oauth.Consumer('OauthKey', 'dont_care'),
+                                     SignatureMethod_RSA_SHA1(),
+                                     oauth.Token(JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET))
+
+        resp_code, response_content = client.request(url)
+
+        resp_code = int(resp_code['status'])
+    else:
+        # BASIC HTTP AUTH
+        response = requests.request(
+            "GET",
+            url,
+            headers={"Accept": "application/json"},
+            auth=requests.auth.HTTPBasicAuth(JIRA_EMAIL, JIRA_API_TOKEN),
+            verify=False)
+
+        resp_code = response.status_code
+
+        response_content = response.text
+
+    return resp_code, response_content
 
 
 def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date):
@@ -30,8 +52,7 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
     # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
     # By default, the returned issues are ordered by rank.
 
-    # TODO: SWITCH ON JIRA EMAIL
-    resp_code, response_content = client.request(f"{JIRA_URL}/board/{board_jira_id}/issue", "GET")
+    resp_code, response_content = make_get_request(f"{JIRA_URL}/board/{board_jira_id}/issue")
 
     response_as_dict = json.loads(response_content)
 
@@ -150,6 +171,8 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
 
     Form.objects.bulk_create(epic_parents_forms_bulk)
 
+    return resp_code
+
 
 def jira_get_boards():
     # GET all boards
@@ -160,8 +183,9 @@ def jira_get_boards():
 
     # TODO: FOR SERVER: change url to https://4cast.atlassian.net/rest/agile/latest/board
 
-    resp_code, response_content = client.request(f"{JIRA_URL}/board", "GET")
+    resp_code, response_content = make_get_request(f"{JIRA_URL}/board")
 
+    print(f"{type(response_content)}: {response_content}")
     response_as_dict = json.loads(response_content)
 
     print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
@@ -202,4 +226,4 @@ def jira_get_boards():
 
     print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING - WE'RE DONE")
 
-    return int(resp_code['status'])
+    return resp_code
