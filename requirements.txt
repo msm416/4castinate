@@ -2,7 +2,9 @@ certifi==2019.6.16
 chardet==3.0.4
 coverage==4.5.4
 cycler==0.10.0
-Django==2.1.10
+Django==2.2.4
+ecdsa==0.13.2
+httplib2==0.13.1
 idna==2.7
 Jinja2==2.10.1
 kiwisolver==1.1.0
@@ -10,10 +12,14 @@ MarkupSafe==1.1.1
 matplotlib==3.1.1
 mpld3==0.3
 numpy==1.16.4
+oauth==1.0.1
+oauth2==1.9.0.post1
+pycrypto==2.6.1
 pyparsing==2.4.0
 python-dateutil==2.8.0
 pytz==2019.1
 requests==2.20.1
 six==1.12.0
 sqlparse==0.3.0
+tlslite-ng==0.7.5
 urllib3==1.24.3
