@@ -71,7 +71,7 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
     print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET ISSUES CALL")
 
     hidden_throughput = 0
-    hidden_id = -1
+    hidden_id = 0
     hidden_duration = 0
     # TODO: hidden_duration for kanban boards (currently is 0)
     #       Also design partial hidden iteration throughput
@@ -185,7 +185,6 @@ def jira_get_boards():
 
     resp_code, response_content = make_get_request(f"{JIRA_URL}/board")
 
-    print(f"{type(response_content)}: {response_content}")
     response_as_dict = json.loads(response_content)
 
     print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
