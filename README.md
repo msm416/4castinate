@@ -60,7 +60,7 @@
 ### 6. Deploy the app with eb cli. 
 #### 6.1 Follow steps [1-3](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy). The *EB CLI init* steps you'll have to perform just at the time when you clone the repo:
 #### 6.2 Set EB environment variables. This has to be done for each new environment you make on AWS EB:
-       eb setenv SECRET_KEY=$SECRET_KEY API_TOKEN=$API_TOKEN JIRA_URL=$JIRA_URL JIRA_EMAIL=$JIRA_EMAIL
+       eb setenv SECRET_KEY=$SECRET_KEY JIRA_API_TOKEN=$JIRA_API_TOKEN JIRA_URL=$JIRA_URL JIRA_EMAIL=$JIRA_EMAIL JIRA_OAUTH_TOKEN=$JIRA_OAUTH_TOKEN JIRA_OAUTH_TOKEN_SECRET=$JIRA_OAUTH_TOKEN_SECRET
        
        You can verify they were set in Elastic Beanstalk by running:
        eb printenv
