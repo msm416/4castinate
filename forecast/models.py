@@ -159,3 +159,13 @@ class Simulation(models.Model):
 
     def __str__(self):
         return self.message
+
+
+class MsgLogWebhook(models.Model):
+    text = models.TextField(default='abcdefgh')
+    msglog_id = models.PositiveSmallIntegerField(default=1)
+    cnt = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self):
+        return self.text
+

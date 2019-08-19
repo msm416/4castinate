@@ -1,3 +1,4 @@
+import json
 import random
 from datetime import datetime
 
@@ -9,7 +10,7 @@ from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
 from forecast.helperMethods.utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue
+from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -19,7 +20,10 @@ def index(request):
     latest_board_list = Board.objects\
                              .filter(creation_date__lte=timezone.now())\
                              .order_by('-creation_date')
-    context = {'latest_board_list': latest_board_list, 'nbar': 'index'}
+    msglog_webhook_list = MsgLogWebhook.objects.all()
+    context = {'latest_board_list': latest_board_list,
+               'nbar': 'index',
+               'msglog_webhook_list': msglog_webhook_list}
     return render(request, 'forecast/index.html', context)
 
 
@@ -128,12 +132,13 @@ def create_form(request, board_id):
 @require_POST
 @csrf_exempt
 def webhook(request):
-    # data = json.loads(request.body)
-    board = get_object_or_404(Board, pk=1)
+    data = json.loads(request.body)
 
-    if Form.objects.count() < 10:
-        aux = random.randint(0, 10000)
-        board.form_set.create(name=str(aux))
-
-    context = {'board': board, 'nbar': 'webhook'}
-    return render(request, 'forecast/detail.html', context)
+    if MsgLogWebhook.objects.exists():
+        msg_log_webhook = MsgLogWebhook.objects.get(msglog_id=1)
+        msg_log_webhook.text = f"{msg_log_webhook.text};{str(data)}"
+        msg_log_webhook.cnt += 1
+        msg_log_webhook.save()
+    else:
+        MsgLogWebhook.objects.create(cnt=1, text=str(data))
+    return HttpResponseRedirect(reverse('forecast:index'))

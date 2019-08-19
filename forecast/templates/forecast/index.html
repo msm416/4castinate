@@ -63,6 +63,27 @@
         {% endfor %}
         </tbody>
     </table>
+    <br>
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>Webhook hits</th>
+            <th>Webhook payloads</th>
+        </tr>
+        </thead>
+        <tbody id="myWebhookLog">
+        {% for webhook in msglog_webhook_list %}
+        <tr>
+            <td>
+                {{ webhook.cnt }}
+            </td>
+            <td>
+                {{ webhook.text }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 
     <script>
         $(document).ready(function(){
