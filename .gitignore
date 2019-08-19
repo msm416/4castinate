@@ -1,6 +1,12 @@
 # CURL OUTPUT
 output_from_curl.txt
 
+# JIRA CREDENTIALS OAUTH
+forecast/helperMethods/oauth/jira_actual_privatekey.pcks8
+forecast/helperMethods/oauth/jira_actual_privatekey.pem
+forecast/helperMethods/oauth/jira_actual_publickey.cer
+forecast/helperMethods/oauth/jira_actual_publickey.pem
+
 # Elastic Beanstalk files
 .elasticbeanstalk/
 
