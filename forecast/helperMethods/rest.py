@@ -1,9 +1,11 @@
 import json
 import time
 
+import Crypto
 import oauth2 as oauth
 import requests
 from multiprocessing import Pool
+from functools import reduce
 
 from django.utils import timezone
 
@@ -16,6 +18,7 @@ JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
 
 def make_single_get_req(url, index, client=None, fields=''):
+    Crypto.Random.atfork()
     url += f"?startAt={index}{fields}"
     print(f"********** MAKING GET REQUEST FOR URL: {url} - index: {index} **********")
     if client:
@@ -34,7 +37,7 @@ def make_single_get_req(url, index, client=None, fields=''):
 
         response_content = response.text
 
-    return resp_code, response_content
+    return resp_code, json.loads(response_content)
 
 
 # Figure out what type of authentication method should be used
@@ -45,7 +48,7 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
                                  oauth.Token(JIRA_OAUTH_TOKEN,
                                              JIRA_OAUTH_TOKEN_SECRET)) if True else None
                                                                # TODO: if str(JIRA_EMAIL).find('@') == -1:
-    # list of issue_lists (type = list of lists)
+    # list of issue_lists
     aggregate_values = []
 
     is_last = False
@@ -57,16 +60,15 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
     while not is_last:
         resp_code, response_content = make_single_get_req(url, index, client, fields)
 
-        response_content_dict = json.loads(response_content)
-        aggregate_values.append(response_content_dict[aggregate_key])
+        aggregate_values.append(response_content[aggregate_key])
 
-        max_results = response_content_dict['maxResults']
+        max_results = response_content['maxResults']
 
-        total_issues = response_content_dict['total'] if 'total' in response_content_dict else 0
+        total_issues = response_content['total'] if 'total' in response_content else 0
 
-        if 'isLast' in response_content_dict:
+        if 'isLast' in response_content:
             # GET BOARDS
-            is_last = response_content_dict['isLast']
+            is_last = response_content['isLast']
         else:
             # GET ISSUES
             if max_results + index >= total_issues:
@@ -74,13 +76,24 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
             else:
                                                      # total_issues
                 start_positions = range(max_results, 2 * max_results - 1, max_results)
-                for parallelization_index in start_positions:
-                    parallelization_resp_code, parallelization_response_content = \
-                        make_single_get_req(url, parallelization_index, client, fields)
 
-                    response_content_dict = json.loads(parallelization_response_content)
-                    aggregate_values.append(response_content_dict[aggregate_key])
+                # for parallelization_index in start_positions:
+                #     parallelization_resp_code, parallelization_response_content = \
+                #         make_single_get_req(url, parallelization_index, client, fields)
+                #
+                #     aggregate_values.append(parallelization_response_content[aggregate_key])
 
+                pool = Pool()
+                unprocessed_results_map = pool.starmap(make_single_get_req,
+                                                       [(url, parallelization_index, client, fields)
+                                                        for parallelization_index in start_positions])
+                pool.close()
+                pool.join()
+
+                aggregate_values = reduce((lambda aggr_vals, resp_tuple: aggr_vals if aggr_vals.append(resp_tuple[1][aggregate_key])
+                                                                               else aggr_vals),
+                                          unprocessed_results_map,
+                                          aggregate_values)
                 is_last = True
 
         max_pages_retrieved -= 1
@@ -92,9 +105,9 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
         resp_code = int(resp_code['status'])
 
     return resp_code, \
-           [issue
-            for issue_list in aggregate_values
-            for issue in issue_list], \
+           [value
+            for value_list in aggregate_values
+            for value in value_list], \
            total_issues
 
 
@@ -132,6 +145,7 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
     #       (currently,you either take the throughput as a whole or not)
 
     for issue in response_as_dict:
+        # print(f"{type(issue)} !@$!@$!$@@!$!@: {issue}")
         state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
         issue_type = issue['fields']['issuetype']['name']
         name = issue['fields']['summary']
