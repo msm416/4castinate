@@ -3,6 +3,7 @@ import time
 
 import oauth2 as oauth
 import requests
+from multiprocessing import Pool
 
 from django.utils import timezone
 
@@ -37,14 +38,14 @@ def make_single_get_req(url, index, client=None, fields=''):
 
 
 # Figure out what type of authentication method should be used
-def make_aggregate_get_req(url, aggregate_key, fields):
+def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
     client = create_oauth_client(oauth.Consumer('OauthKey',
                                                 'dont_care'),
                                  SignatureMethod_RSA_SHA1(),
                                  oauth.Token(JIRA_OAUTH_TOKEN,
                                              JIRA_OAUTH_TOKEN_SECRET)) if True else None
                                                                # TODO: if str(JIRA_EMAIL).find('@') == -1:
-
+    # list of issue_lists (type = list of lists)
     aggregate_values = []
 
     is_last = False
@@ -57,25 +58,44 @@ def make_aggregate_get_req(url, aggregate_key, fields):
         resp_code, response_content = make_single_get_req(url, index, client, fields)
 
         response_content_dict = json.loads(response_content)
-        aggregate_values += response_content_dict[aggregate_key]
+        aggregate_values.append(response_content_dict[aggregate_key])
 
         max_results = response_content_dict['maxResults']
 
+        total_issues = response_content_dict['total'] if 'total' in response_content_dict else 0
+
         if 'isLast' in response_content_dict:
-            # STOP FOR GET BOARDS
+            # GET BOARDS
             is_last = response_content_dict['isLast']
         else:
-            # STOP FOR GET ISSUES
-            if max_results + index >= response_content_dict['total']:
+            # GET ISSUES
+            if max_results + index >= total_issues:
                 is_last = True
+            else:
+                                                     # total_issues
+                start_positions = range(max_results, 2 * max_results - 1, max_results)
+                for parallelization_index in start_positions:
+                    parallelization_resp_code, parallelization_response_content = \
+                        make_single_get_req(url, parallelization_index, client, fields)
+
+                    response_content_dict = json.loads(parallelization_response_content)
+                    aggregate_values.append(response_content_dict[aggregate_key])
+
+                is_last = True
+
+        max_pages_retrieved -= 1
+        if max_pages_retrieved == 0:
+            is_last = True
 
         index += max_results
 
         resp_code = int(resp_code['status'])
 
-        is_last = True
-
-    return resp_code, aggregate_values
+    return resp_code, \
+           [issue
+            for issue_list in aggregate_values
+            for issue in issue_list], \
+           total_issues
 
 
 def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date):
@@ -89,7 +109,7 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
     # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
     # By default, the returned issues are ordered by rank.
 
-    resp_code, response_as_dict = make_aggregate_get_req(f"{JIRA_URL}/board/{board_jira_id}/issue",
+    resp_code, response_as_dict, total_issues = make_aggregate_get_req(f"{JIRA_URL}/board/{board_jira_id}/issue",
                                                          'issues',
                                                          "&fields=resolution,issuetype,summary,parent,closedSprints")
 
@@ -195,7 +215,7 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
 
     board_iterations_bulk = [sprint for sprint, throughput in board_sprints_bulk_dict.values()]
 
-    return resp_code, board_issues_bulk, board_iterations_bulk, board_epic_parents_forms_bulk
+    return resp_code, board_issues_bulk, board_iterations_bulk, board_epic_parents_forms_bulk, total_issues
 
 
 def jira_get_boards():
@@ -207,7 +227,7 @@ def jira_get_boards():
 
     # TODO: FOR SERVER: change url to https://4cast.atlassian.net/rest/agile/latest/board
 
-    resp_code, response_as_dict = make_aggregate_get_req(f"{JIRA_URL}/board", 'values', '')
+    resp_code, response_as_dict, _ = make_aggregate_get_req(f"{JIRA_URL}/board", 'values', '', 0)
 
     print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
 
@@ -235,7 +255,9 @@ def jira_get_boards():
     print(f"{time.time() - start_get_all_boards_time} CREATED NEW JIRA BOARDS")
 
     # TODO: see if can loop through boards_bulk instead (so no objects.get())
+    # These lists are lists of lists.
     issues_bulk, iterations_bulk, epic_parents_forms_bulk = [], [], []
+    total_total_issues = 0
     for board in response_as_dict:
         print(f"{time.time() - start_get_all_boards_time} FLUSHING EVERYTHING FOR BOARD {board['id']}")
 
@@ -247,24 +269,32 @@ def jira_get_boards():
 
         print(f"{time.time() - start_get_all_boards_time} CREATING EVERYTHING FOR BOARD {board['id']}")
 
-        resp_code, board_issues_bulk, board_iterations_bulk, board_epic_parents_forms_bulk = \
+        resp_code, board_issues_bulk, board_iterations_bulk, board_epic_parents_forms_bulk, total_issues = \
             jira_get_issues(board['id'],
                             board_model,
                             start_get_all_boards_time,
                             fetch_date)
 
-        issues_bulk += board_issues_bulk
-        iterations_bulk += board_iterations_bulk
-        epic_parents_forms_bulk += board_epic_parents_forms_bulk
+        issues_bulk.append(board_issues_bulk)
+        iterations_bulk.append(board_iterations_bulk)
+        epic_parents_forms_bulk.append(board_epic_parents_forms_bulk)
+        total_total_issues += total_issues
 
         print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR BOARD {board['id']}")
 
-    Issue.objects.bulk_create(issues_bulk)
+    Issue.objects.bulk_create([issue
+                               for issue_list in issues_bulk
+                               for issue in issue_list])
 
-    Iteration.objects.bulk_create(iterations_bulk)
+    Iteration.objects.bulk_create([iteration
+                                   for iteration_list in iterations_bulk
+                                   for iteration in iteration_list])
 
-    Form.objects.bulk_create(epic_parents_forms_bulk)
+    Form.objects.bulk_create([epic_parent_form
+                              for epic_parent_form_list in epic_parents_forms_bulk
+                              for epic_parent_form in epic_parent_form_list])
 
     print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR ALL BOARDS IN DB - WE'RE DONE")
 
+    print(f"{total_total_issues} - TOT")
     return resp_code
