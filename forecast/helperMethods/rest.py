@@ -18,7 +18,10 @@ JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
 
 def make_single_get_req(url, index, client=None, fields=''):
+    # You need to do Random.atfork() in the child process after every call
+    # to os.fork() to avoid reusing PRNG state
     Crypto.Random.atfork()
+
     url += f"?startAt={index}{fields}"
     print(f"********** MAKING GET REQUEST FOR URL: {url} - index: {index} **********")
     if client:
@@ -75,7 +78,7 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
                 is_last = True
             else:
                                                      # total_issues
-                start_positions = range(max_results, 2 * max_results - 1, max_results)
+                start_positions = range(max_results, total_issues, max_results)
 
                 # for parallelization_index in start_positions:
                 #     parallelization_resp_code, parallelization_response_content = \
@@ -94,6 +97,7 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
                                                                                else aggr_vals),
                                           unprocessed_results_map,
                                           aggregate_values)
+
                 is_last = True
 
         max_pages_retrieved -= 1

@@ -1,8 +1,14 @@
-from forecast.models import Simulation
+from forecast.models import Simulation, Form
 from collections import Counter
 
 
 def aggregate_simulations(form_id):
+    form = Form.objects.get(pk=form_id)
+
+    if not form.simulation_set.exists():
+        print("AAAAAAAAAAAAAA")
+        form.gen_simulations()
+
     simulations = [int(x) for x in
                    Simulation.objects.get(form=form_id).durations.split(";")]
 

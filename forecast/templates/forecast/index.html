@@ -26,6 +26,7 @@
     <table class="table table-bordered table-striped">
         <thead>
         <tr>
+            <th> </th>
             <th>Board Name</th>
             <th>Project Name</th>
             <th>Data Sources</th>
@@ -39,7 +40,14 @@
         {% for board in latest_board_list %}
         <tr>
             <td>
-                <a href="{% url 'forecast:detail' board.id %}">{{ board.name }}</a>
+                <form action="{% url 'forecast:detail' board.id %}" method="post">
+                    {% csrf_token %}
+                        <input type="hidden" name="supporttype" />
+                        <input class="btn btn-success" type="submit" value="->">
+                </form>
+            </td>
+            <td>
+                {{ board.name }}
             </td>
             <td>
                 {{ board.project_name }}
