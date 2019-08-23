@@ -4,26 +4,83 @@
 
 {% block body %}
 
-    <h1>Choose form</h1>
-    <br>
-    <div class="row">
-        <div class="col-md-auto">
-            <h3>Total number of forms for {{board.name}}: {{board.form_set.count}}</h3>
-        </div>
-        <div class="col"></div>
-        <div class="col-md-auto">
-                 <span class="float-right">
-                    <a href="{% url 'forecast:iterations' %}" class="btn btn-secondary" role="button">
-                        View Iterations
-                    </a>
-                 </span>
-        </div>
-        <div class="col-md-auto">
-                <span class="float-right">
+    {% if form %}
+        <h1>{{ board.name }}: {{ form.name }}</h1>
 
-                </span>
-        </div>
-    </div>
+        <canvas id="myLikelihoodTable"></canvas>
+
+        {{ weeks |json_script:"weeks"}}
+        {{ weeks_frequency |json_script:"weeks_frequency"}}
+        {{ weeks_frequency_sum |json_script:"weeks_frequency_sum"}}
+        {{ centile_indices |json_script:"centile_indices"}}
+        {{ centile_values |json_script:"centile_values"}}
+
+        <script>
+            //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
+            var ctx = document.getElementById('myLikelihoodTable').getContext('2d');
+            var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+            var centile_indices = JSON.parse(document.getElementById('centile_indices').textContent);
+            var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+
+            var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+            gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
+            gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
+            gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
+
+            var gradientFill = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+            gradientFill.addColorStop(0, "rgba(244,29,49,0.6)");
+            gradientFill.addColorStop(0.5, "rgba(244,215,28,0.6)");
+            gradientFill.addColorStop(1, "rgba(120,244,31,0.6)");
+
+            var myLineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: centile_values,
+                    datasets:[{
+                        label:weeks_frequency_sum,
+                        borderColor: gradientStroke,
+                        pointBorderColor: gradientStroke,
+                        pointBackgroundColor: gradientStroke,
+                        pointHoverBackgroundColor: gradientStroke,
+                        pointHoverBorderColor: gradientStroke,
+                        pointBorderWidth: 10,
+                        pointHoverRadius: 10,
+                        pointHoverBorderWidth: 1,
+                        pointRadius: 3,
+                        fill: true,
+                        backgroundColor: gradientFill,
+                        borderWidth: 4,
+                        data:centile_indices,
+                        lineTension:0.1
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Forecast Completion Date - Likelihood Graph'
+                    },
+                    scales: {
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Likelihood'
+                            }
+                        }],
+                        xAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Week'
+                            }
+                        }]
+                    }
+                }
+            });
+        </script>
+    {% else %}
+        <h1>{{ board.name }} - No forms exist for this board</h1>
+    {% endif %}
+    <br>
+
     <br>
     <div id="accordion">
         <div class="card">
@@ -36,7 +93,7 @@
                 </h5>
             </div>
 
-            <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"
+            <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
                  data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
@@ -119,16 +176,13 @@
 
     <br>
 
-    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword...">
+    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword ...">
     <br>
-
-    <form action="{% url 'forecast:estimate' board.id %}" method="post">
-        {% csrf_token %}
 
         <table class="table table-bordered table-striped">
             <thead>
                 <tr>
-                    <th>Choose </th>
+                    <th> </th>
                     <th>Name</th>
                     <th>#Sim</th>
                     <th>WIP</th>
@@ -144,13 +198,14 @@
                 {% for form in latest_form_list %}
                     <tr>
                         <td>
-                            <input type="radio" name="form" id="form{{ forloop.counter }}" value="{{ form.id }}">
+                            <form action="{% url 'forecast:detail' board.id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="supporttype" />
+                                <input class="btn btn-success" type="submit" value="->">
+                            </form>
                         </td>
                         <td>
-                            <label for="form{{ forloop.counter }}" data-toggle="tooltip"
-                                   title="{{ form.name }}">
-                                {{ form.name }}
-                            </label>
+                            {{form.name}}}
                         </td>
                         <td>
                             {{form.simulation_count}}
@@ -193,14 +248,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4" align="center">
-                <button type="submit" class="btn btn-secondary"> Estimate </button>
-            </div>
-            <div class="col-md-4"></div>
-        </div>
-    </form>
 
     {% if error_message %}
         <br>
