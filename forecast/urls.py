@@ -7,6 +7,8 @@ urlpatterns = [
     path('', views.index, name='index'),
     # ex: /forecast/
     path('<int:board_id>/', views.detail, name='detail'),
+
+    path('<int:board_id>/<int:form_id>/', views.detail, name='detail'),
     # ex: /forecast/5/
     path('fetch/', views.fetch, name='fetch'),
     # ex: /forecast/fetch/

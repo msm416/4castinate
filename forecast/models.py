@@ -83,6 +83,8 @@ class Form(models.Model):
     throughput_from_data_start_date = models.DateField(default=timezone.now)
     simulation_count = models.PositiveSmallIntegerField(default=1000)
 
+    is_selected = models.BooleanField(default=False)
+
     def __str__(self):
         return self.name
 
