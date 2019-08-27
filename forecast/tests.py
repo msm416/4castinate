@@ -74,25 +74,25 @@ class BoardIndexViewTests(TestCase):
             ['<Board: Past recent board.>', '<Board: Past board.>'])
 
 
-class JiraAPITests(TestCase):
-    def test_jira_get_data_and_populate_db(self):
-        """
-        Fetching is deterministic (and we allow multiple fetches).
-
-        All 'Done' Issues (That aren't EPIC type) are assigned to some Iteration.
-        """
-        self.assertEqual(jira_get_boards(), 200)
-        first_fetch_nb_iterations = Iteration.objects.all().count()
-        first_fetch_nb_issues = Issue.objects.all().count()
-
-        self.assertEqual(Issue.objects.filter(state='Done')
-                                      .exclude(issue_type='Epic').count(),
-                         Iteration.objects.all()
-                                          .aggregate(Sum('throughput'))['throughput__sum'])
-
-        self.assertEqual(jira_get_boards(), 200)
-        second_fetch_nb_iterations = Iteration.objects.all().count()
-        second_fetch_nb_issues = Issue.objects.all().count()
-
-        self.assertEqual((first_fetch_nb_iterations, first_fetch_nb_issues),
-                         (second_fetch_nb_iterations, second_fetch_nb_issues))
+# class JiraAPITests(TestCase):
+    # def test_jira_get_data_and_populate_db(self):
+    #     """
+    #     Fetching is deterministic (and we allow multiple fetches).
+    #
+    #     All 'Done' Issues (That aren't EPIC type) are assigned to some Iteration.
+    #     """
+    #     self.assertEqual(jira_get_boards(), 200)
+    #     first_fetch_nb_iterations = Iteration.objects.all().count()
+    #     first_fetch_nb_issues = Issue.objects.all().count()
+    #
+    #     self.assertEqual(Issue.objects.filter(state='Done')
+    #                                   .exclude(issue_type='Epic').count(),
+    #                      Iteration.objects.all()
+    #                                       .aggregate(Sum('throughput'))['throughput__sum'])
+    #
+    #     self.assertEqual(jira_get_boards(), 200)
+    #     second_fetch_nb_iterations = Iteration.objects.all().count()
+    #     second_fetch_nb_issues = Issue.objects.all().count()
+    #
+    #     self.assertEqual((first_fetch_nb_iterations, first_fetch_nb_issues),
+    #                      (second_fetch_nb_iterations, second_fetch_nb_issues))
