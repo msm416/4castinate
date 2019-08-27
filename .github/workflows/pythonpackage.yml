@@ -22,5 +22,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Test with coverage
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        JIRA_URL: ${{ secrets.JIRA_URL }}
+        JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        JIRA_OAUTH_TOKEN: ${{ secrets.JIRA_OAUTH_TOKEN }}
+        JIRA_OAUTH_TOKEN_SECRET: ${{ secrets.JIRA_OAUTH_TOKEN_SECRET }}
       run: |
         coverage run --source='./forecast' manage.py test forecast
