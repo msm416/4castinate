@@ -30,20 +30,22 @@ def index(request):
 def detail(request, board_id, form_id=None):
     board = get_object_or_404(Board, pk=board_id)
 
-    selected_form = Form.objects.get(id=form_id) if form_id else board.form_set.first()
-    prev_selected_form = board.form_set.filter(is_selected=True)
+    prev_selected_form = board.form_set.filter(is_selected=True).first()
 
-    if prev_selected_form.exists():
-        prev_selected_form = prev_selected_form.get()
+    if prev_selected_form:
         prev_selected_form.is_selected = False
         prev_selected_form.save()
 
-    selected_form.is_selected = True
-    selected_form.save()
+    selected_form = Form.objects.get(id=form_id) \
+        if form_id else \
+        (prev_selected_form if prev_selected_form else board.form_set.first())
 
-    print(selected_form)
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = aggregate_simulations(selected_form.id) \
-        if selected_form else ([], [], [], None)
+    if selected_form:
+        selected_form.is_selected = True
+        selected_form.save()
+        (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = aggregate_simulations(selected_form.id)
+    else:
+        (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = ([], [], [], None)
 
     latest_form_list = board.form_set.order_by('-creation_date')
 
