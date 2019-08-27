@@ -27,23 +27,29 @@ def index(request):
     return render(request, 'forecast/index.html', context)
 
 
-def detail(request, board_id):
+def detail(request, board_id, form_id=None):
     board = get_object_or_404(Board, pk=board_id)
-    form = board.form_set.first()
 
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = aggregate_simulations(form.id) \
-        if form else ([], [], [], None)
+    selected_form = Form.objects.get(id=form_id) if form_id else board.form_set.first()
+    prev_selected_form = board.form_set.filter(is_selected=True)
 
-    print(form)
-    print(type(centile_values))
-    print(weeks)
-    print(weeks_frequency)
-    print(weeks_frequency_sum)
+    if prev_selected_form.exists():
+        prev_selected_form = prev_selected_form.get()
+        prev_selected_form.is_selected = False
+        prev_selected_form.save()
+
+    selected_form.is_selected = True
+    selected_form.save()
+
+    print(selected_form)
+    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = aggregate_simulations(selected_form.id) \
+        if selected_form else ([], [], [], None)
+
     latest_form_list = board.form_set.order_by('-creation_date')
 
     context = {'board': board,
                'latest_form_list': latest_form_list,
-               'form': form,
+               'form': selected_form,
                'weeks': weeks,
                'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
                'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
@@ -60,11 +66,6 @@ def results(request, board_id, form_id):
     board = get_object_or_404(Board, pk=board_id)
     form = get_object_or_404(Form, pk=form_id)
     centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(form_id)
-    print(form)
-    print(centile_values)
-    print(weeks)
-    print(weeks_frequency)
-    print(weeks_frequency_sum)
     context = {
         'board': board,
         'form': form,

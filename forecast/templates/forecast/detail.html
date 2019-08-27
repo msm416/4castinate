@@ -198,14 +198,14 @@
                 {% for form in latest_form_list %}
                     <tr>
                         <td>
-                            <form action="{% url 'forecast:detail' board.id %}" method="post">
+                            <form action="{% url 'forecast:detail' board.id form.id%}" method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="supporttype" />
+                                <input type="hidden" name="supporttype" id="supporttype" value="{{form.id}}"/>
                                 <input class="btn btn-success" type="submit" value="->">
                             </form>
                         </td>
                         <td>
-                            {{form.name}}}
+                            {{form.name}}
                         </td>
                         <td>
                             {{form.simulation_count}}
