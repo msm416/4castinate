@@ -21,7 +21,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Test with coverage
+    - name: Test with coverage - flush db, make migrations and run tests
       env:
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         JIRA_URL: ${{ secrets.JIRA_URL }}
@@ -30,4 +30,6 @@ jobs:
         JIRA_OAUTH_TOKEN: ${{ secrets.JIRA_OAUTH_TOKEN }}
         JIRA_OAUTH_TOKEN_SECRET: ${{ secrets.JIRA_OAUTH_TOKEN_SECRET }}
       run: |
+        python manage.py makemigrations
+        python manage.py migrate
         coverage run --source='./forecast' manage.py test forecast
