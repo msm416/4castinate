@@ -229,7 +229,7 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
                                                   wip_from_data=True,
                                                   wip_lower_bound=wip,
                                                   wip_upper_bound=wip,
-                                                  throughput_from_data=False))
+                                                  throughput_from_data=True))
 
     board_iterations_bulk = [sprint for sprint, throughput in board_sprints_bulk_dict.values()]
 
@@ -242,8 +242,6 @@ def jira_get_boards():
     # Description: Returns all boards. This only includes boards that the user has permission to view.
 
     start_get_all_boards_time = time.time()
-
-    # TODO: FOR SERVER: change url to https://4cast.atlassian.net/rest/agile/latest/board
 
     resp_code, response_as_dict, _ = make_aggregate_get_req(f"{JIRA_URL}/board", 'values', '', 0)
 
@@ -272,7 +270,6 @@ def jira_get_boards():
 
     print(f"{time.time() - start_get_all_boards_time} CREATED NEW JIRA BOARDS")
 
-    # TODO: see if can loop through boards_bulk instead (so no objects.get())
     # These lists are lists of lists.
     issues_bulk, iterations_bulk, epic_parents_forms_bulk = [], [], []
     total_total_issues = 0
@@ -311,6 +308,10 @@ def jira_get_boards():
     Form.objects.bulk_create([epic_parent_form
                               for epic_parent_form_list in epic_parents_forms_bulk
                               for epic_parent_form in epic_parent_form_list])
+
+    # Bulk create does not signal with post_save, so we have to call this method manually:
+    for form in Form.objects.all():
+        form.update_data_fields_and_gen_simulation()
 
     print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR ALL BOARDS IN DB - WE'RE DONE")
 

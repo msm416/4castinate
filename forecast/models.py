@@ -1,8 +1,11 @@
+import re
 from datetime import datetime
-from numpy import random
+from numpy import random, ceil
 import time
 
 from django.db import models
+from django.db.models import signals
+from django.dispatch import receiver
 from django.utils import timezone
 
 WEEK_IN_DAYS = 7
@@ -68,6 +71,7 @@ class Form(models.Model):
 
     # Default: we consider forms that don't use historical wip data
     wip_from_data = models.BooleanField(default=False)
+    wip_from_data_filter = models.TextField(default="")
 
     split_factor_lower_bound = models.FloatField(default=1.00)
     split_factor_upper_bound = models.FloatField(default=3.00)
@@ -89,12 +93,19 @@ class Form(models.Model):
         return self.name
 
     # Returns always >= 0
-    # TODO: implement this for forms that represent epics
-    def get_wip_from_data(self, epic_parent):
+    def get_wip_from_data(self):
+        print(f"WE COMPUTING WIP: - {self.name} filter: {self.wip_from_data_filter}")
+        dict_filter = \
+            {comp[0]: comp[1]
+             for comp in map(lambda x: re.split('=|<=', x),
+                             filter(None, re.split(';', self.wip_from_data_filter)))} \
+            if self.wip_from_data \
+            else {}
         return Issue.objects\
             .filter(board__name=self.board.name,
                     state='Ongoing',
-                    epic_parent=epic_parent)\
+                    epic_parent='None')\
+            .filter(**dict_filter)\
             .count()
 
     # Returns always >= 0
@@ -118,20 +129,6 @@ class Form(models.Model):
     # Each form has at most one Simulation. Subsequent calls will overwrite the Simulation
     # for data forms, and will return the same simulation for non-data forms.
     def gen_simulations(self):
-
-        if self.throughput_from_data:
-            throughput_rate_avg = self.get_throughput_rate_avg()
-            # TODO: figure how to avoid recomputing simulation (but NOT 'if th_l_b == g_th_avg()')
-            self.throughput_lower_bound = throughput_rate_avg
-            self.throughput_upper_bound = throughput_rate_avg
-            self.save()
-        # else:
-        #     if self.simulation_set.exists():
-        #         return
-
-        # if self.wip_from_data:
-        #     wip = self.get_wip_from_data()
-
         start_time = time.time()
 
         wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound,
@@ -140,7 +137,7 @@ class Form(models.Model):
                                     (self.simulation_count,))
         weekly_throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound,
                                            (self.simulation_count,))
-        completion_duration = ((wip * split_rate) / weekly_throughput).astype(int)
+        completion_duration = (ceil((wip * split_rate) / weekly_throughput)).astype(int)
         durations = ';'.join(map(str, completion_duration))
 
         end_time = time.time()
@@ -152,6 +149,12 @@ class Form(models.Model):
 
         # Create new Simulation
         self.simulation_set.create(form=self, message=msg, durations=durations)
+
+    # To be called on forms when webhook triggers/ when batch creation of forms
+    def update_data_fields_and_gen_simulation(self):
+        on_form_pre_save(sender=None, instance=self)
+        self.save()
+        on_form_post_save(sender=None, instance=self)
 
 
 class Simulation(models.Model):
@@ -171,3 +174,25 @@ class MsgLogWebhook(models.Model):
     def __str__(self):
         return self.text
 
+
+@receiver(signals.pre_save, sender=Form)
+def on_form_pre_save(sender, **kwargs):
+    instance = kwargs['instance']
+    if kwargs['instance'].throughput_from_data:
+        throughput_rate_avg = instance.get_throughput_rate_avg()
+        instance.throughput_lower_bound = throughput_rate_avg
+        instance.throughput_upper_bound = throughput_rate_avg
+
+        # else:
+        #     if self.simulation_set.exists():
+        #         return
+
+    if instance.wip_from_data:
+        wip = instance.get_wip_from_data()
+        instance.wip_lower_bound = wip
+        instance.wip_upper_bound = wip
+
+
+@receiver(signals.post_save, sender=Form)
+def on_form_post_save(sender, **kwargs):
+    kwargs['instance'].gen_simulations()

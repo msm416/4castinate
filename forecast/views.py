@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
-from forecast.helperMethods.utils import aggregate_simulations
+from forecast.helperMethods.utils import aggregate_simulations, parse_filter
 from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook
 
 from django.views.decorators.csrf import csrf_exempt
@@ -59,7 +59,8 @@ def detail(request, board_id, form_id=None):
                'centile_values': centile_values,
 
                'LONG_TIME_AGO': LONG_TIME_AGO,
-               'nbar': 'detail'}
+               'nbar': 'detail',
+               'form_fields': [field.name for field in Iteration._meta.get_fields()]}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -112,7 +113,6 @@ def estimate(request, board_id):
             context['error_message'] = "Selected form has invalid throughput!"
             context['nbar'] = 'detail'
             return render(request, 'forecast/detail.html', context)
-        selected_form.gen_simulations()
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
@@ -139,18 +139,22 @@ def create_form(request, board_id):
     wip_from_data = True \
         if request.POST['wip_from_data'] == "Historical Data" \
         else False
+    wip_from_data_filter = request.POST['wip_from_data_filter']
+
+    # TODO: check validity before creation of _filter and other fields
     board.form_set.create(
-        wip_lower_bound=request.POST['wip_lower_bound'],
-        wip_upper_bound=request.POST['wip_upper_bound'],
+        wip_lower_bound=int(request.POST['wip_lower_bound']),
+        wip_upper_bound=int(request.POST['wip_upper_bound']),
         wip_from_data=wip_from_data,
-        throughput_lower_bound=request.POST['throughput_lower_bound'],
-        throughput_upper_bound=request.POST['throughput_upper_bound'],
+        wip_from_data_filter=wip_from_data_filter,
+        throughput_lower_bound=float(request.POST['throughput_lower_bound']),
+        throughput_upper_bound=float(request.POST['throughput_upper_bound']),
         throughput_from_data=throughput_from_data,
         start_date=start_date,
-        split_factor_lower_bound=request.POST['split_factor_lower_bound'],
-        split_factor_upper_bound=request.POST['split_factor_upper_bound'],
+        split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
+        split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
         name=request.POST['name'],
-        simulation_count=request.POST['simulation_count'])
+        simulation_count=int(request.POST['simulation_count']))
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
