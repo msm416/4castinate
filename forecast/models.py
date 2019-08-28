@@ -3,6 +3,8 @@ from numpy import random, ceil
 import time
 
 from django.db import models
+from django.db.models import signals
+from django.dispatch import receiver
 from django.utils import timezone
 
 WEEK_IN_DAYS = 7
@@ -119,24 +121,6 @@ class Form(models.Model):
     # Each form has at most one Simulation. Subsequent calls will overwrite the Simulation
     # for data forms, and will return the same simulation for non-data forms.
     def gen_simulations(self):
-
-        if self.throughput_from_data:
-            throughput_rate_avg = self.get_throughput_rate_avg()
-            # TODO: figure how to avoid recomputing simulation (but NOT 'if th_l_b == g_th_avg()')
-            self.throughput_lower_bound = throughput_rate_avg
-            self.throughput_upper_bound = throughput_rate_avg
-
-        # else:
-        #     if self.simulation_set.exists():
-        #         return
-
-        if self.wip_from_data:
-            wip = self.get_wip_from_data()
-            self.wip_lower_bound = wip
-            self.wip_upper_bound = wip
-
-        self.save()
-
         start_time = time.time()
 
         wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound,
@@ -158,6 +142,12 @@ class Form(models.Model):
         # Create new Simulation
         self.simulation_set.create(form=self, message=msg, durations=durations)
 
+    # To be called on proper forms when webhook triggers/ when batch creation of forms
+    def update_data_fields_and_gen_simulation(self):
+        on_form_pre_save(sender=None, instance=self)
+        self.save()
+        on_form_post_save(sender=None, instance=self)
+
 
 class Simulation(models.Model):
     form = models.ForeignKey(Form, on_delete=models.CASCADE)
@@ -176,3 +166,25 @@ class MsgLogWebhook(models.Model):
     def __str__(self):
         return self.text
 
+
+@receiver(signals.pre_save, sender=Form)
+def on_form_pre_save(sender, **kwargs):
+    instance = kwargs['instance']
+    if kwargs['instance'].throughput_from_data:
+        throughput_rate_avg = instance.get_throughput_rate_avg()
+        instance.throughput_lower_bound = throughput_rate_avg
+        instance.throughput_upper_bound = throughput_rate_avg
+
+        # else:
+        #     if self.simulation_set.exists():
+        #         return
+
+    if instance.wip_from_data:
+        wip = instance.get_wip_from_data()
+        instance.wip_lower_bound = wip
+        instance.wip_upper_bound = wip
+
+
+@receiver(signals.post_save, sender=Form)
+def on_form_post_save(sender, **kwargs):
+    kwargs['instance'].gen_simulations()

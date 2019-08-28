@@ -309,6 +309,10 @@ def jira_get_boards():
                               for epic_parent_form_list in epic_parents_forms_bulk
                               for epic_parent_form in epic_parent_form_list])
 
+    # Bulk create does not signal with post_save, so we have to call this method manually:
+    for form in Form.objects.all():
+        form.update_data_fields_and_gen_simulation()
+
     print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR ALL BOARDS IN DB - WE'RE DONE")
 
     print(f"{total_total_issues} - TOT")
