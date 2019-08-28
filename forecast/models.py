@@ -1,5 +1,5 @@
 from datetime import datetime
-from numpy import random
+from numpy import random, ceil
 import time
 
 from django.db import models
@@ -140,7 +140,7 @@ class Form(models.Model):
                                     (self.simulation_count,))
         weekly_throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound,
                                            (self.simulation_count,))
-        completion_duration = ((wip * split_rate) / weekly_throughput).astype(int)
+        completion_duration = (ceil((wip * split_rate) / weekly_throughput)).astype(int)
         durations = ';'.join(map(str, completion_duration))
 
         end_time = time.time()
