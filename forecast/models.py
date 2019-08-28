@@ -68,6 +68,7 @@ class Form(models.Model):
 
     # Default: we consider forms that don't use historical wip data
     wip_from_data = models.BooleanField(default=False)
+    wip_from_data_filter = models.TextField(default="")
 
     split_factor_lower_bound = models.FloatField(default=1.00)
     split_factor_upper_bound = models.FloatField(default=3.00)
@@ -90,11 +91,11 @@ class Form(models.Model):
 
     # Returns always >= 0
     # TODO: implement this for forms that represent epics
-    def get_wip_from_data(self, epic_parent):
+    def get_wip_from_data(self):
+        print(f"WE HAWT - {self.name}")
         return Issue.objects\
             .filter(board__name=self.board.name,
-                    state='Ongoing',
-                    epic_parent=epic_parent)\
+                    state='Ongoing')\
             .count()
 
     # Returns always >= 0
@@ -124,13 +125,17 @@ class Form(models.Model):
             # TODO: figure how to avoid recomputing simulation (but NOT 'if th_l_b == g_th_avg()')
             self.throughput_lower_bound = throughput_rate_avg
             self.throughput_upper_bound = throughput_rate_avg
-            self.save()
+
         # else:
         #     if self.simulation_set.exists():
         #         return
 
-        # if self.wip_from_data:
-        #     wip = self.get_wip_from_data()
+        if self.wip_from_data:
+            wip = self.get_wip_from_data()
+            self.wip_lower_bound = wip
+            self.wip_upper_bound = wip
+
+        self.save()
 
         start_time = time.time()
 

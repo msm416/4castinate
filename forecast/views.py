@@ -59,7 +59,8 @@ def detail(request, board_id, form_id=None):
                'centile_values': centile_values,
 
                'LONG_TIME_AGO': LONG_TIME_AGO,
-               'nbar': 'detail'}
+               'nbar': 'detail',
+               'form_fields': [field.name for field in Iteration._meta.get_fields()]}
 
     return render(request, 'forecast/detail.html', context)
 

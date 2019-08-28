@@ -6,7 +6,6 @@
 
     {% if form %}
         <h1>{{ board.name }}: {{ form.name }}</h1>
-
         <canvas id="myLikelihoodTable"></canvas>
 
         {{ weeks |json_script:"weeks"}}
@@ -94,61 +93,64 @@
             </div>
 
             <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
-                 data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
+            data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
                         <form action="{% url 'forecast:create_form' board.id%}" method="post">
                             {% csrf_token %}
                             <div class="form-row">
-                                <div class="form-group col-md-3">
-                                    <label for="wip_lower_bound">WIP - Low</label>
+                                <div class="form-group col-md-4">
+                                    <label for="wip_lower_bound"> <b> WIP - Low </b></label>
                                     <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="20">
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label for="wip_upper_bound">WIP - High</label>
+                                <div class="form-group col-md-4">
+                                    <label for="wip_upper_bound"> <b> WIP - High </b> </label>
                                     <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label for="wip_from_data">WIP - Source</label>
+                                <div class="form-group col-md-4">
+                                    <label for="wip_from_data"> <b> WIP - Source </b> </label>
                                     <select name="wip_from_data" id="wip_from_data" class="form-control">
                                         <option id="inputWipOptionForm" selected>Form Data</option>
                                         <option id="inputWipOptionData">Historical Data</option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label for="wip_issue_filter">FILTER BY</label>
-                                    <input type="text" name="wip_issue_filter" class="form-control" id="wip_issue_filter" value="TO BE IMPLEMENTED">
-                                </div>
-
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-3">
-                                    <label for="throughput_lower_bound">TPUT - Low</label>
+                                <div class="form-group col-md-12">
+                                    <label for="wip_issue_filter"> <b> FILTER ISSUES BY: </b> | {% for form_field in form_fields %} {{ form_field }} | {% endfor %} </label>
+                                    <input type="text" name="wip_issue_filter" class="form-control" id="wip_issue_filter" value="field1=str;field2<=10">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="throughput_lower_bound"> <b> TPUT - Low </b> </label>
                                     <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1.00">
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label for="throughput_upper_bound">TPUT - High</label>
+                                <div class="form-group col-md-4">
+                                    <label for="throughput_upper_bound"> <b> TPUT - High </b> </label>
                                     <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5.00">
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label for="throughput_from_data">TPUT - Source</label>
+                                <div class="form-group col-md-4">
+                                    <label for="throughput_from_data"> <b> TPUT - Source </b> </label>
                                     <select name="throughput_from_data" id="throughput_from_data" class="form-control">
                                         <option id="inputOptionForm" selected>Form Data</option>
                                         <option id="inputOptionData" >Historical Data</option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label for="start_date">STARTING FROM </label>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-12">
+                                    <label for="start_date"> <b> FILTER ITERATIONS BY: </b> | start_date | </label>
                                     <input type="date" name="start_date" class="form-control" id="start_date" value="{{LONG_TIME_AGO}}">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-3">
-                                    <label for="split_factor_lower_bound">Split Rate - Low</label>
+                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>
                                     <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="1.00">
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label for="split_factor_upper_bound">Split Rate - High</label>
+                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>
                                     <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
                                 </div>
                                 <div class="form-group col-md-3">
@@ -156,7 +158,7 @@
                                     <input type="text" class="form-control" name="name" id="name" value="New Form">
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label for="simulation_count">Simulation count</label>
+                                    <label for="simulation_count"> <b> Simulation count </b> </label>
                                     <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="1000">
                                 </div>
                             </div>
