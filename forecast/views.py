@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
-from forecast.helperMethods.utils import aggregate_simulations
+from forecast.helperMethods.utils import aggregate_simulations, parse_filter
 from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook
 
 from django.views.decorators.csrf import csrf_exempt
@@ -139,10 +139,14 @@ def create_form(request, board_id):
     wip_from_data = True \
         if request.POST['wip_from_data'] == "Historical Data" \
         else False
+    wip_from_data_filter = request.POST['wip_from_data_filter']
+
+    # TODO: check validity before creation of _filter and other fields
     board.form_set.create(
         wip_lower_bound=int(request.POST['wip_lower_bound']),
         wip_upper_bound=int(request.POST['wip_upper_bound']),
         wip_from_data=wip_from_data,
+        wip_from_data_filter=wip_from_data_filter,
         throughput_lower_bound=float(request.POST['throughput_lower_bound']),
         throughput_upper_bound=float(request.POST['throughput_upper_bound']),
         throughput_from_data=throughput_from_data,

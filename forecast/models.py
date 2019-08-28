@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from numpy import random, ceil
 import time
@@ -92,12 +93,19 @@ class Form(models.Model):
         return self.name
 
     # Returns always >= 0
-    # TODO: implement this for forms that represent epics
     def get_wip_from_data(self):
-        print(f"WE HAWT - {self.name}")
+        print(f"WE COMPUTING WIP: - {self.name} filter: {self.wip_from_data_filter}")
+        dict_filter = \
+            {comp[0]: comp[1]
+             for comp in map(lambda x: re.split('=|<=', x),
+                             filter(None, re.split(';', self.wip_from_data_filter)))} \
+            if self.wip_from_data \
+            else {}
         return Issue.objects\
             .filter(board__name=self.board.name,
-                    state='Ongoing')\
+                    state='Ongoing',
+                    epic_parent='None')\
+            .filter(**dict_filter)\
             .count()
 
     # Returns always >= 0
@@ -142,7 +150,7 @@ class Form(models.Model):
         # Create new Simulation
         self.simulation_set.create(form=self, message=msg, durations=durations)
 
-    # To be called on proper forms when webhook triggers/ when batch creation of forms
+    # To be called on forms when webhook triggers/ when batch creation of forms
     def update_data_fields_and_gen_simulation(self):
         on_form_pre_save(sender=None, instance=self)
         self.save()
