@@ -6,8 +6,22 @@ import oauth2 as oauth
 from pathlib import Path
 
 
-def create_oauth_client(consumer, sign_method, token=None):
-    client = oauth.Client(consumer, token)
+# TODO: MAKE EXPLICIT THAT WE"RE USING private_key_filename EVERYTIME WE MAKE REQUESTS
+base_domain = "4cast.atlassian.net"
+issue_name = "OB-26"
+private_key_filename = 'jira_privatekey.pem'
+
+consumer_key = 'OauthKey'
+consumer_secret = 'dont_care'
+
+request_token_url = f'https://{base_domain}/plugins/servlet/oauth/request-token'
+access_token_url = f'https://{base_domain}/plugins/servlet/oauth/access-token'
+authorize_url = f'https://{base_domain}/plugins/servlet/oauth/authorize'
+data_url = f'https://{base_domain}/rest/agile/1.0/issue/{issue_name}'
+
+
+def create_oauth_client(consumer_key, consumer_secret, sign_method, token=None):
+    client = oauth.Client(oauth.Consumer(consumer_key, consumer_secret), token)
     client.set_signature_method(sign_method)
     client.disable_ssl_certificate_validation = True  # TODO: IS THIS THE RIGHT THING?
     return client
@@ -34,7 +48,7 @@ class SignatureMethod_RSA_SHA1(oauth.SignatureMethod):
         """Builds the base signature string."""
         key, raw = self.signing_base(request, consumer, token)
 
-        with open((Path(__file__).parent / 'jira_privatekey.pem').resolve(), 'r') as f:
+        with open((Path(__file__).parent / private_key_filename).resolve(), 'r') as f:
             data = f.read()
 
         private_key_string = data.strip()
@@ -46,18 +60,8 @@ class SignatureMethod_RSA_SHA1(oauth.SignatureMethod):
 
 
 def get_access_token():
-    consumer_key = 'OauthKey'
-    consumer_secret = 'dont_care'
 
-    request_token_url = 'https://4cast.atlassian.net/plugins/servlet/oauth/request-token'
-    access_token_url = 'https://4cast.atlassian.net/plugins/servlet/oauth/access-token'
-    authorize_url = 'https://4cast.atlassian.net/plugins/servlet/oauth/authorize'
-
-    data_url = 'https://4cast.atlassian.net/rest/agile/1.0/issue/OB-26'
-
-    consumer = oauth.Consumer(consumer_key, consumer_secret)
-
-    client = create_oauth_client(consumer, SignatureMethod_RSA_SHA1())
+    client = create_oauth_client(consumer_key, consumer_secret, SignatureMethod_RSA_SHA1())
 
     # Lets try to access a JIRA issue (BULK-1). We should get a 401.
     resp, content = client.request(data_url, "GET")
@@ -101,7 +105,7 @@ def get_access_token():
     # access token somewhere safe, like a database, for future use.
     token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
 
-    client = create_oauth_client(consumer, SignatureMethod_RSA_SHA1(), token)
+    client = create_oauth_client(consumer_key, consumer_secret, SignatureMethod_RSA_SHA1(), token)
 
     resp, content = client.request(access_token_url, "POST")
 
@@ -117,7 +121,7 @@ def get_access_token():
     # Now lets try to access the same issue again with the access token. We should get a 200!
     access_token = oauth.Token(access_token_parts['oauth_token'], access_token_parts['oauth_token_secret'])
 
-    client = create_oauth_client(consumer, SignatureMethod_RSA_SHA1(), access_token)
+    client = create_oauth_client(consumer_key, consumer_secret, SignatureMethod_RSA_SHA1(), access_token)
 
     resp, content = client.request(data_url, "GET")
     if resp['status'] != '200':

@@ -9,7 +9,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from forecast.helperMethods.rest import jira_get_boards
-from forecast.helperMethods.utils import aggregate_simulations, parse_filter
+from forecast.helperMethods.utils import parse_filter
+from forecast.helperMethods.forecast_models_utils import aggregate_simulations
 from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook
 
 from django.views.decorators.csrf import csrf_exempt
@@ -60,7 +61,7 @@ def detail(request, board_id, form_id=None):
 
                'LONG_TIME_AGO': LONG_TIME_AGO,
                'nbar': 'detail',
-               'form_fields': [field.name for field in Iteration._meta.get_fields()]}
+               'issue_fields': [issue.name for issue in Issue._meta.get_fields()]}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -141,25 +142,36 @@ def create_form(request, board_id):
         else False
     wip_from_data_filter = request.POST['wip_from_data_filter']
 
-    # TODO: check validity before creation of _filter and other fields
-    board.form_set.create(
-        wip_lower_bound=int(request.POST['wip_lower_bound']),
-        wip_upper_bound=int(request.POST['wip_upper_bound']),
-        wip_from_data=wip_from_data,
-        wip_from_data_filter=wip_from_data_filter,
-        throughput_lower_bound=float(request.POST['throughput_lower_bound']),
-        throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-        throughput_from_data=throughput_from_data,
-        start_date=start_date,
-        split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
-        split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
-        name=request.POST['name'],
-        simulation_count=int(request.POST['simulation_count']))
+    try:
+        parse_filter(wip_from_data_filter, wip_from_data)
+    except Exception as e:
+        # PARSE ERROR
+        print("***********************************CREATION ERROR**********************************")
+        print(str(e))
+        return detail(request, board_id)
+    else:
+        # TODO: check validity before creation of _filter and other fields
+        form = Form(
+            board=board,
+            wip_lower_bound=int(request.POST['wip_lower_bound']),
+            wip_upper_bound=int(request.POST['wip_upper_bound']),
+            wip_from_data=wip_from_data,
+            wip_from_data_filter=wip_from_data_filter,
+            throughput_lower_bound=float(request.POST['throughput_lower_bound']),
+            throughput_upper_bound=float(request.POST['throughput_upper_bound']),
+            throughput_from_data=throughput_from_data,
+            start_date=start_date,
+            split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
+            split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+            name=request.POST['name'],
+            simulation_count=int(request.POST['simulation_count']))
 
-    # Always return an HttpResponseRedirect after successfully dealing
-    # with POST data. This prevents data from being posted twice if a
-    # user hits the Back button.
-    return HttpResponseRedirect(reverse('forecast:detail', args=(board_id,)))
+        form.save()
+
+        # Always return an HttpResponseRedirect after successfully dealing
+        # with POST data. This prevents data from being posted twice if a
+        # user hits the Back button.
+        return HttpResponseRedirect(reverse('forecast:detail', args=(board_id, form.id)))
 
 
 @require_POST
@@ -174,4 +186,8 @@ def webhook(request):
         msg_log_webhook.save()
     else:
         MsgLogWebhook.objects.create(cnt=1, text=str(data))
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
     return HttpResponseRedirect(reverse('forecast:index'))

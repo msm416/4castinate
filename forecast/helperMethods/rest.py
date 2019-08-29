@@ -45,12 +45,12 @@ def make_single_get_req(url, index, client=None, fields=''):
 
 # Figure out what type of authentication method should be used
 def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
-    client = create_oauth_client(oauth.Consumer('OauthKey',
-                                                'dont_care'),
+    print(f"{JIRA_URL} {JIRA_OAUTH_TOKEN} {JIRA_OAUTH_TOKEN_SECRET}")
+    client = create_oauth_client('OauthKey', 'dont_care',
                                  SignatureMethod_RSA_SHA1(),
                                  oauth.Token(JIRA_OAUTH_TOKEN,
                                              JIRA_OAUTH_TOKEN_SECRET)) if True else None
-                                                               # TODO: if str(JIRA_EMAIL).find('@') == -1:
+                                             # TODO: if str(JIRA_EMAIL).find('@') == -1:
     # list of issue_lists
     aggregate_values = []
 
@@ -78,7 +78,7 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
                 is_last = True
             else:
                                                      # total_issues
-                start_positions = range(max_results, total_issues, max_results)
+                start_positions = range(max_results, 2 * max_results, max_results)
 
                 # for parallelization_index in start_positions:
                 #     parallelization_resp_code, parallelization_response_content = \
