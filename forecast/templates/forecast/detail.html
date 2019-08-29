@@ -117,7 +117,7 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="wip_from_data_filter"> <b> FILTER ISSUES BY: </b> | {% for form_field in form_fields %} {{ form_field }} | {% endfor %} </label>
+                                    <label for="wip_from_data_filter"> <b> FILTER ISSUES BY: </b> | {% for issue_field in issue_fields %} {{ issue_field }} | {% endfor %} </label>
                                     <input type="text" name="wip_from_data_filter" class="form-control" id="wip_from_data_filter" value="state=Ongoing">
                                 </div>
                             </div>
@@ -154,7 +154,7 @@
                                     <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label for="name">Form name</label>
+                                    <label for="name"> <b> Form name </b> </label>
                                     <input type="text" class="form-control" name="name" id="name" value="New Form">
                                 </div>
                                 <div class="form-group col-md-3">

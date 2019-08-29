@@ -8,6 +8,8 @@ from django.db.models import signals
 from django.dispatch import receiver
 from django.utils import timezone
 
+from forecast.helperMethods.utils import parse_filter
+
 WEEK_IN_DAYS = 7
 LONG_TIME_AGO = "1011-12-13"
 
@@ -95,17 +97,12 @@ class Form(models.Model):
     # Returns always >= 0
     def get_wip_from_data(self):
         print(f"WE COMPUTING WIP: - {self.name} filter: {self.wip_from_data_filter}")
-        dict_filter = \
-            {comp[0]: comp[1]
-             for comp in map(lambda x: re.split('=|<=', x),
-                             filter(None, re.split(';', self.wip_from_data_filter)))} \
-            if self.wip_from_data \
-            else {}
+        q_filter = parse_filter(self.wip_from_data_filter, self.wip_from_data)
         return Issue.objects\
             .filter(board__name=self.board.name,
-                    state='Ongoing',
-                    epic_parent='None')\
-            .filter(**dict_filter)\
+                    state='Ongoing')\
+            .exclude(issue_type='Epic')\
+            .filter(q_filter)\
             .count()
 
     # Returns always >= 0
