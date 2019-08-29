@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import jira_get_boards
+from forecast.helperMethods.rest import jira_get_boards, jira_get_filter
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
 from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook
@@ -125,6 +125,7 @@ def estimate(request, board_id):
 def fetch(request):
     jira_get_boards()
 
+    jira_get_filter("")
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
     # user hits the Back button.
