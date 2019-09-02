@@ -36,80 +36,115 @@
                  data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:create_form' 7%}" method="post">
-                            {% csrf_token %}
-                            <div class="form-row">
-                                <div class="form-group col-md-4">
-                                    <label for="wip_lower_bound"> <b> WIP - Low </b></label>
-                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="20">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <div class="list-group" id="list-tab" role="tablist">
+                                    <a class="list-group-item list-group-item-action active" id="list-no-source-list" data-toggle="list" href="#list-no-source" role="tab" aria-controls="no-source">No source</a>
+                                    <a class="list-group-item list-group-item-action" id="list-jira-list" data-toggle="list" href="#list-jira" role="tab" aria-controls="jira">Jira</a>
                                 </div>
-                                <div class="form-group col-md-4">
-                                    <label for="wip_upper_bound"> <b> WIP - High </b> </label>
-                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="wip_from_data"> <b> WIP - Source </b> </label>
-                                    <select name="wip_from_data" id="wip_from_data" class="form-control">
-                                        <option id="inputWipOptionForm" selected>Form Data</option>
-                                        <option id="inputWipOptionData">Historical Data</option>
-                                    </select>
+                                <br>
+                            </div>
+                            <div class="col-md-10">
+                                <div class="tab-content" id="nav-tabContent">
+                                    <div class="tab-pane fade show active" id="list-no-source" role="tabpanel" aria-labelledby="list-no-source-list">
+                                        <form action="{% url 'forecast:create_query_from_data' 7%}" method="post">
+                                            {% csrf_token %}
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="wip_lower_bound"> <b> WIP - Low </b></label>
+                                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="20">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="wip_upper_bound"> <b> WIP - High </b> </label>
+                                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="throughput_lower_bound"> <b> TPUT - Low </b> </label>
+                                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1.00">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="throughput_upper_bound"> <b> TPUT - High </b> </label>
+                                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5.00">
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-3">
+                                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>
+                                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="1.00">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>
+                                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="name"> <b> Form name </b> </label>
+                                                    <input type="text" class="form-control" name="name" id="name" value="New Form">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="simulation_count"> <b> Simulation count </b> </label>
+                                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="1000">
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-12">
+                                                    <input type="submit" name="create-button" class="form-control btn btn-success" id="create-button" value="->"/>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="tab-pane fade" id="list-jira" role="tabpanel" aria-labelledby="list-jira-list">
+                                        <form action="{% url 'forecast:create_query_from_jql' 7%}" method="post">
+                                            {% csrf_token %}
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="wip_lower_bound_jql"> <b> WIP - Low </b></label>
+                                                    <input type="text" name="wip_lower_bound_jql" class="form-control" id="wip_lower_bound_jql" value="20">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="wip_upper_bound_jql"> <b> WIP - High </b> </label>
+                                                    <input type="text" name="wip_upper_bound_jql" class="form-control" id="wip_upper_bound_jql" value="30">
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="throughput_lower_bound_jql"> <b> TPUT - Low </b> </label>
+                                                    <input type="text" name="throughput_lower_bound_jql" class="form-control" id="throughput_lower_bound_jql" value="1.00">
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="throughput_upper_bound_jql"> <b> TPUT - High </b> </label>
+                                                    <input type="text" name="throughput_upper_bound_jql" class="form-control" id="throughput_upper_bound_jql" value="5.00">
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-3">
+                                                    <label for="split_factor_lower_bound_jql"> <b> Split Rate - Low </b> </label>
+                                                    <input type="text" name="split_factor_lower_bound_jql" class="form-control" id="split_factor_lower_bound_jql" value="1.00">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="split_factor_upper_bound_jql"> <b> Split Rate - High </b> </label>
+                                                    <input type="text" name="split_factor_upper_bound_jql" class="form-control" id="split_factor_upper_bound_jql" value="3.00">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="name_jql"> <b> Form name </b> </label>
+                                                    <input type="text" class="form-control" name="name_jql" id="name_jql" value="New Form">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="simulation_count_jql"> <b> Simulation count </b> </label>
+                                                    <input type="text" name="simulation_count_jql" class="form-control" id="simulation_count_jql" value="1000">
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-12">
+                                                    <input type="submit" name="create-button_jql" class="form-control btn btn-success" id="create-button_jql" value="->"/>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-12">
-                                    <label for="wip_from_data_filter"> <b> FILTER ISSUES BY: </b> | {% for issue_field in issue_fields %} {{ issue_field }} | {% endfor %} </label>
-                                    <input type="text" name="wip_from_data_filter" class="form-control" id="wip_from_data_filter" value="state=Ongoing">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-4">
-                                    <label for="throughput_lower_bound"> <b> TPUT - Low </b> </label>
-                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1.00">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="throughput_upper_bound"> <b> TPUT - High </b> </label>
-                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5.00">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="throughput_from_data"> <b> TPUT - Source </b> </label>
-                                    <select name="throughput_from_data" id="throughput_from_data" class="form-control">
-                                        <option id="inputOptionForm" selected>Form Data</option>
-                                        <option id="inputOptionData" >Historical Data</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-12">
-                                    <label for="start_date"> <b> FILTER ITERATIONS BY: </b> | start_date | </label>
-                                    <input type="date" name="start_date" class="form-control" id="start_date" value="{{LONG_TIME_AGO}}">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-3">
-                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>
-                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="1.00">
-                                </div>
-                                <div class="form-group col-md-3">
-                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>
-                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
-                                </div>
-                                <div class="form-group col-md-3">
-                                    <label for="name"> <b> Form name </b> </label>
-                                    <input type="text" class="form-control" name="name" id="name" value="New Form">
-                                </div>
-                                <div class="form-group col-md-3">
-                                    <label for="simulation_count"> <b> Simulation count </b> </label>
-                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="1000">
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4"></div>
-                                <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-secondary">Create</button>
-                                </div>
-                                <div class="col-md-4"></div>
-                            </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>

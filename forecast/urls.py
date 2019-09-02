@@ -22,6 +22,10 @@ urlpatterns = [
     # ex: /forecast/5/estimate/
     path('<int:board_id>/create-form/', views.create_form, name='create_form'),
     # ex: /forecast/5/create-form/
+    path('<int:board_id>/create-query-from-data/', views.create_query_from_data, name='create_query_from_data'),
+    # ex: /forecast/5/create_query_from_data/
+    path('<int:board_id>/create-query-from-jql/', views.create_query_from_jql, name='create_query_from_jql'),
+    # ex: /forecast/5/create_query_from_jql/
 
     path('webhook/', views.webhook, name='webhook')
     # ex: /forecast/webhook/

@@ -176,6 +176,79 @@ def create_form(request, board_id):
         return HttpResponseRedirect(reverse('forecast:detail', args=(board_id, form.id)))
 
 
+def create_query_from_data(request, board_id):
+    board = get_object_or_404(Board, pk=board_id)
+    throughput_from_data = False
+    wip_from_data = False
+    wip_from_data_filter = "TODO://"
+
+    try:
+        parse_filter(wip_from_data_filter, wip_from_data)
+    except Exception as e:
+        # PARSE ERROR
+        print("***********************************CREATION ERROR**********************************")
+        print(str(e))
+        return detail(request, board_id)
+    else:
+        # TODO: check validity before creation of _filter and other fields
+        form = Form(
+            board=board,
+            wip_lower_bound=int(request.POST['wip_lower_bound']),
+            wip_upper_bound=int(request.POST['wip_upper_bound']),
+            wip_from_data=wip_from_data,
+            wip_from_data_filter=wip_from_data_filter,
+            throughput_lower_bound=float(request.POST['throughput_lower_bound']),
+            throughput_upper_bound=float(request.POST['throughput_upper_bound']),
+            throughput_from_data=throughput_from_data,
+            split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
+            split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+            name=request.POST['name'],
+            simulation_count=int(request.POST['simulation_count']))
+
+        form.save()
+
+        # Always return an HttpResponseRedirect after successfully dealing
+        # with POST data. This prevents data from being posted twice if a
+        # user hits the Back button.
+        return HttpResponseRedirect(reverse('forecast:detail', args=(board_id, form.id)))
+
+
+def create_query_from_jql(request, board_id):
+    board = get_object_or_404(Board, pk=board_id)
+    throughput_from_data = False
+    wip_from_data = False
+    wip_from_data_filter = "TODO://"
+
+    try:
+        parse_filter(wip_from_data_filter, wip_from_data)
+    except Exception as e:
+        # PARSE ERROR
+        print("***********************************CREATION ERROR**********************************")
+        print(str(e))
+        return detail(request, board_id)
+    else:
+        # TODO: check validity before creation of _filter and other fields
+        form = Form(
+            board=board,
+            wip_lower_bound=int(request.POST['wip_lower_bound_jql']),
+            wip_upper_bound=int(request.POST['wip_upper_bound_jql']),
+            wip_from_data=wip_from_data,
+            wip_from_data_filter=wip_from_data_filter,
+            throughput_lower_bound=float(request.POST['throughput_lower_bound_jql']),
+            throughput_upper_bound=float(request.POST['throughput_upper_bound_jql']),
+            throughput_from_data=throughput_from_data,
+            split_factor_lower_bound=float(request.POST['split_factor_lower_bound_jql']),
+            split_factor_upper_bound=float(request.POST['split_factor_upper_bound_jql']),
+            name=request.POST['name_jql'],
+            simulation_count=int(request.POST['simulation_count_jql']))
+
+        form.save()
+
+        # Always return an HttpResponseRedirect after successfully dealing
+        # with POST data. This prevents data from being posted twice if a
+        # user hits the Back button.
+        return HttpResponseRedirect(reverse('forecast:detail', args=(board_id, form.id)))
+
 @require_POST
 @csrf_exempt
 def webhook(request):
