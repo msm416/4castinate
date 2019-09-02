@@ -40,6 +40,15 @@ class Issue(models.Model):
         return self.name
 
 
+class Query(models.Model):
+    name = models.CharField(max_length=200)
+    data_sources = models.CharField(max_length=200, default='Jira')
+    content = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+
+
 class Iteration(models.Model):
     # An instance of Iteration could be a sprint
     # source = Jira / Trello / None

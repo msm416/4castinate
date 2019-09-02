@@ -24,7 +24,8 @@ def index(request):
     msglog_webhook_list = MsgLogWebhook.objects.all()
     context = {'latest_board_list': latest_board_list,
                'nbar': 'index',
-               'msglog_webhook_list': msglog_webhook_list}
+               'msglog_webhook_list': msglog_webhook_list,
+               'LONG_TIME_AGO': LONG_TIME_AGO}
     return render(request, 'forecast/index.html', context)
 
 
