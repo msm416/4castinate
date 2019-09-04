@@ -11,7 +11,7 @@ from django.urls import reverse
 from forecast.helperMethods.rest import jira_get_boards, jira_get_filter
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook
+from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook, Query
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -21,8 +21,10 @@ def index(request):
     latest_board_list = Board.objects\
                              .filter(creation_date__lte=timezone.now())\
                              .order_by('-creation_date')
+    latest_query_list = Query.objects.order_by('name')
     msglog_webhook_list = MsgLogWebhook.objects.all()
     context = {'latest_board_list': latest_board_list,
+               'latest_query_list': latest_query_list,
                'nbar': 'index',
                'msglog_webhook_list': msglog_webhook_list,
                'LONG_TIME_AGO': LONG_TIME_AGO}
@@ -228,26 +230,13 @@ def create_query_from_jql(request, board_id):
         return detail(request, board_id)
     else:
         # TODO: check validity before creation of _filter and other fields
-        form = Form(
-            board=board,
-            wip_lower_bound=int(request.POST['wip_lower_bound_jql']),
-            wip_upper_bound=int(request.POST['wip_upper_bound_jql']),
-            wip_from_data=wip_from_data,
-            wip_from_data_filter=wip_from_data_filter,
-            throughput_lower_bound=float(request.POST['throughput_lower_bound_jql']),
-            throughput_upper_bound=float(request.POST['throughput_upper_bound_jql']),
-            throughput_from_data=throughput_from_data,
-            split_factor_lower_bound=float(request.POST['split_factor_lower_bound_jql']),
-            split_factor_upper_bound=float(request.POST['split_factor_upper_bound_jql']),
-            name=request.POST['name_jql'],
-            simulation_count=int(request.POST['simulation_count_jql']))
-
-        form.save()
+        Query.objects.create(name=request.POST['name_jql'], content=request.POST['jql_query_jql'])
 
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
-        return HttpResponseRedirect(reverse('forecast:detail', args=(board_id, form.id)))
+        return HttpResponseRedirect(reverse('forecast:index'))
+
 
 @require_POST
 @csrf_exempt
