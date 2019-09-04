@@ -95,7 +95,7 @@
                                         </form>
                                     </div>
                                     <div class="tab-pane fade" id="list-jira" role="tabpanel" aria-labelledby="list-jira-list">
-                                        <form action="{% url 'forecast:create_query_from_jql' 7%}" method="post">
+                                        <form action="{% url 'forecast:create_query_from_jql' %}" method="post">
                                             {% csrf_token %}
                                             <div class="form-row">
                                                 <div class="form-group col-md-6">
@@ -144,55 +144,6 @@
             </td>
             <td>
                 {{ query.name }}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <br>
-    <table class="table table-bordered table-striped">
-        <thead>
-        <tr>
-            <th> </th>
-            <th>Board Name</th>
-            <th>Project Name</th>
-            <th>Data Sources</th>
-            <th>Board Type</th>
-            <th># of Iterations</th>
-            <th>Last Fetch Date</th>
-            <th>(DB) Creation Date</th>
-        </tr>
-        </thead>
-        <tbody id="myQueries">
-        {% for board in latest_board_list %}
-        <tr>
-            <td>
-                <form action="{% url 'forecast:detail' board.id %}" method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="supporttype" />
-                    <input class="btn btn-success" type="submit" value="->">
-                </form>
-            </td>
-            <td>
-                {{ board.name }}
-            </td>
-            <td>
-                {{ board.project_name }}
-            </td>
-            <td>
-                {{ board.data_sources }}
-            </td>
-            <td>
-                {{ board.board_type }}
-            </td>
-            <td>
-                {{ board.iteration_set.count }}
-            </td>
-            <td>
-                {{ board.fetch_date }}
-            </td>
-            <td>
-                {{ board.creation_date }}
             </td>
         </tr>
         {% endfor %}

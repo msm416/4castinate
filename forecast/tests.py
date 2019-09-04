@@ -21,29 +21,6 @@ class FormModelTests(TestCase):
             board.iteration_set.create(start_date=(now - timedelta(seconds=i)), throughput=i, state=state)
             board.iteration_set.create(start_date=(now + timedelta(seconds=i)), throughput=i, state=state)
 
-    def test_get_throughput_avg_no_closed_iterations(self):
-        """
-        No closed iterations means 0 throughput.
-        """
-        now = timezone.now()
-        board = Board.objects.create(name="Some board")
-        form = Form.objects.create(board=board, name="Some form")
-
-        self.create_iterations(board, 10, 'NON-CLOSED STATE', now)
-        self.assertIs(form.get_throughput_rate_avg(), 0)
-
-    def test_get_throughput_avg_start_date_filter(self):
-        """
-        If iterations were done before start_date, then we don't consider them.
-        """
-        now = timezone.now()
-        board = Board.objects.create(name="Some board")
-        form = Form.objects.create(board=board, name="Some form", start_date=now, throughput_from_data=True)
-
-        self.assertEqual(form.get_throughput_rate_avg(), 0)
-        self.create_iterations(board, 10, 'closed', now)
-        self.assertEqual(form.get_throughput_rate_avg(), 11 / 2)
-
 
 class BoardIndexViewTests(TestCase):
     def test_no_boards(self):

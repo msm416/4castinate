@@ -5,7 +5,7 @@
 {% block body %}
 
     {% if form %}
-        <h1>{{ board.name }}: {{ form.name }}</h1>
+        <h1>{{ query.name }}: {{ form.name }}</h1>
         <canvas id="myLikelihoodTable"></canvas>
 
         {{ weeks |json_script:"weeks"}}
@@ -75,8 +75,14 @@
                 }
             });
         </script>
+
+        <form action="{% url 'forecast:create_simulation' query.id %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="supporttype" />
+            <input class="btn btn-success" type="submit" value="Generate simulation">
+        </form>
     {% else %}
-        <h1>{{ board.name }} - No forms exist for this board</h1>
+        <h1>{{ query.name }} - No forms exist for this query</h1>
     {% endif %}
     <br>
 
@@ -87,7 +93,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Create Form (click to collapse)</b>
+                        <b> TODO: create -> update form (click to collapse)</b>
                     </button>
                 </h5>
             </div>
@@ -96,7 +102,7 @@
             data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:create_form' board.id%}" method="post">
+                        <form action="{% url 'forecast:create_form' query.id%}" method="post">
                             {% csrf_token %}
                             <div class="form-row">
                                 <div class="form-group col-md-4">
@@ -197,53 +203,53 @@
                 </tr>
             </thead>
             <tbody id="myTable">
-                {% for form in latest_form_list %}
+                {% for simulation in latest_simulation_list %}
                     <tr>
                         <td>
-                            <form action="{% url 'forecast:detail' board.id form.id%}" method="post">
+                            <form action="{% url 'forecast:detail' query.id %}" method="post">
                                 {% csrf_token %}
-                                <input type="hidden" name="supporttype" id="supporttype" value="{{form.id}}"/>
+                                <input type="hidden" name="supporttype" id="supporttype" value="{{simulation.id}}"/>
                                 <input class="btn btn-success" type="submit" value="->">
                             </form>
                         </td>
                         <td>
-                            {{form.name}}
+                            {{simulation.name}}
                         </td>
                         <td>
-                            {{form.simulation_count}}
+                            {{simulation.simulation_count}}
                         </td>
                         <td>
-                            [{{form.wip_lower_bound}},{{form.wip_upper_bound}}]
+                            [{{simulation.wip_lower_bound}},{{simulation.wip_upper_bound}}]
                         </td>
                         <td>
-                            {% if form.wip_from_data %}
+                            {% if simulation.wip_from_data %}
                                 Historical Data
                             {% else %}
-                                Form Data
+                                Simulation Data
                             {% endif %}
                         </td>
                         <td>
-                            {% if form.throughput_from_data %}
-                                {{ form.get_throughput_rate_avg }}
+                            {% if simulation.throughput_from_data %}
+                                {{ simulation.get_throughput_rate_avg }}
                             {% else %}
-                                [{{ form.throughput_lower_bound }},{{ form.throughput_upper_bound }}]
+                                [{{ simulation.throughput_lower_bound }},{{ simulation.throughput_upper_bound }}]
                             {% endif %}
                         </td>
                         <td>
-                            {% if form.throughput_from_data %}
+                            {% if simulation.throughput_from_data %}
                                 Historical Data
                             {% else %}
-                                Form Data
+                                Simulation Data
                             {% endif %}
                         </td>
                         <td>
-                            [{{form.split_factor_lower_bound}},{{form.split_factor_upper_bound}}]
+                            [{{simulation.split_factor_lower_bound}},{{simulation.split_factor_upper_bound}}]
                         </td>
                         <td>
-                            {{ form.start_date }}
+                            {{ simulation.start_date }}
                         </td>
                         <td>
-                            {{ form.creation_date }}
+                            {{ simulation.creation_date }}
                         </td>
 
                     </tr>

@@ -1,11 +1,8 @@
-import re
 from datetime import datetime
 from numpy import random, ceil
 import time
 
 from django.db import models
-from django.db.models import signals
-from django.dispatch import receiver
 from django.utils import timezone
 
 from forecast.helperMethods.utils import parse_filter
@@ -43,10 +40,29 @@ class Issue(models.Model):
 class Query(models.Model):
     name = models.CharField(max_length=200)
     data_sources = models.CharField(max_length=200, default='Jira')
-    content = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
+
+    def gen_simulations(self):
+        start_time = time.time()
+
+        form = self.form_set.get()
+
+        wip = random.uniform(form.wip_lower_bound, form.wip_upper_bound,
+                             (form.simulation_count,))
+        split_rate = random.uniform(form.split_factor_lower_bound, form.split_factor_upper_bound,
+                                    (form.simulation_count,))
+        weekly_throughput = random.uniform(form.throughput_lower_bound, form.throughput_upper_bound,
+                                           (form.simulation_count,))
+        completion_duration = (ceil((wip * split_rate) / weekly_throughput)).astype(int)
+        durations = ';'.join(map(str, completion_duration))
+
+        end_time = time.time()
+        msg = f"Elapsed time is: {str(end_time - start_time)} seconds."
+
+        # Create new Simulation
+        self.simulation_set.create(query=form, message=msg, durations=durations)
 
 
 class Iteration(models.Model):
@@ -71,7 +87,7 @@ class Iteration(models.Model):
 
 
 class Form(models.Model):
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
+    query = models.ForeignKey(Query, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
 
     creation_date = models.DateTimeField(default=timezone.now)
@@ -131,42 +147,12 @@ class Form(models.Model):
             cnt += 1
         return 0 if cnt == 0 else throughput/cnt
 
-    # One test => One Simulation instance is created.
-    # Each form has at most one Simulation. Subsequent calls will overwrite the Simulation
-    # for data forms, and will return the same simulation for non-data forms.
-    def gen_simulations(self):
-        start_time = time.time()
-
-        wip = random.uniform(self.wip_lower_bound, self.wip_upper_bound,
-                             (self.simulation_count,))
-        split_rate = random.uniform(self.split_factor_lower_bound, self.split_factor_upper_bound,
-                                    (self.simulation_count,))
-        weekly_throughput = random.uniform(self.throughput_lower_bound, self.throughput_upper_bound,
-                                           (self.simulation_count,))
-        completion_duration = (ceil((wip * split_rate) / weekly_throughput)).astype(int)
-        durations = ';'.join(map(str, completion_duration))
-
-        end_time = time.time()
-        msg = f"Elapsed time is: {str(end_time - start_time)} seconds."
-
-        # Delete previous Simulation (if it exists)
-        # TODO: ONE TO ONE FORM-SIMULATION
-        self.simulation_set.all().delete()
-
-        # Create new Simulation
-        self.simulation_set.create(form=self, message=msg, durations=durations)
-
-    # To be called on forms when webhook triggers/ when batch creation of forms
-    def update_data_fields_and_gen_simulation(self):
-        on_form_pre_save(sender=None, instance=self)
-        self.save()
-        on_form_post_save(sender=None, instance=self)
-
 
 class Simulation(models.Model):
-    form = models.ForeignKey(Form, on_delete=models.CASCADE)
+    query = models.ForeignKey(Query, on_delete=models.CASCADE)
     durations = models.TextField(default='')
     message = models.CharField(max_length=200)
+    creation_date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.message
@@ -179,26 +165,3 @@ class MsgLogWebhook(models.Model):
 
     def __str__(self):
         return self.text
-
-
-@receiver(signals.pre_save, sender=Form)
-def on_form_pre_save(sender, **kwargs):
-    instance = kwargs['instance']
-    if kwargs['instance'].throughput_from_data:
-        throughput_rate_avg = instance.get_throughput_rate_avg()
-        instance.throughput_lower_bound = throughput_rate_avg
-        instance.throughput_upper_bound = throughput_rate_avg
-
-        # else:
-        #     if self.simulation_set.exists():
-        #         return
-
-    if instance.wip_from_data:
-        wip = instance.get_wip_from_data()
-        instance.wip_lower_bound = wip
-        instance.wip_upper_bound = wip
-
-
-@receiver(signals.post_save, sender=Form)
-def on_form_post_save(sender, **kwargs):
-    kwargs['instance'].gen_simulations()
