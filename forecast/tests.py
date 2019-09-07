@@ -15,40 +15,40 @@ NOTE: METHODS RUN AGAINST A FAKE DB. DB FLUSHES AFTER EACH METHOD.
 """
 
 
-class FormModelTests(TestCase):
-    def create_iterations(self, board, nb_of_iter, state, now):
-        for i in range(1, nb_of_iter + 1):
-            board.iteration_set.create(start_date=(now - timedelta(seconds=i)), throughput=i, state=state)
-            board.iteration_set.create(start_date=(now + timedelta(seconds=i)), throughput=i, state=state)
-
-
-class BoardIndexViewTests(TestCase):
-    def test_no_boards(self):
-        """
-        If no boards exist, an appropriate message is displayed.
-        """
-        response = self.client.get(reverse('forecast:index'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Total number of boards in database: 0")
-        self.assertQuerysetEqual(response.context['latest_board_list'], [])
-
-    def test_future_board_past_board_and_past_recent_board(self):
-        """
-        Even if both past and future boards exist, only past boards are displayed.
-        """
-        now = timezone.now()
-        month_offset = timedelta(days=30)
-        Board.objects.create(name="Past board.",
-                             creation_date=(now - month_offset))
-        Board.objects.create(name="Past recent board.",
-                             creation_date=now)
-        Board.objects.create(name="Future board.",
-                             creation_date=(now + month_offset))
-        response = self.client.get(reverse('forecast:index'))
-        self.assertEqual(response.status_code, 200)
-        self.assertQuerysetEqual(
-            response.context['latest_board_list'],
-            ['<Board: Past recent board.>', '<Board: Past board.>'])
+# class FormModelTests(TestCase):
+#     def create_iterations(self, board, nb_of_iter, state, now):
+#         for i in range(1, nb_of_iter + 1):
+#             board.iteration_set.create(start_date=(now - timedelta(seconds=i)), throughput=i, state=state)
+#             board.iteration_set.create(start_date=(now + timedelta(seconds=i)), throughput=i, state=state)
+#
+# 
+# class BoardIndexViewTests(TestCase):
+#     def test_no_boards(self):
+#         """
+#         If no boards exist, an appropriate message is displayed.
+#         """
+#         response = self.client.get(reverse('forecast:index'))
+#         self.assertEqual(response.status_code, 200)
+#         self.assertContains(response, "Total number of boards in database: 0")
+#         self.assertQuerysetEqual(response.context['latest_board_list'], [])
+#
+#     def test_future_board_past_board_and_past_recent_board(self):
+#         """
+#         Even if both past and future boards exist, only past boards are displayed.
+#         """
+#         now = timezone.now()
+#         month_offset = timedelta(days=30)
+#         Board.objects.create(name="Past board.",
+#                              creation_date=(now - month_offset))
+#         Board.objects.create(name="Past recent board.",
+#                              creation_date=now)
+#         Board.objects.create(name="Future board.",
+#                              creation_date=(now + month_offset))
+#         response = self.client.get(reverse('forecast:index'))
+#         self.assertEqual(response.status_code, 200)
+#         self.assertQuerysetEqual(
+#             response.context['latest_board_list'],
+#             ['<Board: Past recent board.>', '<Board: Past board.>'])
 
 
 # class JiraAPITests(TestCase):

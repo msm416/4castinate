@@ -18,7 +18,7 @@ urlpatterns = [
     # ex: /forecast/5/results/2
     path('<int:board_id>/estimate/', views.estimate, name='estimate'),
     # ex: /forecast/5/estimate/
-    path('<int:query_id>/create-form/', views.create_form, name='create_form'),
+    path('<int:query_id>/update-form/', views.update_form, name='update_form'),
     # ex: /forecast/5/create-form/
     path('<int:board_id>/create-query-from-data/', views.create_query_from_data, name='create_query_from_data'),
     # ex: /forecast/5/create_query_from_data/

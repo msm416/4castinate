@@ -3,11 +3,11 @@
 
 {% block body %}
 
-    <h1>Choose board </h1>
+    <h1>Choose query </h1>
     <br>
     <div class="row">
         <div class="col-md-auto">
-            <h3>Total number of boards in database: {{latest_board_list.count}}</h3>
+            <h3>Total number of Queries in database: {{query_list.count}}</h3>
         </div>
         <div class="col"></div>
         <div class="col-md-auto">
@@ -27,7 +27,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Create Form (click to collapse)</b>
+                        <b> Create Query </b>
                     </button>
                 </h5>
             </div>
@@ -133,7 +133,7 @@
         </tr>
         </thead>
         <tbody id="myTable">
-        {% for query in latest_query_list %}
+        {% for query in query_list %}
         <tr>
             <td>
                 <form action="{% url 'forecast:detail' query.id %}" method="post">

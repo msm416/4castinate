@@ -18,13 +18,9 @@ from django.views.decorators.http import require_POST
 
 
 def index(request):
-    latest_board_list = Board.objects\
-                             .filter(creation_date__lte=timezone.now())\
-                             .order_by('-creation_date')
-    latest_query_list = Query.objects.order_by('name')
+    query_list = Query.objects.order_by('-creation_date')
     msglog_webhook_list = MsgLogWebhook.objects.all()
-    context = {'latest_board_list': latest_board_list,
-               'latest_query_list': latest_query_list,
+    context = {'query_list': query_list,
                'nbar': 'index',
                'msglog_webhook_list': msglog_webhook_list,
                'LONG_TIME_AGO': LONG_TIME_AGO}
@@ -123,7 +119,7 @@ def fetch(request):
     return HttpResponseRedirect(reverse('forecast:index'))
 
 
-def create_form(request, query_id):
+def update_form(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
 
     start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
@@ -144,9 +140,8 @@ def create_form(request, query_id):
         return detail(request, -1)
     else:
         # TODO: check validity before creation of _filter and other fields
-        Form.objects.all().delete()
-        form = Form(
-            query=query,
+        query.form_set.all().delete()
+        query.form_set.create(
             wip_lower_bound=int(request.POST['wip_lower_bound']),
             wip_upper_bound=int(request.POST['wip_upper_bound']),
             wip_from_data=wip_from_data,
@@ -159,8 +154,6 @@ def create_form(request, query_id):
             split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
             name=request.POST['name'],
             simulation_count=int(request.POST['simulation_count']))
-
-        form.save()
 
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a

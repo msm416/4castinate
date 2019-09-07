@@ -4,8 +4,24 @@
 
 {% block body %}
 
-    {% if form %}
-        <h1>{{ query.name }}: {{ form.name }}</h1>
+    <div class="row" style="display: flex;align-items: center;">
+        <div class="col-md-auto">
+            <h1>{{ query.name }}: Preview of latest simulation</h1>
+        </div>
+        <div class="col"></div>
+        <div class="col-md-auto">
+            <span class="float-right">
+                <form action="{% url 'forecast:create_simulation' query.id %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="supporttype" />
+                <input class="btn btn-success" type="submit" value="Generate simulation">
+            </form>
+            </span>
+        </div>
+    </div>
+    <br>
+
+    {% if latest_simulation_list.exists %}
         <canvas id="myLikelihoodTable"></canvas>
 
         {{ weeks |json_script:"weeks"}}
@@ -75,14 +91,8 @@
                 }
             });
         </script>
-
-        <form action="{% url 'forecast:create_simulation' query.id %}" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="supporttype" />
-            <input class="btn btn-success" type="submit" value="Generate simulation">
-        </form>
     {% else %}
-        <h1>{{ query.name }} - No forms exist for this query</h1>
+        <h3 class="text-center"> No simulations </h3>
     {% endif %}
     <br>
 
@@ -93,7 +103,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> TODO: create -> update form (click to collapse)</b>
+                        <b> Update form </b>
                     </button>
                 </h5>
             </div>
@@ -102,16 +112,16 @@
             data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:create_form' query.id%}" method="post">
+                        <form action="{% url 'forecast:update_form' query.id%}" method="post">
                             {% csrf_token %}
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label for="wip_lower_bound"> <b> WIP - Low </b></label>
-                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="20">
+                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="wip_upper_bound"> <b> WIP - High </b> </label>
-                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
+                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="wip_from_data"> <b> WIP - Source </b> </label>
@@ -130,11 +140,11 @@
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label for="throughput_lower_bound"> <b> TPUT - Low </b> </label>
-                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1.00">
+                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="throughput_upper_bound"> <b> TPUT - High </b> </label>
-                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5.00">
+                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label for="throughput_from_data"> <b> TPUT - Source </b> </label>
@@ -153,25 +163,25 @@
                             <div class="form-row">
                                 <div class="form-group col-md-3">
                                     <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>
-                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="1.00">
+                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="{{form.split_factor_lower_bound}}">
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>
-                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
+                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="{{form.split_factor_upper_bound}}">
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label for="name"> <b> Form name </b> </label>
-                                    <input type="text" class="form-control" name="name" id="name" value="New Form">
+                                    <input type="text" class="form-control" name="name" id="name" value="{{form.name}}">
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label for="simulation_count"> <b> Simulation count </b> </label>
-                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="1000">
+                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="{{form.simulation_count}}">
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-secondary">Create</button>
+                                    <button type="submit" class="btn btn-secondary">Update</button>
                                 </div>
                                 <div class="col-md-4"></div>
                             </div>
@@ -183,7 +193,7 @@
     </div>
 
     <br>
-
+    <h3 class="text-center"> Choose simulation for full report </h3>
     <input class="form-control" id="myInput" type="text" placeholder="Search by keyword ...">
     <br>
 
