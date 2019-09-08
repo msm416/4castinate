@@ -14,7 +14,7 @@
                 <form action="{% url 'forecast:create_simulation' query.id %}" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="supporttype" />
-                <input class="btn btn-success" type="submit" value="Generate simulation">
+                <input class="btn btn-success" type="submit" value="Create simulation">
             </form>
             </span>
         </div>
@@ -103,7 +103,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Update form </b>
+                        <b> Modify form </b>
                     </button>
                 </h5>
             </div>
@@ -112,7 +112,7 @@
             data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:update_form' query.id%}" method="post">
+                        <form action="{% url 'forecast:modify_form' query.id%}" method="post">
                             {% csrf_token %}
                             <div class="form-row">
                                 <div class="form-group col-md-4">
@@ -126,15 +126,15 @@
                                 <div class="form-group col-md-4">
                                     <label for="wip_from_data"> <b> WIP - Source </b> </label>
                                     <select name="wip_from_data" id="wip_from_data" class="form-control">
-                                        <option id="inputWipOptionForm" selected>Form Data</option>
-                                        <option id="inputWipOptionData">Historical Data</option>
+                                        <option id="inputWipOptionForm" {% if not form.wip_from_data %} selected {% endif %}>Manual input</option>
+                                        <option id="inputWipOptionData" {% if form.wip_from_data %} selected {% endif %} >Filter</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
                                     <label for="wip_from_data_filter"> <b> FILTER ISSUES BY: </b> | {% for issue_field in issue_fields %} {{ issue_field }} | {% endfor %} </label>
-                                    <input type="text" name="wip_from_data_filter" class="form-control" id="wip_from_data_filter" value="state=Ongoing">
+                                    <input type="text" name="wip_from_data_filter" class="form-control" id="wip_from_data_filter" value="{{form.wip_from_data_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
@@ -149,8 +149,8 @@
                                 <div class="form-group col-md-4">
                                     <label for="throughput_from_data"> <b> TPUT - Source </b> </label>
                                     <select name="throughput_from_data" id="throughput_from_data" class="form-control">
-                                        <option id="inputOptionForm" selected>Form Data</option>
-                                        <option id="inputOptionData" >Historical Data</option>
+                                        <option id="inputOptionForm" {% if not form.throughput_from_data %} selected {% endif %}>Manual input</option>
+                                        <option id="inputOptionData" {% if form.throughput_from_data %} selected {% endif %}>Filter</option>
                                     </select>
                                 </div>
                             </div>
@@ -181,7 +181,7 @@
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-secondary">Update</button>
+                                    <button type="submit" class="btn btn-secondary">Modify</button>
                                 </div>
                                 <div class="col-md-4"></div>
                             </div>

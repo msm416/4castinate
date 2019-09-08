@@ -21,7 +21,7 @@ NOTE: METHODS RUN AGAINST A FAKE DB. DB FLUSHES AFTER EACH METHOD.
 #             board.iteration_set.create(start_date=(now - timedelta(seconds=i)), throughput=i, state=state)
 #             board.iteration_set.create(start_date=(now + timedelta(seconds=i)), throughput=i, state=state)
 #
-# 
+#
 # class BoardIndexViewTests(TestCase):
 #     def test_no_boards(self):
 #         """

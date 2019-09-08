@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import jira_get_boards, jira_get_filter
+from forecast.helperMethods.rest import jira_get_boards, update_form_and_create_simulation
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
 from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook, Query
@@ -112,14 +112,13 @@ def estimate(request, query_id):
 def fetch(request):
     jira_get_boards()
 
-    jira_get_filter("")
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
     # user hits the Back button.
     return HttpResponseRedirect(reverse('forecast:index'))
 
 
-def update_form(request, query_id):
+def modify_form(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
 
     start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
@@ -184,7 +183,7 @@ def create_query_from_jql(request):
 
 def create_simulation(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
-    query.gen_simulations()
+    update_form_and_create_simulation(query)
     return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
 
 

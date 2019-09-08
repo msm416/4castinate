@@ -23,9 +23,17 @@ client = create_oauth_client('OauthKey', 'dont_care',
                                                            # TODO: if str(JIRA_EMAIL).find('@') == -1:
 
 
-def jira_get_filter(filter):
-    resp_code, response_content = make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={filter}")
-    return
+def update_form_and_create_simulation(query):
+    form = query.form_set.all().get()
+    if form.wip_from_data:
+        resp_code, response_content = \
+            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_from_data_filter}&fields=None")
+        if resp_code == 200:
+            form.wip_lower_bound = form.wip_upper_bound = response_content['total']
+            form.save()
+    else:
+        print(f"NO NEEEEEEEEEEEEEEEED !!!!!")
+    query.create_simulation()
 
 
 def make_single_get_req(url, client=None):

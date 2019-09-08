@@ -45,7 +45,7 @@ class Query(models.Model):
     def __str__(self):
         return self.name
 
-    def gen_simulations(self):
+    def create_simulation(self):
         start_time = time.time()
 
         form = self.form_set.get()
