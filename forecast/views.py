@@ -11,7 +11,7 @@ from django.urls import reverse
 from forecast.helperMethods.rest import jira_get_boards, update_form_and_create_simulation
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook, Query
+from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook, Query, Simulation
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -53,13 +53,12 @@ def detail(request, query_id):
     return render(request, 'forecast/detail.html', context)
 
 
-def results(request, board_id, form_id):
-    board = get_object_or_404(Board, pk=board_id)
-    form = get_object_or_404(Form, pk=form_id)
-    centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(form_id)
+def results(request, query_id, simulation_id):
+    query = get_object_or_404(Query, pk=query_id)
+    simulation = get_object_or_404(Simulation, pk=simulation_id)
+    centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(simulation)
     context = {
-        'board': board,
-        'form': form,
+        'query': query,
         'weeks': weeks,
         'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
         'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
