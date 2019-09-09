@@ -5,8 +5,6 @@ import time
 from django.db import models
 from django.utils import timezone
 
-from forecast.helperMethods.utils import parse_filter
-
 WEEK_IN_DAYS = 7
 LONG_TIME_AGO = "1011-12-13"
 
@@ -49,23 +47,19 @@ class Form(models.Model):
 
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
+    # Default: we consider forms that don't use filter to determine wip
+    wip_from_filter = models.BooleanField(default=False)
+    wip_filter = models.TextField(default="")
 
-    # Default: we consider forms that don't use historical wip data
-    wip_from_data = models.BooleanField(default=False)
-    wip_from_data_filter = models.TextField(default="")
+    throughput_lower_bound = models.FloatField(default=1.00)
+    throughput_upper_bound = models.FloatField(default=5.00)
+    # Default: we consider forms that don't use filter to determine throughput
+    throughput_from_filter = models.BooleanField(default=False)
+    throughput_filter = models.TextField(default="")
 
     split_factor_lower_bound = models.FloatField(default=1.00)
     split_factor_upper_bound = models.FloatField(default=3.00)
 
-    throughput_lower_bound = models.FloatField(default=1.00)
-    throughput_upper_bound = models.FloatField(default=5.00)
-
-    # Default: we consider forms that don't use historical throughput data
-    throughput_from_data = models.BooleanField(default=False)
-
-    # PK of Iteration object that represents the start point (we consider
-    # Iteration objects until the most recent Iteration - i.e. present)
-    throughput_from_data_start_date = models.DateField(default=timezone.now)
     simulation_count = models.PositiveSmallIntegerField(default=1000)
 
     is_selected = models.BooleanField(default=False)

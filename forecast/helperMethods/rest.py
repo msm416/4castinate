@@ -17,16 +17,19 @@ client = create_oauth_client('OauthKey', 'dont_care',
                                                            # TODO: if str(JIRA_EMAIL).find('@') == -1:
 
 
-def update_form_and_create_simulation(query):
-    form = query.form_set.all().get()
-    if form.wip_from_data:
-        resp_code, response_content = \
-            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_from_data_filter}&fields=None")
-        if resp_code == 200:
-            form.wip_lower_bound = form.wip_upper_bound = response_content['total']
-            form.save()
+def fetch_filters_and_update_form(form):
+    resp_code, response_content = \
+        make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_filter}&fields=None")
+    if resp_code == 200:
+        form.wip_lower_bound = form.wip_upper_bound = response_content['total']
     else:
-        print(f"NO NEEEEEEEEEEEEEEEED !!!!!")
+        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! bad filter  !!!!!!!!!!!!!!!!!!!!!")
+        form.wip_lower_bound = form.wip_upper_bound = 0
+    form.save()
+
+
+def update_form_and_create_simulation(query):
+    fetch_filters_and_update_form(query.form_set.get())
     query.create_simulation()
 
 

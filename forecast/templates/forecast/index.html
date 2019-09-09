@@ -39,6 +39,16 @@
                                 </div>
                             </div>
                             <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="wip_filter"> <b> JQL filter to infer WIP </b></label>
+                                    <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="throughput_filter"> <b> JQL filter to infer throughput  </b> </label>
+                                    <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="">
+                                </div>
+                            </div>
+                            <div class="form-row">
                                 <div class="form-group col-md-12">
                                     <input type="submit" name="create-button_jql" class="form-control btn btn-success" id="create-button_jql" value="->"/>
                                 </div>
@@ -64,7 +74,11 @@
         {% for query in query_list %}
         <tr>
             <td>
-                <a class="btn btn-success" href="{% url 'forecast:detail' query.id %}"> -> </a>
+                <form action="{% url 'forecast:detail' query.id %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="supporttype"/>
+                    <input class="btn btn-success" type="submit" value="->">
+                </form>
             </td>
             <td>
                 {{ query.name }}

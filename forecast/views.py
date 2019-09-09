@@ -4,10 +4,10 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import update_form_and_create_simulation
+from forecast.helperMethods.rest import fetch_filters_and_update_form, update_form_and_create_simulation
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
-from .models import LONG_TIME_AGO, Query, Simulation
+from .models import LONG_TIME_AGO, Query, Simulation, Form
 
 
 def index(request):
@@ -20,6 +20,8 @@ def index(request):
 
 def detail(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
+
+    fetch_filters_and_update_form(query.form_set.get())
 
     latest_simulation_list = query.simulation_set.order_by('-creation_date')
 
@@ -64,53 +66,55 @@ def modify_form(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
 
     start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
-    throughput_from_data = True \
-        if request.POST['throughput_from_data'] == "Filter" \
-        else False
-    wip_from_data = True \
-        if request.POST['wip_from_data'] == "Filter" \
-        else False
-    wip_from_data_filter = request.POST['wip_from_data_filter']
+
+    wip_filter = request.POST['wip_filter']
 
     try:
-        parse_filter(wip_from_data_filter, wip_from_data)
+        # TODO: check validity before creation of _filter and other fields
+        parse_filter(wip_filter, True)
     except Exception as e:
         # PARSE ERROR
         print("***********************************CREATION ERROR**********************************")
         print(str(e))
         return detail(request, -1)
     else:
-        # TODO: check validity before creation of _filter and other fields
-        query.form_set.all().delete()
-        query.form_set.create(
-            wip_lower_bound=int(request.POST['wip_lower_bound']),
-            wip_upper_bound=int(request.POST['wip_upper_bound']),
-            wip_from_data=wip_from_data,
-            wip_from_data_filter=wip_from_data_filter,
-            throughput_lower_bound=float(request.POST['throughput_lower_bound']),
-            throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-            throughput_from_data=throughput_from_data,
-            start_date=start_date,
-            split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
-            split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
-            name=request.POST['name'],
-            simulation_count=int(request.POST['simulation_count']))
+        form = query.form_set.get()
+        if wip_filter != form.wip_filter:
+            form.wip_filter = wip_filter
+            fetch_filters_and_update_form(form)
+            print(f"filter is: {form.wip_filter}")
+        else:
+            Form.objects\
+                .filter(query=query)\
+                .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
+                        wip_upper_bound=int(request.POST['wip_upper_bound']),
+                        wip_from_filter=True,
+                        wip_filter=wip_filter,
+                        throughput_lower_bound=float(request.POST['throughput_lower_bound']),
+                        throughput_upper_bound=float(request.POST['throughput_upper_bound']),
+                        throughput_from_filter=False,
+                        start_date=start_date,
+                        split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
+                        split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+                        name=request.POST['name'],
+                        simulation_count=int(request.POST['simulation_count']))
 
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
+        query.create_simulation()
         return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
 
 
 def create_query(request):
-    throughput_from_data = False
-    wip_from_data = False
-    wip_from_data_filter = "TODO://"
-
     # TODO: check validity before creation of _filter and other fields
     query = Query(name=request.POST['name'], description=request.POST['description'])
     query.save()
-    query.form_set.create(name="default Form")
+    query.form_set.create(name="default Form",
+                          wip_from_filter=True,
+                          wip_filter=request.POST['wip_filter'],
+                          throughput_from_filter=True,
+                          throughput_filter=request.POST['throughput_filter'])
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
