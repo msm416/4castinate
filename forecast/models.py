@@ -11,32 +11,6 @@ WEEK_IN_DAYS = 7
 LONG_TIME_AGO = "1011-12-13"
 
 
-class Board(models.Model):
-    name = models.CharField(max_length=200)
-    data_sources = models.CharField(max_length=200, default='None')
-    project_name = models.CharField(max_length=200, default='None')
-    board_type = models.CharField(max_length=200, default='Hybrid')
-    creation_date = models.DateTimeField(default=timezone.now)
-    fetch_date = models.DateTimeField(null=True)
-    source_id = models.CharField(max_length=200, default='None')
-
-    def __str__(self):
-        return self.name
-
-
-class Issue(models.Model):
-    board = models.ForeignKey(Board, on_delete=models.CASCADE, null=True)
-    name = models.CharField(max_length=200, default="some issue")
-    state = models.CharField(max_length=200, default='Done')
-    issue_type = models.CharField(max_length=200, default='non-epic')
-    epic_parent = models.CharField(max_length=200, default='None')
-    source = models.CharField(max_length=200, default='None')
-    source_id = models.PositiveSmallIntegerField(default=0)
-
-    def __str__(self):
-        return self.name
-
-
 class Query(models.Model):
     name = models.CharField(max_length=200)
     description = models.CharField(max_length=200, default='N/A')
@@ -64,27 +38,6 @@ class Query(models.Model):
 
         # Create new Simulation
         self.simulation_set.create(query=form, message=msg, durations=durations)
-
-
-class Iteration(models.Model):
-    # An instance of Iteration could be a sprint
-    # source = Jira / Trello / None
-    board = models.ForeignKey(Board, on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
-    creation_date = models.DateTimeField(default=timezone.now)
-    start_date = models.DateTimeField(default=timezone.now)
-    duration = models.PositiveSmallIntegerField(default=WEEK_IN_DAYS)
-    throughput = models.PositiveSmallIntegerField(default=3)
-
-    # Default: Iteration does not come from some external source
-    source = models.CharField(max_length=200, default='None')
-    state = models.CharField(max_length=200, default='INVALID_STATE')
-
-    # Id of Iteration on JIRA (Unique for boards)
-    source_id = models.PositiveSmallIntegerField(default=0)
-
-    def __str__(self):
-        return self.name
 
 
 class Form(models.Model):
@@ -120,34 +73,6 @@ class Form(models.Model):
     def __str__(self):
         return self.name
 
-    # Returns always >= 0
-    def get_wip_from_data(self):
-        print(f"WE COMPUTING WIP: - {self.name} filter: {self.wip_from_data_filter}")
-        q_filter = parse_filter(self.wip_from_data_filter, self.wip_from_data)
-        return Issue.objects\
-            .filter(board__name=self.board.name,
-                    state='Ongoing')\
-            .exclude(issue_type='Epic')\
-            .filter(q_filter)\
-            .count()
-
-    # Returns always >= 0
-    # Returns the average weekly throughput
-    def get_throughput_rate_avg(self):
-        cnt = 0
-        throughput = 0
-        for iteration in self.board\
-                             .iteration_set\
-                             .filter(state='closed',
-                                     start_date__gte=self.start_date)\
-                             .all():
-            if iteration.throughput == 0 or iteration.duration == 0:
-                continue
-
-            throughput += (iteration.throughput * WEEK_IN_DAYS / iteration.duration)
-            cnt += 1
-        return 0 if cnt == 0 else throughput/cnt
-
 
 class Simulation(models.Model):
     query = models.ForeignKey(Query, on_delete=models.CASCADE)
@@ -157,12 +82,3 @@ class Simulation(models.Model):
 
     def __str__(self):
         return self.message
-
-
-class MsgLogWebhook(models.Model):
-    text = models.TextField(default='abcdefgh')
-    msglog_id = models.PositiveSmallIntegerField(default=1)
-    cnt = models.PositiveSmallIntegerField(default=0)
-
-    def __str__(self):
-        return self.text

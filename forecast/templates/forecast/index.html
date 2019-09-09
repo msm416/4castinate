@@ -9,16 +9,6 @@
         <div class="col-md-auto">
             <h3>Total number of Queries in database: {{query_list.count}}</h3>
         </div>
-        <div class="col"></div>
-        <div class="col-md-auto">
-            <span class="float-right">
-                <form action="{% url 'forecast:fetch'%}" method="post">
-                    {% csrf_token %}
-
-                    <input class="btn btn-dark" type="submit" name="fetch_button" value="Fetch Boards"/>
-                </form>
-            </span>
-        </div>
     </div>
     <br>
     <div id="accordion">
@@ -36,7 +26,7 @@
                  data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:create_query_from_jql' %}" method="post">
+                        <form action="{% url 'forecast:create_query' %}" method="post">
                             {% csrf_token %}
                             <div class="form-row">
                                 <div class="form-group col-md-6">
@@ -81,27 +71,6 @@
             </td>
             <td>
                 {{ query.description }}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <br>
-    <table class="table table-bordered table-striped">
-        <thead>
-        <tr>
-            <th>Webhook hits</th>
-            <th>Webhook payloads</th>
-        </tr>
-        </thead>
-        <tbody id="myWebhookLog">
-        {% for webhook in msglog_webhook_list %}
-        <tr>
-            <td>
-                {{ webhook.cnt }}
-            </td>
-            <td>
-                {{ webhook.text }}
             </td>
         </tr>
         {% endfor %}

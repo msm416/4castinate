@@ -33,7 +33,7 @@
 ##### 5.2.2 Edit the environment file with the needed variables (paste them at the end of the file, one per line). If you don't want to fetch data from Jira, just export the Jira Variables as given below. If you've opted for OAuth, edit the jira_oauth_token and jira_oauth_token_secret variables (5.1.2). If you've opted for Basic authentication, edit the jira_email and jira_api_token variables. In both cases, edit the jira_url variable and DON'T edit the variables for the other case. Note that you need the SECRET_KEY variable set up properly (it is used [internally](https://docs.djangoproject.com/en/2.2/topics/signing/) by Django):
        export SECRET_KEY='<your secret Django key>'
 
-       export JIRA_URL='https://<your_jira_domain>.atlassian.net/rest/agile/1.0/board'
+       export JIRA_URL='https://<your_jira_domain>.atlassian.net'
 
        export JIRA_EMAIL='<jira_user_email>'
        export JIRA_API_TOKEN='<jira_api_token>'

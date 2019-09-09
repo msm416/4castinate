@@ -1,28 +1,19 @@
-import json
-import random
 from datetime import datetime
-
-from django.utils import timezone
 
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import jira_get_boards, update_form_and_create_simulation
+from forecast.helperMethods.rest import update_form_and_create_simulation
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook, Query, Simulation
-
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from .models import LONG_TIME_AGO, Query, Simulation
 
 
 def index(request):
     query_list = Query.objects.order_by('-creation_date')
-    msglog_webhook_list = MsgLogWebhook.objects.all()
     context = {'query_list': query_list,
                'nbar': 'index',
-               'msglog_webhook_list': msglog_webhook_list,
                'LONG_TIME_AGO': LONG_TIME_AGO}
     return render(request, 'forecast/index.html', context)
 
@@ -47,8 +38,7 @@ def detail(request, query_id):
                'centile_values': centile_values,
 
                'LONG_TIME_AGO': LONG_TIME_AGO,
-               'nbar': 'detail',
-               'issue_fields': [issue.name for issue in Issue._meta.get_fields()]}
+               'nbar': 'detail'}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -68,53 +58,6 @@ def results(request, query_id, simulation_id):
     }
 
     return render(request, 'forecast/results.html', context)
-
-
-def iterations(request):
-    iteration_list = Iteration.objects.order_by('board__name', '-start_date')
-    context = {'iteration_list': iteration_list, 'nbar': 'iterations'}
-    return render(request, 'forecast/iterations.html', context)
-
-
-def issues(request):
-    issue_list = Issue.objects.order_by('board__name', '-state', 'epic_parent')
-    context = {'issue_list': issue_list, 'nbar': 'issues'}
-    return render(request, 'forecast/issues.html', context)
-
-
-def estimate(request, query_id):
-    query = get_object_or_404(Query, pk=query_id)
-    latest_form_list = query.form_set.order_by('-creation_date')
-    context = {'query': query, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
-    try:
-        selected_form = query.form_set.get(pk=request.POST['form'])
-    except (KeyError, Form.DoesNotExist):
-        # Redisplay the form selection template.
-        context['error_message'] = "You didn't choose an existing form!"
-        context['nbar'] = 'detail'
-        return render(request, 'forecast/detail.html', context)
-    else:
-        # TODO: make all form checks (on server or client side)
-        if selected_form.throughput_lower_bound <= 0 or \
-                (selected_form.throughput_from_data and selected_form.get_throughput_rate_avg() == 0):
-            context['error_message'] = "Selected form has invalid throughput!"
-            context['nbar'] = 'detail'
-            return render(request, 'forecast/detail.html', context)
-        # Always return an HttpResponseRedirect after successfully dealing
-        # with POST data. This prevents data from being posted twice if a
-        # user hits the Back button.
-        return HttpResponseRedirect(
-            reverse('forecast:results',
-                    args=(query.id, selected_form.id)))
-
-
-def fetch(request):
-    jira_get_boards()
-
-    # Always return an HttpResponseRedirect after successfully dealing
-    # with POST data. This prevents data from being posted twice if a
-    # user hits the Back button.
-    return HttpResponseRedirect(reverse('forecast:index'))
 
 
 def modify_form(request, query_id):
@@ -159,12 +102,7 @@ def modify_form(request, query_id):
         return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
 
 
-def create_query_from_data(request, board_id):
-    # TODO: delete eventually
-    return HttpResponseRedirect(reverse('forecast:index'))
-
-
-def create_query_from_jql(request):
+def create_query(request):
     throughput_from_data = False
     wip_from_data = False
     wip_from_data_filter = "TODO://"
@@ -184,22 +122,3 @@ def create_simulation(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
     update_form_and_create_simulation(query)
     return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
-
-
-@require_POST
-@csrf_exempt
-def webhook(request):
-    data = json.loads(request.body)
-
-    if MsgLogWebhook.objects.exists():
-        msg_log_webhook = MsgLogWebhook.objects.get(msglog_id=1)
-        msg_log_webhook.text = f"{msg_log_webhook.text};{str(data)}"
-        msg_log_webhook.cnt += 1
-        msg_log_webhook.save()
-    else:
-        MsgLogWebhook.objects.create(cnt=1, text=str(data))
-
-    # Always return an HttpResponseRedirect after successfully dealing
-    # with POST data. This prevents data from being posted twice if a
-    # user hits the Back button.
-    return HttpResponseRedirect(reverse('forecast:index'))

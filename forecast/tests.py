@@ -6,8 +6,7 @@ from django.urls import reverse
 from django.test import TestCase
 from django.db.models import Sum
 
-from forecast.helperMethods.rest import jira_get_boards
-from .models import Board, Form, Iteration, Issue
+from .models import Form
 
 
 """
