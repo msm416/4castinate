@@ -122,10 +122,10 @@ def modify_form(request, query_id):
 
     start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
     throughput_from_data = True \
-        if request.POST['throughput_from_data'] == "Historical Data" \
+        if request.POST['throughput_from_data'] == "Filter" \
         else False
     wip_from_data = True \
-        if request.POST['wip_from_data'] == "Historical Data" \
+        if request.POST['wip_from_data'] == "Filter" \
         else False
     wip_from_data_filter = request.POST['wip_from_data_filter']
 

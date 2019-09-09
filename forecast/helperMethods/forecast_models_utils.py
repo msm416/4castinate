@@ -17,9 +17,8 @@ def aggregate_simulations(simulation):
     # weeks = [k for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
     # weeks_frequency = [v for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
 
-    # TODO: fiecare 20-ish element are pe oY average prob in loc de prob discreta (sa fie omogen grafu)
-    weeks = [k for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
-    weeks_frequency = [v for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
+    # weeks = [k for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
+    # weeks_frequency = [v for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
 
     simulations.sort()
     centile_indices = []
