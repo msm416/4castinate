@@ -8,51 +8,38 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import jira_get_boards
+from forecast.helperMethods.rest import jira_get_boards, update_form_and_create_simulation
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook
+from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook, Query, Simulation
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 
 def index(request):
-    latest_board_list = Board.objects\
-                             .filter(creation_date__lte=timezone.now())\
-                             .order_by('-creation_date')
+    query_list = Query.objects.order_by('-creation_date')
     msglog_webhook_list = MsgLogWebhook.objects.all()
-    context = {'latest_board_list': latest_board_list,
+    context = {'query_list': query_list,
                'nbar': 'index',
-               'msglog_webhook_list': msglog_webhook_list}
+               'msglog_webhook_list': msglog_webhook_list,
+               'LONG_TIME_AGO': LONG_TIME_AGO}
     return render(request, 'forecast/index.html', context)
 
 
-def detail(request, board_id, form_id=None):
-    board = get_object_or_404(Board, pk=board_id)
+def detail(request, query_id):
+    query = get_object_or_404(Query, pk=query_id)
 
-    prev_selected_form = board.form_set.filter(is_selected=True).first()
+    latest_simulation_list = query.simulation_set.order_by('-creation_date')
 
-    if prev_selected_form:
-        prev_selected_form.is_selected = False
-        prev_selected_form.save()
+    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = \
+        aggregate_simulations(latest_simulation_list.first()) \
+        if latest_simulation_list.exists() \
+        else ([], [], [], None)
 
-    selected_form = Form.objects.get(id=form_id) \
-        if form_id else \
-        (prev_selected_form if prev_selected_form else board.form_set.first())
-
-    if selected_form:
-        selected_form.is_selected = True
-        selected_form.save()
-        (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = aggregate_simulations(selected_form.id)
-    else:
-        (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = ([], [], [], None)
-
-    latest_form_list = board.form_set.order_by('-creation_date')
-
-    context = {'board': board,
-               'latest_form_list': latest_form_list,
-               'form': selected_form,
+    context = {'query': query,
+               'form': query.form_set.get(),
+               'latest_simulation_list': latest_simulation_list,
                'weeks': weeks,
                'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
                'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
@@ -66,13 +53,12 @@ def detail(request, board_id, form_id=None):
     return render(request, 'forecast/detail.html', context)
 
 
-def results(request, board_id, form_id):
-    board = get_object_or_404(Board, pk=board_id)
-    form = get_object_or_404(Form, pk=form_id)
-    centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(form_id)
+def results(request, query_id, simulation_id):
+    query = get_object_or_404(Query, pk=query_id)
+    simulation = get_object_or_404(Simulation, pk=simulation_id)
+    centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(simulation)
     context = {
-        'board': board,
-        'form': form,
+        'query': query,
         'weeks': weeks,
         'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
         'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
@@ -96,12 +82,12 @@ def issues(request):
     return render(request, 'forecast/issues.html', context)
 
 
-def estimate(request, board_id):
-    board = get_object_or_404(Board, pk=board_id)
-    latest_form_list = board.form_set.order_by('-creation_date')
-    context = {'board': board, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
+def estimate(request, query_id):
+    query = get_object_or_404(Query, pk=query_id)
+    latest_form_list = query.form_set.order_by('-creation_date')
+    context = {'query': query, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
     try:
-        selected_form = board.form_set.get(pk=request.POST['form'])
+        selected_form = query.form_set.get(pk=request.POST['form'])
     except (KeyError, Form.DoesNotExist):
         # Redisplay the form selection template.
         context['error_message'] = "You didn't choose an existing form!"
@@ -119,7 +105,7 @@ def estimate(request, board_id):
         # user hits the Back button.
         return HttpResponseRedirect(
             reverse('forecast:results',
-                    args=(board.id, selected_form.id)))
+                    args=(query.id, selected_form.id)))
 
 
 def fetch(request):
@@ -131,14 +117,15 @@ def fetch(request):
     return HttpResponseRedirect(reverse('forecast:index'))
 
 
-def create_form(request, board_id):
-    board = get_object_or_404(Board, pk=board_id)
+def modify_form(request, query_id):
+    query = get_object_or_404(Query, pk=query_id)
+
     start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
     throughput_from_data = True \
-        if request.POST['throughput_from_data'] == "Historical Data" \
+        if request.POST['throughput_from_data'] == "Filter" \
         else False
     wip_from_data = True \
-        if request.POST['wip_from_data'] == "Historical Data" \
+        if request.POST['wip_from_data'] == "Filter" \
         else False
     wip_from_data_filter = request.POST['wip_from_data_filter']
 
@@ -148,11 +135,11 @@ def create_form(request, board_id):
         # PARSE ERROR
         print("***********************************CREATION ERROR**********************************")
         print(str(e))
-        return detail(request, board_id)
+        return detail(request, -1)
     else:
         # TODO: check validity before creation of _filter and other fields
-        form = Form(
-            board=board,
+        query.form_set.all().delete()
+        query.form_set.create(
             wip_lower_bound=int(request.POST['wip_lower_bound']),
             wip_upper_bound=int(request.POST['wip_upper_bound']),
             wip_from_data=wip_from_data,
@@ -166,12 +153,37 @@ def create_form(request, board_id):
             name=request.POST['name'],
             simulation_count=int(request.POST['simulation_count']))
 
-        form.save()
-
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
-        return HttpResponseRedirect(reverse('forecast:detail', args=(board_id, form.id)))
+        return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
+
+
+def create_query_from_data(request, board_id):
+    # TODO: delete eventually
+    return HttpResponseRedirect(reverse('forecast:index'))
+
+
+def create_query_from_jql(request):
+    throughput_from_data = False
+    wip_from_data = False
+    wip_from_data_filter = "TODO://"
+
+    # TODO: check validity before creation of _filter and other fields
+    query = Query(name=request.POST['name_jql'])
+    query.save()
+    query.form_set.create(name="default Form")
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
+    return HttpResponseRedirect(reverse('forecast:index'))
+
+
+def create_simulation(request, query_id):
+    query = get_object_or_404(Query, pk=query_id)
+    update_form_and_create_simulation(query)
+    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
 
 
 @require_POST

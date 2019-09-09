@@ -16,14 +16,31 @@ from datetime import datetime
 
 JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
+client = create_oauth_client('OauthKey', 'dont_care',
+                             SignatureMethod_RSA_SHA1(),
+                             oauth.Token(JIRA_OAUTH_TOKEN,
+                                         JIRA_OAUTH_TOKEN_SECRET)) if True else None
+                                                           # TODO: if str(JIRA_EMAIL).find('@') == -1:
 
-def make_single_get_req(url, index, client=None, fields=''):
+
+def update_form_and_create_simulation(query):
+    form = query.form_set.all().get()
+    if form.wip_from_data:
+        resp_code, response_content = \
+            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_from_data_filter}&fields=None")
+        if resp_code == 200:
+            form.wip_lower_bound = form.wip_upper_bound = response_content['total']
+            form.save()
+    else:
+        print(f"NO NEEEEEEEEEEEEEEEED !!!!!")
+    query.create_simulation()
+
+
+def make_single_get_req(url, client=None):
     # You need to do Random.atfork() in the child process after every call
     # to os.fork() to avoid reusing PRNG state
     Crypto.Random.atfork()
-
-    url += f"?startAt={index}{fields}"
-    print(f"********** MAKING GET REQUEST FOR URL: {url} - index: {index} **********")
+    print(f"********** MAKING GET REQUEST FOR URL: {url} **********")
     if client:
         # OAUTH REQUEST
         resp_code, response_content = client.request(url, "GET")
@@ -45,12 +62,6 @@ def make_single_get_req(url, index, client=None, fields=''):
 
 # Figure out what type of authentication method should be used
 def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
-    print(f"{JIRA_URL} {JIRA_OAUTH_TOKEN} {JIRA_OAUTH_TOKEN_SECRET}")
-    client = create_oauth_client('OauthKey', 'dont_care',
-                                 SignatureMethod_RSA_SHA1(),
-                                 oauth.Token(JIRA_OAUTH_TOKEN,
-                                             JIRA_OAUTH_TOKEN_SECRET)) if True else None
-                                             # TODO: if str(JIRA_EMAIL).find('@') == -1:
     # list of issue_lists
     aggregate_values = []
 
@@ -61,7 +72,7 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
     resp_code = -1
 
     while not is_last:
-        resp_code, response_content = make_single_get_req(url, index, client, fields)
+        resp_code, response_content = make_single_get_req(f"{url}?startAt={index}{fields}", client)
 
         aggregate_values.append(response_content[aggregate_key])
 
@@ -88,15 +99,17 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
 
                 pool = Pool()
                 unprocessed_results_map = pool.starmap(make_single_get_req,
-                                                       [(url, parallelization_index, client, fields)
+                                                       [(f"{url}?startAt={parallelization_index}{fields}", client)
                                                         for parallelization_index in start_positions])
                 pool.close()
                 pool.join()
 
-                aggregate_values = reduce((lambda aggr_vals, resp_tuple: aggr_vals if aggr_vals.append(resp_tuple[1][aggregate_key])
-                                                                               else aggr_vals),
-                                          unprocessed_results_map,
-                                          aggregate_values)
+                aggregate_values = reduce(
+                    (lambda aggr_vals, resp_tuple: aggr_vals
+                     if aggr_vals.append(resp_tuple[1][aggregate_key])
+                     else aggr_vals),
+                    unprocessed_results_map,
+                    aggregate_values)
 
                 is_last = True
 
@@ -126,9 +139,10 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
     # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
     # By default, the returned issues are ordered by rank.
 
-    resp_code, response_as_dict, total_issues = make_aggregate_get_req(f"{JIRA_URL}/board/{board_jira_id}/issue",
-                                                         'issues',
-                                                         "&fields=resolution,issuetype,summary,parent,closedSprints")
+    resp_code, response_as_dict, total_issues = make_aggregate_get_req(
+        f"{JIRA_URL}/rest/agile/1.0/board/{board_jira_id}/issue",
+        'issues',
+        "&fields=resolution,issuetype,summary,parent,closedSprints")
 
     board_sprints_bulk_dict = {}
 
@@ -149,7 +163,6 @@ def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date)
     #       (currently,you either take the throughput as a whole or not)
 
     for issue in response_as_dict:
-        # print(f"{type(issue)} !@$!@$!$@@!$!@: {issue}")
         state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
         issue_type = issue['fields']['issuetype']['name']
         name = issue['fields']['summary']
@@ -243,7 +256,7 @@ def jira_get_boards():
 
     start_get_all_boards_time = time.time()
 
-    resp_code, response_as_dict, _ = make_aggregate_get_req(f"{JIRA_URL}/board", 'values', '', 0)
+    resp_code, response_as_dict, _ = make_aggregate_get_req(f"{JIRA_URL}/rest/agile/1.0/board", 'values', '', 0)
 
     print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
 

@@ -1,18 +1,25 @@
-from forecast.models import Form, Simulation
+from forecast.models import Simulation
 
 from collections import Counter
 
 
-def aggregate_simulations(form_id):
-    form = Form.objects.get(pk=form_id)
+def aggregate_simulations(simulation):
     simulations = [int(x) for x in
-                   Simulation.objects.get(form=form_id).durations.split(";")]
+                   simulation.durations.split(";")]
 
     weeks_to_frequency = sorted(Counter(simulations).items())
 
     weeks = [k for (k, v) in weeks_to_frequency]
     weeks_frequency = [v for (k, v) in weeks_to_frequency]
+
     weeks_frequency_sum = sum(weeks_frequency)
+
+    # weeks = [k for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
+    # weeks_frequency = [v for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
+
+    # weeks = [k for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
+    # weeks_frequency = [v for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
+
     simulations.sort()
     centile_indices = []
     centile_values = []

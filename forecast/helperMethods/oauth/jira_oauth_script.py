@@ -7,17 +7,16 @@ from pathlib import Path
 
 
 # TODO: MAKE EXPLICIT THAT WE"RE USING private_key_filename EVERYTIME WE MAKE REQUESTS
-base_domain = "4cast.atlassian.net"
+base_url = "https://4cast.atlassian.net"
 issue_name = "OB-26"
 private_key_filename = 'jira_privatekey.pem'
-
 consumer_key = 'OauthKey'
 consumer_secret = 'dont_care'
 
-request_token_url = f'https://{base_domain}/plugins/servlet/oauth/request-token'
-access_token_url = f'https://{base_domain}/plugins/servlet/oauth/access-token'
-authorize_url = f'https://{base_domain}/plugins/servlet/oauth/authorize'
-data_url = f'https://{base_domain}/rest/agile/1.0/issue/{issue_name}'
+request_token_url = f'{base_url}/plugins/servlet/oauth/request-token'
+access_token_url = f'{base_url}/plugins/servlet/oauth/access-token'
+authorize_url = f'{base_url}/plugins/servlet/oauth/authorize'
+data_url = f'{base_url}/rest/agile/1.0/issue/{issue_name}'
 
 
 def create_oauth_client(consumer_key, consumer_secret, sign_method, token=None):
