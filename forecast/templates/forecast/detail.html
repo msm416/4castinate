@@ -216,11 +216,7 @@
                 {% for simulation in latest_simulation_list %}
                     <tr>
                         <td>
-                            <form action="{% url 'forecast:results' query.id simulation.id %}" method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="supporttype" id="supporttype" value="{{simulation.id}}"/>
-                                <input class="btn btn-success" type="submit" value="->">
-                            </form>
+                            <a class="btn btn-success" href="{% url 'forecast:results' query.id simulation.id %}"> -> </a>
                         </td>
                         <td>
                             {{simulation.name}}

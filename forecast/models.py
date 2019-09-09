@@ -39,7 +39,7 @@ class Issue(models.Model):
 
 class Query(models.Model):
     name = models.CharField(max_length=200)
-    data_sources = models.CharField(max_length=200, default='Jira')
+    description = models.CharField(max_length=200, default='N/A')
     creation_date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):

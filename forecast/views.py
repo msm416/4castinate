@@ -170,7 +170,7 @@ def create_query_from_jql(request):
     wip_from_data_filter = "TODO://"
 
     # TODO: check validity before creation of _filter and other fields
-    query = Query(name=request.POST['name_jql'])
+    query = Query(name=request.POST['name'], description=request.POST['description'])
     query.save()
     query.form_set.create(name="default Form")
 

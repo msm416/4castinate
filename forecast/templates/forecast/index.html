@@ -36,87 +36,24 @@
                  data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <div class="list-group" id="list-tab" role="tablist">
-                                    <a class="list-group-item list-group-item-action active" id="list-no-source-list" data-toggle="list" href="#list-no-source" role="tab" aria-controls="no-source">No source</a>
-                                    <a class="list-group-item list-group-item-action" id="list-jira-list" data-toggle="list" href="#list-jira" role="tab" aria-controls="jira">Jira</a>
+                        <form action="{% url 'forecast:create_query_from_jql' %}" method="post">
+                            {% csrf_token %}
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="name"> <b> Name </b></label>
+                                    <input type="text" name="name" class="form-control" id="name" value="My Query">
                                 </div>
-                                <br>
-                            </div>
-                            <div class="col-md-10">
-                                <div class="tab-content" id="nav-tabContent">
-                                    <div class="tab-pane fade show active" id="list-no-source" role="tabpanel" aria-labelledby="list-no-source-list">
-                                        <form action="{% url 'forecast:create_query_from_data' 7%}" method="post">
-                                            {% csrf_token %}
-                                            <div class="form-row">
-                                                <div class="form-group col-md-6">
-                                                    <label for="wip_lower_bound"> <b> WIP - Low </b></label>
-                                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="20">
-                                                </div>
-                                                <div class="form-group col-md-6">
-                                                    <label for="wip_upper_bound"> <b> WIP - High </b> </label>
-                                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="30">
-                                                </div>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-6">
-                                                    <label for="throughput_lower_bound"> <b> TPUT - Low </b> </label>
-                                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="1.00">
-                                                </div>
-                                                <div class="form-group col-md-6">
-                                                    <label for="throughput_upper_bound"> <b> TPUT - High </b> </label>
-                                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="5.00">
-                                                </div>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-3">
-                                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>
-                                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="1.00">
-                                                </div>
-                                                <div class="form-group col-md-3">
-                                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>
-                                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="3.00">
-                                                </div>
-                                                <div class="form-group col-md-3">
-                                                    <label for="name"> <b> Form name </b> </label>
-                                                    <input type="text" class="form-control" name="name" id="name" value="New Form">
-                                                </div>
-                                                <div class="form-group col-md-3">
-                                                    <label for="simulation_count"> <b> Simulation count </b> </label>
-                                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="1000">
-                                                </div>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-12">
-                                                    <input type="submit" name="create-button" class="form-control btn btn-success" id="create-button" value="->"/>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                    <div class="tab-pane fade" id="list-jira" role="tabpanel" aria-labelledby="list-jira-list">
-                                        <form action="{% url 'forecast:create_query_from_jql' %}" method="post">
-                                            {% csrf_token %}
-                                            <div class="form-row">
-                                                <div class="form-group col-md-6">
-                                                    <label for="name_jql"> <b> Name </b></label>
-                                                    <input type="text" name="name_jql" class="form-control" id="name_jql" value="20">
-                                                </div>
-                                                <div class="form-group col-md-6">
-                                                    <label for="jql_query_jql"> <b> JQL Query </b> </label>
-                                                    <input type="text" name="jql_query_jql" class="form-control" id="jql_query_jql" value="30">
-                                                </div>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-12">
-                                                    <input type="submit" name="create-button_jql" class="form-control btn btn-success" id="create-button_jql" value="->"/>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
+                                <div class="form-group col-md-6">
+                                    <label for="description"> <b> Description </b> </label>
+                                    <input type="text" name="description" class="form-control" id="description" value="abcdefgh">
                                 </div>
                             </div>
-                        </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-12">
+                                    <input type="submit" name="create-button_jql" class="form-control btn btn-success" id="create-button_jql" value="->"/>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -130,20 +67,20 @@
         <tr>
             <th> </th>
             <th>Query Name</th>
+            <th>Query Description</th>
         </tr>
         </thead>
         <tbody id="myTable">
         {% for query in query_list %}
         <tr>
             <td>
-                <form action="{% url 'forecast:detail' query.id %}" method="post">
-                    {% csrf_token %}
-                        <input type="hidden" name="supporttype" />
-                        <input class="btn btn-success" type="submit" value="->">
-                </form>
+                <a class="btn btn-success" href="{% url 'forecast:detail' query.id %}"> -> </a>
             </td>
             <td>
                 {{ query.name }}
+            </td>
+            <td>
+                {{ query.description }}
             </td>
         </tr>
         {% endfor %}
