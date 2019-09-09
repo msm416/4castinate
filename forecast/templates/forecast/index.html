@@ -3,13 +3,8 @@
 
 {% block body %}
 
-    <h1>Choose query </h1>
     <br>
-    <div class="row">
-        <div class="col-md-auto">
-            <h3>Total number of Queries in database: {{query_list.count}}</h3>
-        </div>
-    </div>
+    <h1 class="text-center" >Choose Query - Total number of Queries in database: {{query_list.count}} </h1>
     <br>
     <div id="accordion">
         <div class="card">
@@ -22,7 +17,7 @@
                 </h5>
             </div>
 
-            <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
+            <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"
                  data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">

@@ -10,10 +10,8 @@ urlpatterns = [
     # ex: /forecast/5/
     path('<int:query_id>/results/<int:simulation_id>/', views.results, name='results'),
     # ex: /forecast/5/results/2
-    path('<int:query_id>/modify-form/', views.modify_form, name='modify_form'),
+    path('<int:query_id>/run-simulation/', views.run_simulation, name='run_simulation'),
     # ex: /forecast/5/create-form/
     path('create-query/', views.create_query, name='create_query'),
     # ex: /forecast/create-query/
-    path('<int:query_id>/create_simulation/', views.create_simulation, name='create_simulation'),
-    # ex: /forecast/5/create-simulation/
 ]

@@ -48,13 +48,11 @@ class Form(models.Model):
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
     # Default: we consider forms that don't use filter to determine wip
-    wip_from_filter = models.BooleanField(default=False)
     wip_filter = models.TextField(default="")
 
     throughput_lower_bound = models.FloatField(default=1.00)
     throughput_upper_bound = models.FloatField(default=5.00)
     # Default: we consider forms that don't use filter to determine throughput
-    throughput_from_filter = models.BooleanField(default=False)
     throughput_filter = models.TextField(default="")
 
     split_factor_lower_bound = models.FloatField(default=1.00)

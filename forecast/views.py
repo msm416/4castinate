@@ -19,6 +19,7 @@ def index(request):
 
 
 def detail(request, query_id):
+    # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
     fetch_filters_and_update_form(query.form_set.get())
@@ -62,10 +63,8 @@ def results(request, query_id, simulation_id):
     return render(request, 'forecast/results.html', context)
 
 
-def modify_form(request, query_id):
+def run_simulation(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
-
-    start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
 
     wip_filter = request.POST['wip_filter']
 
@@ -88,15 +87,12 @@ def modify_form(request, query_id):
                 .filter(query=query)\
                 .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
                         wip_upper_bound=int(request.POST['wip_upper_bound']),
-                        wip_from_filter=True,
                         wip_filter=wip_filter,
                         throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                         throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-                        throughput_from_filter=False,
-                        start_date=start_date,
+                        start_date=datetime.strptime(request.POST['start_date'], "%Y-%m-%d"),
                         split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
                         split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
-                        name=request.POST['name'],
                         simulation_count=int(request.POST['simulation_count']))
 
         # Always return an HttpResponseRedirect after successfully dealing
@@ -111,18 +107,10 @@ def create_query(request):
     query = Query(name=request.POST['name'], description=request.POST['description'])
     query.save()
     query.form_set.create(name="default Form",
-                          wip_from_filter=True,
                           wip_filter=request.POST['wip_filter'],
-                          throughput_from_filter=True,
                           throughput_filter=request.POST['throughput_filter'])
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
     # user hits the Back button.
     return HttpResponseRedirect(reverse('forecast:index'))
-
-
-def create_simulation(request, query_id):
-    query = get_object_or_404(Query, pk=query_id)
-    update_form_and_create_simulation(query)
-    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))

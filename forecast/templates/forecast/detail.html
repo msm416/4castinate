@@ -4,21 +4,8 @@
 
 {% block body %}
 
-    <div class="row" style="display: flex;align-items: center;">
-        <div class="col-md-auto">
-            <h1>{{ query.name }}: Preview of latest simulation</h1>
-        </div>
-        <div class="col"></div>
-        <div class="col-md-auto">
-            <span class="float-right">
-                <form action="{% url 'forecast:create_simulation' query.id %}" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="supporttype" />
-                <input class="btn btn-success" type="submit" value="Create simulation">
-            </form>
-            </span>
-        </div>
-    </div>
+    <br>
+    <h1 class="text-center">{{ query.name }}: Preview of latest simulation</h1>
     <br>
 
     {% if latest_simulation_list.exists %}
@@ -103,32 +90,25 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Modify form </b>
+                        <b> Run simulation </b>
                     </button>
                 </h5>
             </div>
 
-            <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
+            <div id="collapseOne" class="collapse show" aria-labelledby="headingOne"
             data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:modify_form' query.id%}" method="post">
+                        <form action="{% url 'forecast:run_simulation' query.id%}" method="post">
                             {% csrf_token %}
                             <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
                                     <label for="wip_lower_bound"> <b> WIP - Low </b></label>
                                     <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}">
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
                                     <label for="wip_upper_bound"> <b> WIP - High </b> </label>
                                     <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="wip_from_filter"> <b> WIP - Source </b> </label>
-                                    <select name="wip_from_filter" id="wip_from_filter" class="form-control">
-                                        <option id="inputWipOptionForm" {% if not form.wip_from_filter %} selected {% endif %}>Manual input</option>
-                                        <option id="inputWipOptionData" {% if form.wip_from_filter %} selected {% endif %} >Filter</option>
-                                    </select>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -138,20 +118,13 @@
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
                                     <label for="throughput_lower_bound"> <b> TPUT - Low </b> </label>
                                     <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}">
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
                                     <label for="throughput_upper_bound"> <b> TPUT - High </b> </label>
                                     <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="throughput_from_filter"> <b> TPUT - Source </b> </label>
-                                    <select name="throughput_from_filter" id="throughput_from_filter" class="form-control">
-                                        <option id="inputOptionForm" {% if not form.throughput_from_filter %} selected {% endif %}>Manual input</option>
-                                        <option id="inputOptionData" {% if form.throughput_from_filter %} selected {% endif %}>Filter</option>
-                                    </select>
                                 </div>
                             </div>
                             <div class="form-row">
@@ -161,19 +134,15 @@
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-3">
+                                <div class="form-group col-md-4">
                                     <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>
                                     <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="{{form.split_factor_lower_bound}}">
                                 </div>
-                                <div class="form-group col-md-3">
+                                <div class="form-group col-md-4">
                                     <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>
                                     <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="{{form.split_factor_upper_bound}}">
                                 </div>
-                                <div class="form-group col-md-3">
-                                    <label for="name"> <b> Form name </b> </label>
-                                    <input type="text" class="form-control" name="name" id="name" value="{{form.name}}">
-                                </div>
-                                <div class="form-group col-md-3">
+                                <div class="form-group col-md-4">
                                     <label for="simulation_count"> <b> Simulation count </b> </label>
                                     <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="{{form.simulation_count}}">
                                 </div>
@@ -181,7 +150,7 @@
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-secondary">Modify</button>
+                                    <button type="submit" class="btn btn-secondary">Run simulation and update filters</button>
                                 </div>
                                 <div class="col-md-4"></div>
                             </div>
@@ -228,25 +197,13 @@
                             [{{simulation.wip_lower_bound}},{{simulation.wip_upper_bound}}]
                         </td>
                         <td>
-                            {% if simulation.wip_from_filter %}
-                                Historical Data
-                            {% else %}
-                                Simulation Data
-                            {% endif %}
+                            DELET DIS
                         </td>
                         <td>
-                            {% if simulation.throughput_from_filter %}
-                                {{ simulation.get_throughput_rate_avg }}
-                            {% else %}
-                                [{{ simulation.throughput_lower_bound }},{{ simulation.throughput_upper_bound }}]
-                            {% endif %}
+                            DELET THIS TPUT
                         </td>
                         <td>
-                            {% if simulation.throughput_from_filter %}
-                                Historical Data
-                            {% else %}
-                                Simulation Data
-                            {% endif %}
+                            DELEEEEET
                         </td>
                         <td>
                             [{{simulation.split_factor_lower_bound}},{{simulation.split_factor_upper_bound}}]
