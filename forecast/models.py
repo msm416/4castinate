@@ -1,4 +1,3 @@
-from datetime import datetime
 from numpy import random, ceil
 import time
 
@@ -43,7 +42,6 @@ class Form(models.Model):
     name = models.CharField(max_length=200)
 
     creation_date = models.DateTimeField(default=timezone.now)
-    start_date = models.DateTimeField(default=datetime.strptime(LONG_TIME_AGO, "%Y-%m-%d"))
 
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)

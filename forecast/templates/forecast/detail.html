@@ -101,36 +101,64 @@
                     <div class="container">
                         <form action="{% url 'forecast:run_simulation' query.id%}" method="post">
                             {% csrf_token %}
+                            <h3>
+                                Notes:
+                            </h3>
+                            <br>
+                            <h5>
+                                Legend
+                            </h5>
+                            <h8>
+                                Fields of <span style="background-color: #fff5f5;border: double"> <b> this colour </b> </span> are fetched from filters.
+                                They can be changed before running the simulation (but will not be saved in your configuration).
+                            </h8>
+                            <h8>
+                                Fields of <span style="background-color: white;border: double"> <b> this colour </b> </span> will be saved in your configuration.
+                            </h8>
+                            <br>
+                            <br>
+                            <h5>
+                                Valid Throughput filters
+                            </h5>
+                            <h8>
+                                * <b>cannot</b> have ORDER BY clause (Not supported yet)
+                            </h8>
+                            <br>
+                            <h8>
+                                * <b>must</b> have "resolution = Done" or equivalent (since issues must have a non-null resolutiondate)
+                            </h8>
+                            <br>
+                            <br>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="wip_lower_bound"> <b> WIP - Low </b></label>
-                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}">
+                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}" style="background-color: #fff5f5">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="wip_upper_bound"> <b> WIP - High </b> </label>
-                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}">
+                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}" style="background-color: #fff5f5">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="wip_filter"> <b> FILTER ISSUES BY: </b> </label>
+                                    <label for="wip_filter"> <b> JQL filter to infer WIP: </b> </label>
                                     <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label for="throughput_lower_bound"> <b> TPUT - Low </b> </label>
-                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}">
+                                    <label for="throughput_lower_bound"> <b> (Weekly) Throughput - Low </b> </label>
+                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}" style="background-color: #fff5f5">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="throughput_upper_bound"> <b> TPUT - High </b> </label>
-                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}">
+                                    <label for="throughput_upper_bound"> <b> (Weekly) Throughput - High </b> </label>
+                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}" style="background-color: #fff5f5">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="start_date"> <b> FILTER ITERATIONS BY: </b> | start_date | </label>
-                                    <input type="date" name="start_date" class="form-control" id="start_date" value="{{LONG_TIME_AGO}}">
+                                    <label for="throughput_filter"> <b> JQL filter to infer Throughput: </b> </label>
+                                    <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
@@ -177,7 +205,6 @@
                     <th>TPut_Rate</th>
                     <th>TPut_Source</th>
                     <th>S_Rate</th>
-                    <th>Start date</th>
                     <th>(DB) Creation date</th>
                 </tr>
             </thead>
@@ -207,9 +234,6 @@
                         </td>
                         <td>
                             [{{simulation.split_factor_lower_bound}},{{simulation.split_factor_upper_bound}}]
-                        </td>
-                        <td>
-                            {{ simulation.start_date }}
                         </td>
                         <td>
                             {{ simulation.creation_date }}

@@ -1,10 +1,8 @@
-from datetime import datetime
-
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import fetch_filters_and_update_form, update_form_and_create_simulation
+from forecast.helperMethods.rest import fetch_filters_and_update_form
 from forecast.helperMethods.utils import parse_filter
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
 from .models import LONG_TIME_AGO, Query, Simulation, Form
@@ -68,6 +66,8 @@ def run_simulation(request, query_id):
 
     wip_filter = request.POST['wip_filter']
 
+    throughput_filter = request.POST['throughput_filter']
+
     try:
         # TODO: check validity before creation of _filter and other fields
         parse_filter(wip_filter, True)
@@ -78,10 +78,11 @@ def run_simulation(request, query_id):
         return detail(request, -1)
     else:
         form = query.form_set.get()
-        if wip_filter != form.wip_filter:
+        if wip_filter != form.wip_filter or throughput_filter != form.throughput_filter:
             form.wip_filter = wip_filter
+            form.throughput_filter = throughput_filter
             fetch_filters_and_update_form(form)
-            print(f"filter is: {form.wip_filter}")
+            print(f"filters are: wip: {form.wip_filter}; throughput: {form.throughput_filter}")
         else:
             Form.objects\
                 .filter(query=query)\
@@ -90,7 +91,7 @@ def run_simulation(request, query_id):
                         wip_filter=wip_filter,
                         throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                         throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-                        start_date=datetime.strptime(request.POST['start_date'], "%Y-%m-%d"),
+                        throughput_filter=throughput_filter,
                         split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
                         split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
                         simulation_count=int(request.POST['simulation_count']))
