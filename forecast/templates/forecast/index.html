@@ -34,13 +34,9 @@
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="wip_filter"> <b> JQL filter to infer WIP </b></label>
-                                    <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="throughput_filter"> <b> JQL filter to infer throughput  </b> </label>
-                                    <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="">
+                                <div class="form-group col-md-12">
+                                    <label for="filter"> <b> Query Issues (JQL) </b></label>
+                                    <input type="text" name="filter" class="form-control" id="filter" value="">
                                 </div>
                             </div>
                             <div class="form-row">
@@ -63,6 +59,8 @@
             <th> </th>
             <th>Query Name</th>
             <th>Query Description</th>
+            <th>Query WIP FILTER</th>
+            <th>Query THROUGHPUT FILTER</th>
         </tr>
         </thead>
         <tbody id="myTable">
@@ -80,6 +78,12 @@
             </td>
             <td>
                 {{ query.description }}
+            </td>
+            <td>
+                {{ query.form.wip_filter }}
+            </td>
+            <td>
+                {{ query.form.throughput_filter }}
             </td>
         </tr>
         {% endfor %}

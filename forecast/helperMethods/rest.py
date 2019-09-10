@@ -9,8 +9,6 @@ import dateutil.parser
 from ebdjango.settings import JIRA_URL, JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET, JIRA_EMAIL, JIRA_API_TOKEN
 from forecast.helperMethods.oauth.jira_oauth_script import SignatureMethod_RSA_SHA1, create_oauth_client
 
-JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
-
 client = create_oauth_client('OauthKey', 'dont_care',
                              SignatureMethod_RSA_SHA1(),
                              oauth.Token(JIRA_OAUTH_TOKEN,
@@ -19,6 +17,10 @@ client = create_oauth_client('OauthKey', 'dont_care',
 
 
 JQL_ORDER_BY_CLAUSE = " ORDER BY resolutiondate "
+
+
+def create_form_filters(filter):
+    return f"{filter} and resolution is EMPTY", f"{filter} and resolution = done"
 
 
 def fetch_filters_and_update_form(form):

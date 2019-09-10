@@ -5,7 +5,6 @@ from django.db import models
 from django.utils import timezone
 
 WEEK_IN_DAYS = 7
-LONG_TIME_AGO = "1011-12-13"
 
 
 class Query(models.Model):
