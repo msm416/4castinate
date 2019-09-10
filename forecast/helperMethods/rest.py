@@ -35,8 +35,7 @@ def fetch_wip_filter(form):
     if resp_code == 200:
         form.wip_lower_bound = form.wip_upper_bound = response_content['total']
     else:
-        print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! bad wip filter  !!!!!!!!!!!!!!!!!!!!!")
-        form.wip_lower_bound = form.wip_upper_bound = 1
+        form.wip_lower_bound = form.wip_upper_bound = -1
 
 
 def fetch_throughput_filter(form):
@@ -55,9 +54,6 @@ def fetch_throughput_filter(form):
             first_issue_done_date = response_content_asc['issues'][0]['fields']['resolutiondate']
             last_issue_done_date = response_content_desc['issues'][0]['fields']['resolutiondate']
 
-            print(f"***************************** THE DURATIONS: "
-                  f"[{first_issue_done_date},"
-                  f" {last_issue_done_date}]")
             if first_issue_done_date and last_issue_done_date:
 
                 duration_in_weeks = ((dateutil.parser.parse(last_issue_done_date) -
@@ -66,8 +62,7 @@ def fetch_throughput_filter(form):
                 form.throughput_lower_bound = form.throughput_upper_bound = total / duration_in_weeks
                 return
 
-    print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! bad throughput filter  !!!!!!!!!!!!!!!!!!!!!")
-    form.throughput_lower_bound = form.throughput_upper_bound = 1
+    form.throughput_lower_bound = form.throughput_upper_bound = -1
 
 
 def make_single_get_req(url, client=None):

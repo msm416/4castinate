@@ -3,9 +3,16 @@
 
 
 {% block body %}
-
     <br>
-    <h1 class="text-center">{{ query.name }}: Preview of latest simulation</h1>
+    {% if run_simulation_response %}
+        {% if run_simulation_response == "succeeded" %}
+            <h2 class="text-success text-center"> Simulation creation {{ run_simulation_response }} </h2>
+        {% else %}
+            <h2 class="text-danger text-center"> Simulation creation {{ run_simulation_response }} </h2>
+        {% endif %}
+    {% endif %}
+    <br>
+    <h3 class="text-center">{{ query.name }}: Preview of latest simulation</h3>
     <br>
 
     {% if latest_simulation_list.exists %}
@@ -112,6 +119,7 @@
                                 Load this webpage -> Fields below get populated
                                 from existing configuration -> Tweak values if needed ->
                                 <span class="bg-success text-white" style="border: double"> Run simulation </span>
+                                on displayed values
                             </h8>
                             <br>
                             <br>

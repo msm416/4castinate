@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 WEEK_IN_DAYS = 7
+SUCCESS_MESSAGE = "succeeded"
 
 
 class Query(models.Model):
@@ -20,20 +21,29 @@ class Query(models.Model):
 
         form = self.form_set.get()
 
+        run_simulation_response = form.check_validity()
+
+        if run_simulation_response != SUCCESS_MESSAGE:
+            return run_simulation_response
+
         wip = random.uniform(form.wip_lower_bound, form.wip_upper_bound,
                              (form.simulation_count,))
+
         split_rate = random.uniform(form.split_factor_lower_bound, form.split_factor_upper_bound,
                                     (form.simulation_count,))
+
         weekly_throughput = random.uniform(form.throughput_lower_bound, form.throughput_upper_bound,
                                            (form.simulation_count,))
-        completion_duration = (ceil((wip * split_rate) / weekly_throughput)).astype(int)
-        durations = ';'.join(map(str, completion_duration))
 
+        completion_duration = (ceil((wip * split_rate) / weekly_throughput)).astype(int)
+
+        durations = ';'.join(map(str, completion_duration))
         end_time = time.time()
         msg = f"Elapsed time is: {str(end_time - start_time)} seconds."
 
         # Create new Simulation
         self.simulation_set.create(query=form, message=msg, durations=durations)
+        return SUCCESS_MESSAGE
 
 
 class Form(models.Model):
@@ -61,6 +71,23 @@ class Form(models.Model):
 
     def __str__(self):
         return self.name
+
+    def check_validity(self):
+        run_simulation_response = ""
+
+        if 0 >= self.wip_lower_bound or self.wip_lower_bound > self.wip_upper_bound:
+            run_simulation_response += f"WIP is " \
+                f"({self.wip_lower_bound}, {self.wip_upper_bound}). "
+
+        if 0 >= self.throughput_lower_bound or self.throughput_lower_bound > self.throughput_upper_bound:
+            run_simulation_response += f"Throughput is " \
+                f"({self.throughput_lower_bound}, { self.throughput_upper_bound}). "
+
+        if 0 >= self.split_factor_lower_bound or self.split_factor_lower_bound > self.split_factor_upper_bound:
+            run_simulation_response += f"Split Rate is " \
+                f"({self.split_factor_lower_bound}, { self.split_factor_upper_bound}). "
+
+        return f"failed: {run_simulation_response}" if run_simulation_response else SUCCESS_MESSAGE
 
 
 class Simulation(models.Model):

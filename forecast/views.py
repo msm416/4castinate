@@ -15,7 +15,7 @@ def index(request):
     return render(request, 'forecast/index.html', context)
 
 
-def detail(request, query_id):
+def detail(request, query_id, run_simulation_response=None):
     # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
@@ -36,7 +36,8 @@ def detail(request, query_id):
                'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
                'centile_indices': [5*i for i in range(0, 21)],
                'centile_values': centile_values,
-               'nbar': 'detail'}
+               'nbar': 'detail',
+               'run_simulation_response': run_simulation_response}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -96,8 +97,8 @@ def run_simulation(request, query_id):
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
         # user hits the Back button.
-        query.create_simulation()
-        return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
+        run_simulation_response = query.create_simulation()
+        return HttpResponseRedirect(reverse('forecast:detail', args=(query_id, run_simulation_response,)))
 
 
 def create_query(request):
