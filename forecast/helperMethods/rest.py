@@ -1,20 +1,13 @@
 import json
-import time
-
 import Crypto
 import oauth2 as oauth
 import requests
 from multiprocessing import Pool
 from functools import reduce
-
-from django.utils import timezone
+import dateutil.parser
 
 from ebdjango.settings import JIRA_URL, JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET, JIRA_EMAIL, JIRA_API_TOKEN
 from forecast.helperMethods.oauth.jira_oauth_script import SignatureMethod_RSA_SHA1, create_oauth_client
-from forecast.models import Board, Iteration, Issue, LONG_TIME_AGO, Form
-from datetime import datetime
-
-JIRA_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
 client = create_oauth_client('OauthKey', 'dont_care',
                              SignatureMethod_RSA_SHA1(),
@@ -23,17 +16,53 @@ client = create_oauth_client('OauthKey', 'dont_care',
                                                            # TODO: if str(JIRA_EMAIL).find('@') == -1:
 
 
-def update_form_and_create_simulation(query):
-    form = query.form_set.all().get()
-    if form.wip_from_data:
-        resp_code, response_content = \
-            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_from_data_filter}&fields=None")
-        if resp_code == 200:
-            form.wip_lower_bound = form.wip_upper_bound = response_content['total']
-            form.save()
+JQL_ORDER_BY_CLAUSE = " ORDER BY resolutiondate "
+
+
+def create_form_filters(filter):
+    return f"{filter} and resolution is EMPTY", f"{filter} and resolution = done"
+
+
+def fetch_filters_and_update_form(form):
+    fetch_wip_filter(form)
+    fetch_throughput_filter(form)
+    form.save()
+
+
+def fetch_wip_filter(form):
+    resp_code, response_content = \
+        make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_filter}&maxResults=1&fields=None")
+    if resp_code == 200:
+        form.wip_lower_bound = form.wip_upper_bound = response_content['total']
     else:
-        print(f"NO NEEEEEEEEEEEEEEEED !!!!!")
-    query.create_simulation()
+        form.wip_lower_bound = form.wip_upper_bound = -1
+
+
+def fetch_throughput_filter(form):
+    resp_code_asc, response_content_asc = \
+        make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
+                            f"ORDER BY resolutiondate ASC &maxResults=1&fields=resolutiondate")
+
+    if resp_code_asc == 200:
+        total = response_content_asc['total']
+
+        resp_code_desc, response_content_desc = \
+            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
+                                f"ORDER BY resolutiondate DESC &maxResults=1&fields=resolutiondate")
+
+        if len(response_content_asc['issues']) != 0 and len(response_content_desc['issues']) != 0:
+            first_issue_done_date = response_content_asc['issues'][0]['fields']['resolutiondate']
+            last_issue_done_date = response_content_desc['issues'][0]['fields']['resolutiondate']
+
+            if first_issue_done_date and last_issue_done_date:
+
+                duration_in_weeks = ((dateutil.parser.parse(last_issue_done_date) -
+                                     dateutil.parser.parse(first_issue_done_date)).days + 1) / 7
+
+                form.throughput_lower_bound = form.throughput_upper_bound = total / duration_in_weeks
+                return
+
+    form.throughput_lower_bound = form.throughput_upper_bound = -1
 
 
 def make_single_get_req(url, client=None):
@@ -121,212 +150,4 @@ def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
 
         resp_code = int(resp_code['status'])
 
-    return resp_code, \
-           [value
-            for value_list in aggregate_values
-            for value in value_list], \
-           total_issues
-
-
-def jira_get_issues(board_jira_id, board, start_get_all_boards_time, fetch_date):
-    # Get issues for board
-    # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-boardId-issue-get
-    # Description: Returns all issues from a board, for a given board ID.
-    # This only includes issues that the user has permission to view.
-    # An issue belongs to the board if its status is mapped to the board's column.
-    # Epic issues do not belongs to the scrum boards.
-    # Note, if the user does not have permission to view the board, no issues will be returned at all.
-    # Issues returned from this resource include Agile fields, like sprint, closedSprints, flagged, and epic.
-    # By default, the returned issues are ordered by rank.
-
-    resp_code, response_as_dict, total_issues = make_aggregate_get_req(
-        f"{JIRA_URL}/rest/agile/1.0/board/{board_jira_id}/issue",
-        'issues',
-        "&fields=resolution,issuetype,summary,parent,closedSprints")
-
-    board_sprints_bulk_dict = {}
-
-    board_issues_bulk = []
-
-    # {'Epic parent's name': 'WIP of Epic'}
-    board_epic_parents_dict = {}
-
-    board_epic_parents_forms_bulk = []
-
-    print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET ISSUES CALL")
-
-    hidden_throughput = 0
-    hidden_id = 0
-    hidden_duration = 0
-    # TODO: hidden_duration for kanban boards (currently is 0)
-    #       Also design partial hidden iteration throughput
-    #       (currently,you either take the throughput as a whole or not)
-
-    for issue in response_as_dict:
-        state = 'Done' if issue['fields']['resolution'] else 'Ongoing'
-        issue_type = issue['fields']['issuetype']['name']
-        name = issue['fields']['summary']
-        source_id = issue['id']
-
-        # TODO: get epic parent (if any) properly:
-        #       it's not necessarily direct parent (and even this might be wrong)
-
-        if 'parent' in issue['fields']:
-            epic_parent = issue['fields']['parent']['fields']['summary']
-            if state == 'Ongoing':
-                board_epic_parents_dict[epic_parent] = board_epic_parents_dict.get(epic_parent, 0) + 1
-        else:
-            epic_parent = 'None'
-
-        board_issues_bulk.append(Issue(board=board,
-                                 name=name,
-                                 state=state,
-                                 issue_type=issue_type,
-                                 epic_parent=epic_parent,
-                                 source='JIRA',
-                                 source_id=source_id))
-
-        issue_fields = issue['fields']
-
-        if state != 'Done':
-            # DON"T CONSIDER ONGOING ISSUES IN THROUGHPUT
-            continue
-
-        if issue_type == "Epic":
-            # DON"T CONSIDER EPIC ISSUES IN THROUGHPUT
-            continue
-
-        if 'closedSprints' not in issue_fields:
-            # ADD TO HIDDEN SPRINT ALL THOSE ISSUES
-            hidden_throughput += 1
-            continue
-
-        sprint = issue_fields['closedSprints'][0]
-        start_date = datetime.strptime(sprint['startDate'].split('Z')[0].split('+')[0], JIRA_DATE_FORMAT)
-        complete_date = datetime.strptime(sprint['completeDate'].split('Z')[0].split('+')[0], JIRA_DATE_FORMAT)
-        duration = (complete_date - start_date).days
-        duration = 1 if duration is 0 else duration
-        sprint_id = sprint['id']
-
-        sprint_obj = Iteration(board=board,
-                               name=sprint['name'],
-                               source='JIRA',
-                               throughput=0,
-                               duration=duration,
-                               start_date=sprint['startDate'],
-                               source_id=sprint_id,
-                               state=sprint['state'])
-
-        board_sprints_bulk_dict[sprint_id] = [sprint_obj,
-                                        1 + (board_sprints_bulk_dict[sprint_id][1]
-                                             if sprint_id in board_sprints_bulk_dict
-                                             else 0)]
-
-    for sprint, throughput in board_sprints_bulk_dict.values():
-        sprint.throughput = throughput
-        hidden_duration += sprint.duration
-
-    board_sprints_bulk_dict[hidden_id] = [(Iteration(board=board,
-                                                     name=f"QUASI-ITERATION - {board.name}",
-                                                     source='JIRA',
-                                                     throughput=hidden_throughput,
-                                                     duration=hidden_duration,
-                                                     source_id=hidden_id,
-                                                     state='closed',
-                                                     start_date=datetime.strptime(LONG_TIME_AGO, "%Y-%m-%d"))),
-                                          hidden_throughput]
-
-    for epic_parent, wip in board_epic_parents_dict.items():
-        board_epic_parents_forms_bulk.append(Form(board=board,
-                                                  name=f"AUTO-FORM - {epic_parent} - {board.name}",
-                                                  wip_from_data=True,
-                                                  wip_lower_bound=wip,
-                                                  wip_upper_bound=wip,
-                                                  throughput_from_data=True))
-
-    board_iterations_bulk = [sprint for sprint, throughput in board_sprints_bulk_dict.values()]
-
-    return resp_code, board_issues_bulk, board_iterations_bulk, board_epic_parents_forms_bulk, total_issues
-
-
-def jira_get_boards():
-    # GET all boards
-    # https://developer.atlassian.com/cloud/jira/software/rest/#api-rest-agile-1-0-board-get
-    # Description: Returns all boards. This only includes boards that the user has permission to view.
-
-    start_get_all_boards_time = time.time()
-
-    resp_code, response_as_dict, _ = make_aggregate_get_req(f"{JIRA_URL}/rest/agile/1.0/board", 'values', '', 0)
-
-    print(f"{time.time() - start_get_all_boards_time} LOAD JSON RESPONSE FROM REST API GET BOARDS CALL")
-
-    fetch_date = timezone.now()
-
-    Board.objects.filter(data_sources='JIRA').delete()
-
-    boards_bulk = []
-
-    print(f"{time.time() - start_get_all_boards_time} DELETED PREVIOUS JIRA BOARDS")
-
-    for board in response_as_dict:
-
-        board_obj = Board(name=board['name'],
-                          creation_date=fetch_date,
-                          # project_name=board['location']['name'], TODO: why is no location key in jira server resp
-                          data_sources='JIRA',
-                          board_type=board['type'],
-                          source_id=board['id'])
-
-        boards_bulk.append(board_obj)
-
-    Board.objects.bulk_create(boards_bulk)
-
-    print(f"{time.time() - start_get_all_boards_time} CREATED NEW JIRA BOARDS")
-
-    # These lists are lists of lists.
-    issues_bulk, iterations_bulk, epic_parents_forms_bulk = [], [], []
-    total_total_issues = 0
-    for board in response_as_dict:
-        print(f"{time.time() - start_get_all_boards_time} FLUSHING EVERYTHING FOR BOARD {board['id']}")
-
-        board_model = Board.objects.get(data_sources='JIRA', source_id=board['id'])
-
-        board_model.issue_set.all().delete()
-        board_model.iteration_set.all().delete()
-        board_model.form_set.all().delete()
-
-        print(f"{time.time() - start_get_all_boards_time} CREATING EVERYTHING FOR BOARD {board['id']}")
-
-        resp_code, board_issues_bulk, board_iterations_bulk, board_epic_parents_forms_bulk, total_issues = \
-            jira_get_issues(board['id'],
-                            board_model,
-                            start_get_all_boards_time,
-                            fetch_date)
-
-        issues_bulk.append(board_issues_bulk)
-        iterations_bulk.append(board_iterations_bulk)
-        epic_parents_forms_bulk.append(board_epic_parents_forms_bulk)
-        total_total_issues += total_issues
-
-        print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR BOARD {board['id']}")
-
-    Issue.objects.bulk_create([issue
-                               for issue_list in issues_bulk
-                               for issue in issue_list])
-
-    Iteration.objects.bulk_create([iteration
-                                   for iteration_list in iterations_bulk
-                                   for iteration in iteration_list])
-
-    Form.objects.bulk_create([epic_parent_form
-                              for epic_parent_form_list in epic_parents_forms_bulk
-                              for epic_parent_form in epic_parent_form_list])
-
-    # Bulk create does not signal with post_save, so we have to call this method manually:
-    for form in Form.objects.all():
-        form.update_data_fields_and_gen_simulation()
-
-    print(f"{time.time() - start_get_all_boards_time} CREATED EVERYTHING FOR ALL BOARDS IN DB - WE'RE DONE")
-
-    print(f"{total_total_issues} - TOT")
-    return resp_code
+    return resp_code, [value for value_list in aggregate_values for value in value_list], total_issues

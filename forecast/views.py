@@ -1,34 +1,26 @@
-import json
-import random
-from datetime import datetime
-
-from django.utils import timezone
-
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import jira_get_boards, update_form_and_create_simulation
-from forecast.helperMethods.utils import parse_filter
+from forecast.helperMethods.rest import fetch_filters_and_update_form, create_form_filters
 from forecast.helperMethods.forecast_models_utils import aggregate_simulations
-from .models import Board, Form, Iteration, LONG_TIME_AGO, Issue, MsgLogWebhook, Query, Simulation
-
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from .models import Query, Simulation, Form
 
 
 def index(request):
     query_list = Query.objects.order_by('-creation_date')
-    msglog_webhook_list = MsgLogWebhook.objects.all()
+
     context = {'query_list': query_list,
-               'nbar': 'index',
-               'msglog_webhook_list': msglog_webhook_list,
-               'LONG_TIME_AGO': LONG_TIME_AGO}
+               'nbar': 'index'}
+
     return render(request, 'forecast/index.html', context)
 
 
-def detail(request, query_id):
+def detail(request, query_id, run_simulation_response=None):
+    # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
+
+    fetch_filters_and_update_form(query.form)
 
     latest_simulation_list = query.simulation_set.order_by('-creation_date')
 
@@ -38,25 +30,26 @@ def detail(request, query_id):
         else ([], [], [], None)
 
     context = {'query': query,
-               'form': query.form_set.get(),
+               'form': query.form,
                'latest_simulation_list': latest_simulation_list,
                'weeks': weeks,
                'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
                'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
                'centile_indices': [5*i for i in range(0, 21)],
                'centile_values': centile_values,
-
-               'LONG_TIME_AGO': LONG_TIME_AGO,
                'nbar': 'detail',
-               'issue_fields': [issue.name for issue in Issue._meta.get_fields()]}
+               'run_simulation_response': run_simulation_response}
 
     return render(request, 'forecast/detail.html', context)
 
 
 def results(request, query_id, simulation_id):
     query = get_object_or_404(Query, pk=query_id)
+
     simulation = get_object_or_404(Simulation, pk=simulation_id)
+
     centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(simulation)
+
     context = {
         'query': query,
         'weeks': weeks,
@@ -70,134 +63,46 @@ def results(request, query_id, simulation_id):
     return render(request, 'forecast/results.html', context)
 
 
-def iterations(request):
-    iteration_list = Iteration.objects.order_by('board__name', '-start_date')
-    context = {'iteration_list': iteration_list, 'nbar': 'iterations'}
-    return render(request, 'forecast/iterations.html', context)
+def run_simulation(request, query_id):
 
+    wip_filter = request.POST['wip_filter']
 
-def issues(request):
-    issue_list = Issue.objects.order_by('board__name', '-state', 'epic_parent')
-    context = {'issue_list': issue_list, 'nbar': 'issues'}
-    return render(request, 'forecast/issues.html', context)
+    throughput_filter = request.POST['throughput_filter']
 
+    Form.objects \
+        .filter(query__pk=query_id) \
+        .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
+                wip_upper_bound=int(request.POST['wip_upper_bound']),
+                wip_filter=wip_filter,
+                throughput_lower_bound=float(request.POST['throughput_lower_bound']),
+                throughput_upper_bound=float(request.POST['throughput_upper_bound']),
+                throughput_filter=throughput_filter,
+                split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
+                split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+                simulation_count=int(request.POST['simulation_count']))
 
-def estimate(request, query_id):
     query = get_object_or_404(Query, pk=query_id)
-    latest_form_list = query.form_set.order_by('-creation_date')
-    context = {'query': query, 'latest_form_list': latest_form_list, 'LONG_TIME_AGO': LONG_TIME_AGO}
-    try:
-        selected_form = query.form_set.get(pk=request.POST['form'])
-    except (KeyError, Form.DoesNotExist):
-        # Redisplay the form selection template.
-        context['error_message'] = "You didn't choose an existing form!"
-        context['nbar'] = 'detail'
-        return render(request, 'forecast/detail.html', context)
-    else:
-        # TODO: make all form checks (on server or client side)
-        if selected_form.throughput_lower_bound <= 0 or \
-                (selected_form.throughput_from_data and selected_form.get_throughput_rate_avg() == 0):
-            context['error_message'] = "Selected form has invalid throughput!"
-            context['nbar'] = 'detail'
-            return render(request, 'forecast/detail.html', context)
-        # Always return an HttpResponseRedirect after successfully dealing
-        # with POST data. This prevents data from being posted twice if a
-        # user hits the Back button.
-        return HttpResponseRedirect(
-            reverse('forecast:results',
-                    args=(query.id, selected_form.id)))
 
-
-def fetch(request):
-    jira_get_boards()
+    run_simulation_response = query.create_simulation()
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
     # user hits the Back button.
-    return HttpResponseRedirect(reverse('forecast:index'))
+    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id, run_simulation_response,)))
 
 
-def modify_form(request, query_id):
-    query = get_object_or_404(Query, pk=query_id)
-
-    start_date = datetime.strptime(request.POST['start_date'], "%Y-%m-%d")
-    throughput_from_data = True \
-        if request.POST['throughput_from_data'] == "Filter" \
-        else False
-    wip_from_data = True \
-        if request.POST['wip_from_data'] == "Filter" \
-        else False
-    wip_from_data_filter = request.POST['wip_from_data_filter']
-
-    try:
-        parse_filter(wip_from_data_filter, wip_from_data)
-    except Exception as e:
-        # PARSE ERROR
-        print("***********************************CREATION ERROR**********************************")
-        print(str(e))
-        return detail(request, -1)
-    else:
-        # TODO: check validity before creation of _filter and other fields
-        query.form_set.all().delete()
-        query.form_set.create(
-            wip_lower_bound=int(request.POST['wip_lower_bound']),
-            wip_upper_bound=int(request.POST['wip_upper_bound']),
-            wip_from_data=wip_from_data,
-            wip_from_data_filter=wip_from_data_filter,
-            throughput_lower_bound=float(request.POST['throughput_lower_bound']),
-            throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-            throughput_from_data=throughput_from_data,
-            start_date=start_date,
-            split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
-            split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
-            name=request.POST['name'],
-            simulation_count=int(request.POST['simulation_count']))
-
-        # Always return an HttpResponseRedirect after successfully dealing
-        # with POST data. This prevents data from being posted twice if a
-        # user hits the Back button.
-        return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
-
-
-def create_query_from_data(request, board_id):
-    # TODO: delete eventually
-    return HttpResponseRedirect(reverse('forecast:index'))
-
-
-def create_query_from_jql(request):
-    throughput_from_data = False
-    wip_from_data = False
-    wip_from_data_filter = "TODO://"
-
+def create_query(request):
     # TODO: check validity before creation of _filter and other fields
-    query = Query(name=request.POST['name_jql'])
+    query = Query(name=request.POST['name'], description=request.POST['description'])
+
     query.save()
-    query.form_set.create(name="default Form")
 
-    # Always return an HttpResponseRedirect after successfully dealing
-    # with POST data. This prevents data from being posted twice if a
-    # user hits the Back button.
-    return HttpResponseRedirect(reverse('forecast:index'))
+    wip_filter, throughput_filter = create_form_filters(request.POST['filter'])
 
-
-def create_simulation(request, query_id):
-    query = get_object_or_404(Query, pk=query_id)
-    update_form_and_create_simulation(query)
-    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
-
-
-@require_POST
-@csrf_exempt
-def webhook(request):
-    data = json.loads(request.body)
-
-    if MsgLogWebhook.objects.exists():
-        msg_log_webhook = MsgLogWebhook.objects.get(msglog_id=1)
-        msg_log_webhook.text = f"{msg_log_webhook.text};{str(data)}"
-        msg_log_webhook.cnt += 1
-        msg_log_webhook.save()
-    else:
-        MsgLogWebhook.objects.create(cnt=1, text=str(data))
+    Form.objects.create(query=query,
+                        name="default Form",
+                        wip_filter=wip_filter,
+                        throughput_filter=throughput_filter)
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
