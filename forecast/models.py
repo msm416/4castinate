@@ -16,15 +16,15 @@ class Query(models.Model):
     def __str__(self):
         return self.name
 
-    def create_simulation(self):
+    def run_estimation(self):
         start_time = time.time()
 
         form = self.form
 
-        run_simulation_response = form.check_validity()
+        run_estimation_response = form.check_validity()
 
-        if run_simulation_response != SUCCESS_MESSAGE:
-            return run_simulation_response
+        if run_estimation_response != SUCCESS_MESSAGE:
+            return run_estimation_response
 
         wip = random.uniform(form.wip_lower_bound, form.wip_upper_bound,
                              (form.simulation_count,))
@@ -41,8 +41,8 @@ class Query(models.Model):
         end_time = time.time()
         msg = f"Elapsed time is: {str(end_time - start_time)} seconds."
 
-        # Create new Simulation
-        self.simulation_set.create(query=self, message=msg, durations=durations)
+        # Create new estimation
+        self.estimation_set.create(query=self, message=msg, durations=durations)
         return SUCCESS_MESSAGE
 
 
@@ -73,24 +73,24 @@ class Form(models.Model):
         return self.name
 
     def check_validity(self):
-        run_simulation_response = ""
+        run_estimation_response = ""
 
         if 0 >= self.wip_lower_bound or self.wip_lower_bound > self.wip_upper_bound:
-            run_simulation_response += f"WIP is " \
+            run_estimation_response += f"WIP is " \
                 f"({self.wip_lower_bound}, {self.wip_upper_bound}). "
 
         if 0 >= self.throughput_lower_bound or self.throughput_lower_bound > self.throughput_upper_bound:
-            run_simulation_response += f"Throughput is " \
+            run_estimation_response += f"Throughput is " \
                 f"({self.throughput_lower_bound}, { self.throughput_upper_bound}). "
 
         if 0 >= self.split_factor_lower_bound or self.split_factor_lower_bound > self.split_factor_upper_bound:
-            run_simulation_response += f"Split Rate is " \
+            run_estimation_response += f"Split Rate is " \
                 f"({self.split_factor_lower_bound}, { self.split_factor_upper_bound}). "
 
-        return f"failed: {run_simulation_response}" if run_simulation_response else SUCCESS_MESSAGE
+        return f"failed: {run_estimation_response}" if run_estimation_response else SUCCESS_MESSAGE
 
 
-class Simulation(models.Model):
+class Estimation(models.Model):
     query = models.ForeignKey(Query, on_delete=models.CASCADE)
     durations = models.TextField(default='')
     message = models.CharField(max_length=200)

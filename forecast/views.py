@@ -3,8 +3,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from forecast.helperMethods.rest import fetch_filters_and_update_form, create_form_filters
-from forecast.helperMethods.forecast_models_utils import aggregate_simulations
-from .models import Query, Simulation, Form
+from forecast.helperMethods.forecast_models_utils import reduce_durations
+from .models import Query, Estimation, Form
 
 
 def index(request):
@@ -16,39 +16,42 @@ def index(request):
     return render(request, 'forecast/index.html', context)
 
 
-def detail(request, query_id, run_simulation_response=None):
+def detail(request, query_id, run_estimation_response=None):
     # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
     fetch_filters_and_update_form(query.form)
 
-    latest_simulation_list = query.simulation_set.order_by('-creation_date')
+    latest_estimation_list = query.estimation_set.order_by('-creation_date')
+
+    estimation = latest_estimation_list.first()
 
     (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = \
-        aggregate_simulations(latest_simulation_list.first()) \
-        if latest_simulation_list.exists() \
+        reduce_durations([int(x) for x in estimation.durations.split(";")]) \
+        if latest_estimation_list.exists() \
         else ([], [], [], None)
 
     context = {'query': query,
                'form': query.form,
-               'latest_simulation_list': latest_simulation_list,
+               'latest_estimation_list': latest_estimation_list,
                'weeks': weeks,
                'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
                'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
                'centile_indices': [5*i for i in range(0, 21)],
                'centile_values': centile_values,
                'nbar': 'detail',
-               'run_simulation_response': run_simulation_response}
+               'run_estimation_response': run_estimation_response}
 
     return render(request, 'forecast/detail.html', context)
 
 
-def results(request, query_id, simulation_id):
+def results(request, query_id, estimation_id):
     query = get_object_or_404(Query, pk=query_id)
 
-    simulation = get_object_or_404(Simulation, pk=simulation_id)
+    estimation = get_object_or_404(Estimation, pk=estimation_id)
 
-    centile_values, weeks, weeks_frequency, weeks_frequency_sum = aggregate_simulations(simulation)
+    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = \
+        reduce_durations([int(x) for x in estimation.durations.split(";")])
 
     context = {
         'query': query,
@@ -63,7 +66,7 @@ def results(request, query_id, simulation_id):
     return render(request, 'forecast/results.html', context)
 
 
-def run_simulation(request, query_id):
+def run_estimation(request, query_id):
 
     wip_filter = request.POST['wip_filter']
 
@@ -83,12 +86,12 @@ def run_simulation(request, query_id):
 
     query = get_object_or_404(Query, pk=query_id)
 
-    run_simulation_response = query.create_simulation()
+    run_estimation_response = query.run_estimation()
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
     # user hits the Back button.
-    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id, run_simulation_response,)))
+    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id, run_estimation_response,)))
 
 
 def create_query(request):

@@ -4,18 +4,18 @@
 
 {% block body %}
     <br>
-    {% if run_simulation_response %}
-        {% if run_simulation_response == "succeeded" %}
-            <h2 class="text-success text-center"> Simulation creation {{ run_simulation_response }} </h2>
+    {% if run_estimation_response %}
+        {% if run_estimation_response == "succeeded" %}
+            <h2 class="text-success text-center"> Estimation creation {{ run_estimation_response }} </h2>
         {% else %}
-            <h2 class="text-danger text-center"> Simulation creation {{ run_simulation_response }} </h2>
+            <h2 class="text-danger text-center"> Estimation creation {{ run_estimation_response }} </h2>
         {% endif %}
     {% endif %}
     <br>
-    <h3 class="text-center">{{ query.name }}: Preview of latest simulation</h3>
+    <h3 class="text-center">{{ query.name }}: Preview of latest estimation</h3>
     <br>
 
-    {% if latest_simulation_list.exists %}
+    {% if latest_estimation_list.exists %}
         <canvas id="myLikelihoodTable"></canvas>
 
         {{ weeks |json_script:"weeks"}}
@@ -86,7 +86,7 @@
             });
         </script>
     {% else %}
-        <h3 class="text-center"> No simulations </h3>
+        <h3 class="text-center"> No estimations </h3>
     {% endif %}
     <br>
 
@@ -97,7 +97,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Run simulation </b>
+                        <b> Run estimation </b>
                     </button>
                 </h5>
             </div>
@@ -106,7 +106,7 @@
             data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:run_simulation' query.id%}" method="post">
+                        <form action="{% url 'forecast:run_estimation' query.id%}" method="post">
                             {% csrf_token %}
                             <h3>
                                 Notes:
@@ -117,16 +117,16 @@
                             </h5>
                             <h8>
                                 <span style="background-color: #fff5f5;border: double"> <b> These fields </b> </span>
-                                &nbsp; are fetched from JQL filters on refresh. They can be changed before running the simulation but <b> will not be saved </b> for later use.
+                                &nbsp; are fetched from JQL filters on refresh. They can be changed before running the estimation but <b> will not be saved </b> for later use.
                             </h8>
                             <br>
                             <h8>
                                 <span style="background-color: white;border: double"> <b> These fields </b> </span>
-                                &nbsp; are loaded from your configuration. They can be changed before running the simulation and <b> will be saved </b> for later use.
+                                &nbsp; are loaded from your configuration. They can be changed before running the estimation and <b> will be saved </b> for later use.
                             </h8>
                             <br>
                             <h8>
-                                <span class="bg-success text-white" style="border: double; border-color: black"> Run simulation </span> &nbsp; creates a forecast using only the <b> numerical </b> values below.
+                                <span class="bg-success text-white" style="border: double; border-color: black"> Run estimation </span> &nbsp; creates a forecast using only the <b> numerical </b> values below.
                             </h8>
                             <br>
                             <br>
@@ -191,7 +191,7 @@
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-success">Run simulation</button>
+                                    <button type="submit" class="btn btn-success">Run estimation</button>
                                 </div>
                                 <div class="col-md-4"></div>
                             </div>
@@ -203,7 +203,7 @@
     </div>
 
     <br>
-    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past simulation ...">
+    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
 
         <table class="table table-bordered table-striped">
@@ -221,19 +221,19 @@
                 </tr>
             </thead>
             <tbody id="myTable">
-                {% for simulation in latest_simulation_list %}
+                {% for estimation in latest_estimation_list %}
                     <tr>
                         <td>
-                            <a class="btn btn-success" href="{% url 'forecast:results' query.id simulation.id %}"> -> </a>
+                            <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
                         </td>
                         <td>
-                            {{simulation.name}}
+                            {{estimation.name}}
                         </td>
                         <td>
-                            {{simulation.simulation_count}}
+                            {{estimation.simulation_count}}
                         </td>
                         <td>
-                            [{{simulation.wip_lower_bound}},{{simulation.wip_upper_bound}}]
+                            [{{estimation.wip_lower_bound}},{{estimation.wip_upper_bound}}]
                         </td>
                         <td>
                             DELET DIS
@@ -245,10 +245,10 @@
                             DELEEEEET
                         </td>
                         <td>
-                            [{{simulation.split_factor_lower_bound}},{{simulation.split_factor_upper_bound}}]
+                            [{{estimation.split_factor_lower_bound}},{{estimation.split_factor_upper_bound}}]
                         </td>
                         <td>
-                            {{ simulation.creation_date }}
+                            {{ estimation.creation_date }}
                         </td>
 
                     </tr>
