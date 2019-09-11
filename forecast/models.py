@@ -42,7 +42,7 @@ class Query(models.Model):
         msg = f"Elapsed time is: {str(end_time - start_time)} seconds."
 
         # Create new Simulation
-        self.simulation_set.create(query=form, message=msg, durations=durations)
+        self.simulation_set.create(query=self, message=msg, durations=durations)
         return SUCCESS_MESSAGE
 
 

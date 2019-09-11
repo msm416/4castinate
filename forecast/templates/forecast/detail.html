@@ -113,25 +113,20 @@
                             </h3>
                             <br>
                             <h5>
-                                Order of actions
-                            </h5>
-                            <h8>
-                                Load this webpage -> Fields below get populated
-                                from existing configuration -> Tweak values if needed ->
-                                <span class="bg-success text-white" style="border: double"> Run simulation </span>
-                                on displayed values
-                            </h8>
-                            <br>
-                            <br>
-                            <h5>
                                 Legend
                             </h5>
                             <h8>
-                                Fields of <span style="background-color: #fff5f5;border: double"> <b> this colour </b> </span> &nbsp; are fetched from filters.
-                                They can be changed before running the simulation (but will not be saved in your configuration).
+                                <span style="background-color: #fff5f5;border: double"> <b> These fields </b> </span>
+                                &nbsp; are fetched from JQL filters on refresh. They can be changed before running the simulation but <b> will not be saved </b> for later use.
                             </h8>
+                            <br>
                             <h8>
-                                Fields of <span style="background-color: white;border: double"> <b> this colour </b> </span> &nbsp; will be saved in your configuration.
+                                <span style="background-color: white;border: double"> <b> These fields </b> </span>
+                                &nbsp; are loaded from your configuration. They can be changed before running the simulation and <b> will be saved </b> for later use.
+                            </h8>
+                            <br>
+                            <h8>
+                                <span class="bg-success text-white" style="border: double; border-color: black"> Run simulation </span> &nbsp; creates a forecast using only the <b> numerical </b> values below.
                             </h8>
                             <br>
                             <br>
@@ -143,7 +138,7 @@
                             </h8>
                             <br>
                             <h8>
-                                * <b>must</b> have "resolution = Done" or equivalent (since issues must have a non-null resolutiondate)
+                                * <b>must</b> have "resolution = Done" clause or equivalent (since jira issues must have a non-null resolutiondate)
                             </h8>
                             <br>
                             <br>
@@ -208,14 +203,13 @@
     </div>
 
     <br>
-    <h3 class="text-center"> Choose simulation for full report </h3>
-    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword ...">
+    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past simulation ...">
     <br>
 
         <table class="table table-bordered table-striped">
             <thead>
                 <tr>
-                    <th> </th>
+                    <th> View Forecast </th>
                     <th>Name</th>
                     <th>#Sim</th>
                     <th>WIP</th>
