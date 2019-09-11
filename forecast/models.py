@@ -19,7 +19,7 @@ class Query(models.Model):
     def create_simulation(self):
         start_time = time.time()
 
-        form = self.form_set.get()
+        form = self.form
 
         run_simulation_response = form.check_validity()
 
@@ -47,7 +47,7 @@ class Query(models.Model):
 
 
 class Form(models.Model):
-    query = models.ForeignKey(Query, on_delete=models.CASCADE)
+    query = models.OneToOneField(Query, on_delete=models.CASCADE, primary_key=True)
     name = models.CharField(max_length=200)
 
     creation_date = models.DateTimeField(default=timezone.now)

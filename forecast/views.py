@@ -19,7 +19,7 @@ def detail(request, query_id, run_simulation_response=None):
     # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
-    fetch_filters_and_update_form(query.form_set.get())
+    fetch_filters_and_update_form(query.form)
 
     latest_simulation_list = query.simulation_set.order_by('-creation_date')
 
@@ -29,7 +29,7 @@ def detail(request, query_id, run_simulation_response=None):
         else ([], [], [], None)
 
     context = {'query': query,
-               'form': query.form_set.get(),
+               'form': query.form,
                'latest_simulation_list': latest_simulation_list,
                'weeks': weeks,
                'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
@@ -60,7 +60,6 @@ def results(request, query_id, simulation_id):
 
 
 def run_simulation(request, query_id):
-    query = get_object_or_404(Query, pk=query_id)
 
     wip_filter = request.POST['wip_filter']
 
@@ -75,24 +74,19 @@ def run_simulation(request, query_id):
         print(str(e))
         return detail(request, -1)
     else:
-        form = query.form_set.get()
-        if wip_filter != form.wip_filter or throughput_filter != form.throughput_filter:
-            form.wip_filter = wip_filter
-            form.throughput_filter = throughput_filter
-            fetch_filters_and_update_form(form)
-            print(f"filters are: wip: {form.wip_filter}; throughput: {form.throughput_filter}")
-        else:
-            Form.objects\
-                .filter(query=query)\
-                .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
-                        wip_upper_bound=int(request.POST['wip_upper_bound']),
-                        wip_filter=wip_filter,
-                        throughput_lower_bound=float(request.POST['throughput_lower_bound']),
-                        throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-                        throughput_filter=throughput_filter,
-                        split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
-                        split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
-                        simulation_count=int(request.POST['simulation_count']))
+        Form.objects \
+            .filter(query__pk=query_id) \
+            .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
+                    wip_upper_bound=int(request.POST['wip_upper_bound']),
+                    wip_filter=wip_filter,
+                    throughput_lower_bound=float(request.POST['throughput_lower_bound']),
+                    throughput_upper_bound=float(request.POST['throughput_upper_bound']),
+                    throughput_filter=throughput_filter,
+                    split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
+                    split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+                    simulation_count=int(request.POST['simulation_count']))
+
+        query = get_object_or_404(Query, pk=query_id)
 
         # Always return an HttpResponseRedirect after successfully dealing
         # with POST data. This prevents data from being posted twice if a
@@ -106,9 +100,10 @@ def create_query(request):
     query = Query(name=request.POST['name'], description=request.POST['description'])
     query.save()
     wip_filter, throughput_filter = create_form_filters(request.POST['filter'])
-    query.form_set.create(name="default Form",
-                          wip_filter=wip_filter,
-                          throughput_filter=throughput_filter)
+    Form.objects.create(query=query,
+                        name="default Form",
+                        wip_filter=wip_filter,
+                        throughput_filter=throughput_filter)
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a
