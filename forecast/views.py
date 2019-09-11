@@ -80,9 +80,10 @@ def run_estimation(request, query_id):
                 throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                 throughput_upper_bound=float(request.POST['throughput_upper_bound']),
                 throughput_filter=throughput_filter,
-                split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
-                split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
-                simulation_count=int(request.POST['simulation_count']))
+                # split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
+                #                 # split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+                # simulation_count=int(request.POST['simulation_count'])
+                )
 
     query = get_object_or_404(Query, pk=query_id)
 

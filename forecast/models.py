@@ -63,9 +63,9 @@ class Form(models.Model):
     throughput_filter = models.TextField(default="")
 
     split_factor_lower_bound = models.FloatField(default=1.00)
-    split_factor_upper_bound = models.FloatField(default=3.00)
+    split_factor_upper_bound = models.FloatField(default=1.00)
 
-    simulation_count = models.PositiveSmallIntegerField(default=1000)
+    simulation_count = models.PositiveSmallIntegerField(default=10000)
 
     is_selected = models.BooleanField(default=False)
 
