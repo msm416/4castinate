@@ -32,4 +32,4 @@ jobs:
       run: |
         python manage.py makemigrations
         python manage.py migrate
-        coverage run --source='./forecast' manage.py test forecast
+        coverage run --source='./forecast' --omit='./forecast/helperMethods/oauth/jira_oauth_script.py' manage.py test forecast
