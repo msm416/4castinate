@@ -8,15 +8,13 @@ from pathlib import Path
 
 # TODO: MAKE EXPLICIT THAT WE"RE USING private_key_filename EVERYTIME WE MAKE REQUESTS
 base_url = "https://4cast.atlassian.net"
-issue_name = "OB-26"
-private_key_filename = 'jira_privatekey.pem'
 consumer_key = 'OauthKey'
 consumer_secret = 'dont_care'
 
 request_token_url = f'{base_url}/plugins/servlet/oauth/request-token'
 access_token_url = f'{base_url}/plugins/servlet/oauth/access-token'
 authorize_url = f'{base_url}/plugins/servlet/oauth/authorize'
-data_url = f'{base_url}/rest/agile/1.0/issue/{issue_name}'
+data_url = f'{base_url}/rest/agile/1.0/board'
 
 
 def create_oauth_client(consumer_key, consumer_secret, sign_method, token=None):
@@ -28,6 +26,10 @@ def create_oauth_client(consumer_key, consumer_secret, sign_method, token=None):
 
 class SignatureMethod_RSA_SHA1(oauth.SignatureMethod):
     name = 'RSA-SHA1'
+
+    def __init__(self, private_key_filename='jira_privatekey.pem'):
+        self.private_key_filename = private_key_filename
+        super().__init__()
 
     def signing_base(self, request, consumer, token):
         if not hasattr(request, 'normalized_url') or request.normalized_url is None:
@@ -47,7 +49,7 @@ class SignatureMethod_RSA_SHA1(oauth.SignatureMethod):
         """Builds the base signature string."""
         key, raw = self.signing_base(request, consumer, token)
 
-        with open((Path(__file__).parent / private_key_filename).resolve(), 'r') as f:
+        with open((Path(__file__).parent / self.private_key_filename).resolve(), 'r') as f:
             data = f.read()
 
         private_key_string = data.strip()
@@ -62,7 +64,7 @@ def get_access_token():
 
     client = create_oauth_client(consumer_key, consumer_secret, SignatureMethod_RSA_SHA1())
 
-    # Lets try to access a JIRA issue (BULK-1). We should get a 401.
+    # Lets try to access JIRA boartds. We should get a 401.
     resp, content = client.request(data_url, "GET")
     if resp['status'] != '401':
         raise Exception("Should have no access!")
@@ -117,7 +119,7 @@ def get_access_token():
     print("    - oauth_token_secret = %s" % access_token_parts['oauth_token_secret'])
     print("You may now access protected resources using the access tokens above.")
 
-    # Now lets try to access the same issue again with the access token. We should get a 200!
+    # Now lets try to access the same data again with the access token. We should get a 200!
     access_token = oauth.Token(access_token_parts['oauth_token'], access_token_parts['oauth_token_secret'])
 
     client = create_oauth_client(consumer_key, consumer_secret, SignatureMethod_RSA_SHA1(), access_token)
