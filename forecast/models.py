@@ -43,7 +43,7 @@ class Query(models.Model):
 
         # Create new estimation
         self.estimation_set.create(query=self, message=msg, durations=durations)
-        return SUCCESS_MESSAGE
+        return run_estimation_response
 
 
 class Form(models.Model):

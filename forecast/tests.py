@@ -23,39 +23,43 @@ def random_string_with_digits_and_symbols(string_length=10):
 
 
 class SimulationTests(TestCase):
-    def test_run_estimation_on_query_with_valid_form(self):
+    def test_form_validity_check(self):
         """
-        Invalid forms should not create Estimation models and save them db.
-
-        run_estimation should give back corresponding message.
+        Valid forms should give SUCCESS_MESSAGE as response
+        on both run_estimation() and check_validity() methods
         """
+        for _ in range(0, 100):
+            query = Query.objects.create(name="query")
 
-        query = Query.objects.create(name="query")
+            wip_lower_bound = random.randint(0, 10000)
+            wip_upper_bound = random.randint(wip_lower_bound, 20000)
+            throughput_lower_bound = random.randint(0, 10000)
+            throughput_upper_bound = random.randint(throughput_lower_bound, 20000)
+            name = random_string_with_digits_and_symbols(100)
+            wip_filter = random_string_with_digits_and_symbols(100)
+            throughput_filter = random_string_with_digits_and_symbols(100)
 
-        wip_lower_bound = random.randint(0, 10000)
-        wip_upper_bound = random.randint(0, 20000)
-        throughput_lower_bound = random.randint(0, 10000)
-        throughput_upper_bound = random.randint(throughput_lower_bound, 20000)
-        name = random_string_with_digits_and_symbols(100)
-        wip_filter = random_string_with_digits_and_symbols(100)
-        throughput_filter = random_string_with_digits_and_symbols(100)
-        split_factor_lower_bound = random.randint(1, 10000)
-        split_factor_upper_bound = random.randint(split_factor_lower_bound, 20000)
+            # TODO: randfloat?
+            split_factor_lower_bound = random.randint(1, 10000)
+            split_factor_upper_bound = random.randint(split_factor_lower_bound, 20000)
 
-        _ = \
-            Form.objects.create(query=query,
-                                name=name,
-                                wip_lower_bound=wip_lower_bound,
-                                wip_upper_bound=wip_upper_bound,
-                                throughput_lower_bound=throughput_lower_bound,
-                                throughput_upper_bound=throughput_upper_bound,
-                                wip_filter=wip_filter,
-                                throughput_filter=throughput_filter,
-                                split_factor_lower_bound=split_factor_lower_bound,
-                                split_factor_upper_bound=split_factor_upper_bound)
+            form = \
+                Form.objects.create(query=query,
+                                    name=name,
+                                    wip_lower_bound=wip_lower_bound,
+                                    wip_upper_bound=wip_upper_bound,
+                                    throughput_lower_bound=throughput_lower_bound,
+                                    throughput_upper_bound=throughput_upper_bound,
+                                    wip_filter=wip_filter,
+                                    throughput_filter=throughput_filter,
+                                    split_factor_lower_bound=split_factor_lower_bound,
+                                    split_factor_upper_bound=split_factor_upper_bound)
 
-        response = query.run_estimation()
-        self.assertEqual(response, SUCCESS_MESSAGE)
+            run_estimation_response = query.run_estimation()
+            self.assertEqual(run_estimation_response, SUCCESS_MESSAGE)
+
+            check_validity_response = form.check_validity()
+            self.assertEqual(run_estimation_response, check_validity_response)
 
 
 # class FormModelTests(TestCase):
