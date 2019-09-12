@@ -6,7 +6,6 @@ import oauth2 as oauth
 from pathlib import Path
 
 
-# TODO: MAKE EXPLICIT THAT WE"RE USING private_key_filename EVERYTIME WE MAKE REQUESTS
 base_url = "https://4cast.atlassian.net"
 consumer_key = 'OauthKey'
 consumer_secret = 'dont_care'
@@ -64,7 +63,7 @@ def get_access_token():
 
     client = create_oauth_client(consumer_key, consumer_secret, SignatureMethod_RSA_SHA1())
 
-    # Lets try to access JIRA boartds. We should get a 401.
+    # Lets try to access JIRA boards. We should get a 401.
     resp, content = client.request(data_url, "GET")
     if resp['status'] != '401':
         raise Exception("Should have no access!")

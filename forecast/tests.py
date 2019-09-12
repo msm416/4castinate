@@ -22,38 +22,40 @@ def random_string_with_digits_and_symbols(string_length=10):
     return ''.join(random.choice(password_characters) for _ in range(string_length))
 
 
+def random_fields_for_form_model(query):
+    name = random_string_with_digits_and_symbols(100)
+    wip_lower_bound = random.randint(0, 10000)
+    wip_upper_bound = random.randint(wip_lower_bound, 20000)
+    throughput_lower_bound = random.randint(0, 10000)
+    throughput_upper_bound = random.randint(throughput_lower_bound, 20000)
+    wip_filter = random_string_with_digits_and_symbols(100)
+    throughput_filter = random_string_with_digits_and_symbols(100)
+
+    split_factor_lower_bound = random.uniform(1, 10000)
+    split_factor_upper_bound = random.uniform(split_factor_lower_bound, 20000)
+
+    return {'query': query,
+            'name': name,
+            'wip_lower_bound': wip_lower_bound,
+            'wip_upper_bound': wip_upper_bound,
+            'throughput_lower_bound': throughput_lower_bound,
+            'throughput_upper_bound': throughput_upper_bound,
+            'wip_filter': wip_filter,
+            'throughput_filter': throughput_filter,
+            'split_factor_lower_bound': split_factor_lower_bound,
+            'split_factor_upper_bound': split_factor_upper_bound}
+
+
 class SimulationTests(TestCase):
     def test_form_validity_check(self):
         """
         Valid forms should give SUCCESS_MESSAGE as response
         on both run_estimation() and check_validity() methods
         """
-        for _ in range(0, 100):
-            query = Query.objects.create(name="query")
+        for _ in range(0, 20):
+            query = Query.objects.create(name=random_string_with_digits_and_symbols())
 
-            wip_lower_bound = random.randint(0, 10000)
-            wip_upper_bound = random.randint(wip_lower_bound, 20000)
-            throughput_lower_bound = random.randint(0, 10000)
-            throughput_upper_bound = random.randint(throughput_lower_bound, 20000)
-            name = random_string_with_digits_and_symbols(100)
-            wip_filter = random_string_with_digits_and_symbols(100)
-            throughput_filter = random_string_with_digits_and_symbols(100)
-
-            # TODO: randfloat?
-            split_factor_lower_bound = random.randint(1, 10000)
-            split_factor_upper_bound = random.randint(split_factor_lower_bound, 20000)
-
-            form = \
-                Form.objects.create(query=query,
-                                    name=name,
-                                    wip_lower_bound=wip_lower_bound,
-                                    wip_upper_bound=wip_upper_bound,
-                                    throughput_lower_bound=throughput_lower_bound,
-                                    throughput_upper_bound=throughput_upper_bound,
-                                    wip_filter=wip_filter,
-                                    throughput_filter=throughput_filter,
-                                    split_factor_lower_bound=split_factor_lower_bound,
-                                    split_factor_upper_bound=split_factor_upper_bound)
+            form = Form.objects.create(**random_fields_for_form_model(query))
 
             run_estimation_response = query.run_estimation()
             self.assertEqual(run_estimation_response, SUCCESS_MESSAGE)
@@ -61,6 +63,52 @@ class SimulationTests(TestCase):
             check_validity_response = form.check_validity()
             self.assertEqual(run_estimation_response, check_validity_response)
 
+
+class ViewTests(TestCase):
+    def test_valid_get_req_index(self):
+        response = self.client.get(reverse('forecast:index'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_valid_get_req_detail(self):
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        Form.objects.create(query=query,
+                            name=random_string_with_digits_and_symbols())
+
+        response = self.client.get(reverse('forecast:detail',
+                                           args=(query.pk,
+                                                 SUCCESS_MESSAGE)))
+        self.assertEqual(response.status_code, 200)
+
+    def test_valid_post_req_create_query(self):
+        response = self.client.post(reverse('forecast:create_query'),
+                                    {'name': random_string_with_digits_and_symbols(),
+                                     'description': random_string_with_digits_and_symbols(),
+                                     'filter': random_string_with_digits_and_symbols()})
+        self.assertRedirects(response, reverse('forecast:index'))
+
+    def test_valid_post_req_run_estimation(self):
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        Form.objects.create(query=query,
+                            name=random_string_with_digits_and_symbols())
+
+        response = self.client.post(reverse('forecast:run_estimation',
+                                            args=(query.pk,)),
+                                    random_fields_for_form_model(query))
+        self.assertRedirects(response, reverse('forecast:detail',
+                                               args=(query.pk, query.run_estimation())))
+
+    def test_valid_get_req_results(self):
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        Form.objects.create(query=query,
+                            name=random_string_with_digits_and_symbols())
+
+        response = query.run_estimation()
+        self.assertEqual(response, SUCCESS_MESSAGE)
+
+        estimation = query.estimation_set.order_by('-creation_date').first()
+        response = self.client.get(reverse('forecast:results',
+                                           args=(query.pk, estimation.pk)))
+        self.assertEqual(response.status_code, 200)
 
 # class FormModelTests(TestCase):
 #     def create_iterations(self, board, nb_of_iter, state, now):

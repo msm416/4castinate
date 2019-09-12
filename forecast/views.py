@@ -68,18 +68,14 @@ def results(request, query_id, estimation_id):
 
 def run_estimation(request, query_id):
 
-    wip_filter = request.POST['wip_filter']
-
-    throughput_filter = request.POST['throughput_filter']
-
     Form.objects \
         .filter(query__pk=query_id) \
         .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
                 wip_upper_bound=int(request.POST['wip_upper_bound']),
-                wip_filter=wip_filter,
+                wip_filter=request.POST['wip_filter'],
                 throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                 throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-                throughput_filter=throughput_filter,
+                throughput_filter=request.POST['throughput_filter'],
                 # split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
                 #                 # split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
                 # simulation_count=int(request.POST['simulation_count'])
