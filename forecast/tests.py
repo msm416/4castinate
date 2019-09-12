@@ -47,6 +47,17 @@ def random_fields_for_form_model(query):
 
 
 class SimulationTests(TestCase):
+    def test_abc(self):
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        Form.objects.create(query=query,
+                            name="Gk/o;#w%3ECQn;#8Q_9Z%22%3Ed;J~s%6064MW81yRjL!w$6%3E0xXE=V/ch%22%22hvNcIg_M9E%)NTHPO~&x%60bB1~t[iKwdIC%3Ecy4\[9L]CSeQ8;")
+
+        response = self.client.post(reverse('forecast:run_estimation',
+                                            args=(query.pk,)),
+                                    random_fields_for_form_model(query))
+        self.assertRedirects(response, reverse('forecast:detail',
+                                               args=(query.pk, query.run_estimation())))
+
     def test_form_validity_check(self):
         """
         Valid forms should give SUCCESS_MESSAGE as response
