@@ -4,18 +4,18 @@
 
 {% block body %}
     <br>
-    {% if run_simulation_response %}
-        {% if run_simulation_response == "succeeded" %}
-            <h2 class="text-success text-center"> Simulation creation {{ run_simulation_response }} </h2>
+    {% if run_estimation_response %}
+        {% if run_estimation_response == "succeeded" %}
+            <h2 class="text-success text-center"> Estimation creation {{ run_estimation_response }} </h2>
         {% else %}
-            <h2 class="text-danger text-center"> Simulation creation {{ run_simulation_response }} </h2>
+            <h2 class="text-danger text-center"> Estimation creation {{ run_estimation_response }} </h2>
         {% endif %}
     {% endif %}
     <br>
-    <h3 class="text-center">{{ query.name }}: Preview of latest simulation</h3>
+    <h3 class="text-center">{{ query.name }}: Preview of latest estimation</h3>
     <br>
 
-    {% if latest_simulation_list.exists %}
+    {% if latest_estimation_list.exists %}
         <canvas id="myLikelihoodTable"></canvas>
 
         {{ weeks |json_script:"weeks"}}
@@ -86,7 +86,7 @@
             });
         </script>
     {% else %}
-        <h3 class="text-center"> No simulations </h3>
+        <h3 class="text-center"> No estimations </h3>
     {% endif %}
     <br>
 
@@ -97,7 +97,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Run simulation </b>
+                        <b> Run Estimation </b>
                     </button>
                 </h5>
             </div>
@@ -106,92 +106,107 @@
             data-parent="#accordion" style="background-color: rgb(240, 240, 240);">
                 <div class="card-body">
                     <div class="container">
-                        <form action="{% url 'forecast:run_simulation' query.id%}" method="post">
-                            {% csrf_token %}
-                            <h3>
-                                Notes:
-                            </h3>
-                            <br>
+                        <form action="{% url 'forecast:run_estimation' query.id%}" method="post">
                             <h5>
                                 Legend
                             </h5>
-                            <h8>
-                                <span style="background-color: #fff5f5;border: double"> <b> These fields </b> </span>
-                                &nbsp; are fetched from JQL filters on refresh. They can be changed before running the simulation but <b> will not be saved </b> for later use.
-                            </h8>
-                            <br>
-                            <h8>
-                                <span style="background-color: white;border: double"> <b> These fields </b> </span>
-                                &nbsp; are loaded from your configuration. They can be changed before running the simulation and <b> will be saved </b> for later use.
-                            </h8>
-                            <br>
-                            <h8>
-                                <span class="bg-success text-white" style="border: double; border-color: black"> Run simulation </span> &nbsp; creates a forecast using only the <b> numerical </b> values below.
-                            </h8>
-                            <br>
+                            <ul>
+                                <li>
+                                    <h8>
+                                        <span style="background-color: white;border: double"> <b> Configured Filters </b> </span>
+                                        &nbsp; are loaded from your saved configuration.
+                                    </h8>
+                                    <br>
+                                </li>
+                                <li>
+                                    <h8>
+                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span>
+                                        &nbsp; is fetched from <span style="background-color: white;border: double"> <b> Configured Filters </b> </span> on page reload.
+                                    </h8>
+                                    <br>
+                                </li>
+                                <li>
+                                    <h8>
+                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation and Update Configuration </span> &nbsp; creates a forecast using the
+                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> &nbsp;, it saves
+                                        <span style="background-color: white;border: double"> <b> Configured Filters </b> </span> &nbsp; changes for later use and
+                                        finally, redirects back on this page.
+                                    </h8>
+                                    <br>
+                                </li>
+                            </ul>
                             <br>
                             <h5>
-                                Valid Throughput filters
+                                Valid JQL Throughput Filters
                             </h5>
-                            <h8>
-                                * <b>cannot</b> have ORDER BY clause (Not supported yet)
-                            </h8>
+                            <ul>
+                                <li>
+                                    <h8>
+                                        <b>cannot</b> have ORDER BY clause (Not supported yet)
+                                    </h8>
+                                    <br>
+                                </li>
+                                <li>
+                                    <h8>
+                                        <b>must</b> have "resolution = Done" clause or equivalent (since Jira issues must have a non-null resolutiondate)
+                                    </h8>
+                                    <br>
+                                </li>
+                            </ul>
                             <br>
-                            <h8>
-                                * <b>must</b> have "resolution = Done" clause or equivalent (since jira issues must have a non-null resolutiondate)
-                            </h8>
-                            <br>
-                            <br>
+                            <h5>
+                                Estimation data
+                            </h5>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="wip_lower_bound"> <b> WIP - Low </b></label>
-                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}" style="background-color: #fff5f5">
+                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}" style="background-color: #e0feff">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="wip_upper_bound"> <b> WIP - High </b> </label>
-                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}" style="background-color: #fff5f5">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-12">
-                                    <label for="wip_filter"> <b> JQL filter to infer WIP: </b> </label>
-                                    <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
+                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}" style="background-color: #e0feff">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="throughput_lower_bound"> <b> (Weekly) Throughput - Low </b> </label>
-                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}" style="background-color: #fff5f5">
+                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}" style="background-color: #e0feff">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="throughput_upper_bound"> <b> (Weekly) Throughput - High </b> </label>
-                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}" style="background-color: #fff5f5">
+                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}" style="background-color: #e0feff">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="throughput_filter"> <b> JQL filter to infer Throughput: </b> </label>
-                                    <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
+                                    <label for="wip_filter"> <b> JQL Filter to infer WIP </b> </label>
+                                    <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group col-md-4">
-                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>
-                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="{{form.split_factor_lower_bound}}">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>
-                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="{{form.split_factor_upper_bound}}">
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label for="simulation_count"> <b> Simulation count </b> </label>
-                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="{{form.simulation_count}}">
+                                <div class="form-group col-md-12">
+                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput </b> </label>
+                                    <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
                                 </div>
                             </div>
+<!--                            <div class="form-row">-->
+<!--                                <div class="form-group col-md-4">-->
+<!--                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>-->
+<!--                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="{{form.split_factor_lower_bound}}">-->
+<!--                                </div>-->
+<!--                                <div class="form-group col-md-4">-->
+<!--                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>-->
+<!--                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="{{form.split_factor_upper_bound}}">-->
+<!--                                </div>-->
+<!--                                <div class="form-group col-md-4">-->
+<!--                                    <label for="simulation_count"> <b> Simulation count </b> </label>-->
+<!--                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="{{form.simulation_count}}">-->
+<!--                                </div>-->
+<!--                            </div>-->
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-success">Run simulation</button>
+                                    <button type="submit" class="btn btn-success">Run Estimation and Update Configuration</button>
                                 </div>
                                 <div class="col-md-4"></div>
                             </div>
@@ -203,7 +218,7 @@
     </div>
 
     <br>
-    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past simulation ...">
+    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
 
         <table class="table table-bordered table-striped">
@@ -221,19 +236,19 @@
                 </tr>
             </thead>
             <tbody id="myTable">
-                {% for simulation in latest_simulation_list %}
+                {% for estimation in latest_estimation_list %}
                     <tr>
                         <td>
-                            <a class="btn btn-success" href="{% url 'forecast:results' query.id simulation.id %}"> -> </a>
+                            <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
                         </td>
                         <td>
-                            {{simulation.name}}
+                            {{estimation.name}}
                         </td>
                         <td>
-                            {{simulation.simulation_count}}
+                            {{estimation.simulation_count}}
                         </td>
                         <td>
-                            [{{simulation.wip_lower_bound}},{{simulation.wip_upper_bound}}]
+                            [{{estimation.wip_lower_bound}},{{estimation.wip_upper_bound}}]
                         </td>
                         <td>
                             DELET DIS
@@ -245,10 +260,10 @@
                             DELEEEEET
                         </td>
                         <td>
-                            [{{simulation.split_factor_lower_bound}},{{simulation.split_factor_upper_bound}}]
+                            [{{estimation.split_factor_lower_bound}},{{estimation.split_factor_upper_bound}}]
                         </td>
                         <td>
-                            {{ simulation.creation_date }}
+                            {{ estimation.creation_date }}
                         </td>
 
                     </tr>

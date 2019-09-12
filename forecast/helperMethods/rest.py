@@ -34,21 +34,23 @@ def fetch_wip_filter(form):
         make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_filter}&maxResults=1&fields=None")
     if resp_code == 200:
         form.wip_lower_bound = form.wip_upper_bound = response_content['total']
-    else:
-        form.wip_lower_bound = form.wip_upper_bound = -1
+        return
+    form.wip_lower_bound = form.wip_upper_bound = -1
 
 
 def fetch_throughput_filter(form):
     resp_code_asc, response_content_asc = \
         make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
-                            f"ORDER BY resolutiondate ASC &maxResults=1&fields=resolutiondate")
+                            f"ORDER BY resolutiondate ASC &maxResults=1&fields=resolutiondate",
+                            client)
 
     if resp_code_asc == 200:
         total = response_content_asc['total']
 
         resp_code_desc, response_content_desc = \
             make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
-                                f"ORDER BY resolutiondate DESC &maxResults=1&fields=resolutiondate")
+                                f"ORDER BY resolutiondate DESC &maxResults=1&fields=resolutiondate",
+                                client)
 
         if len(response_content_asc['issues']) != 0 and len(response_content_desc['issues']) != 0:
             first_issue_done_date = response_content_asc['issues'][0]['fields']['resolutiondate']
@@ -86,68 +88,4 @@ def make_single_get_req(url, client=None):
 
         response_content = response.text
 
-    return resp_code, json.loads(response_content)
-
-
-# Figure out what type of authentication method should be used
-def make_aggregate_get_req(url, aggregate_key, fields, max_pages_retrieved=2):
-    # list of issue_lists
-    aggregate_values = []
-
-    is_last = False
-
-    index = 0
-
-    resp_code = -1
-
-    while not is_last:
-        resp_code, response_content = make_single_get_req(f"{url}?startAt={index}{fields}", client)
-
-        aggregate_values.append(response_content[aggregate_key])
-
-        max_results = response_content['maxResults']
-
-        total_issues = response_content['total'] if 'total' in response_content else 0
-
-        if 'isLast' in response_content:
-            # GET BOARDS
-            is_last = response_content['isLast']
-        else:
-            # GET ISSUES
-            if max_results + index >= total_issues:
-                is_last = True
-            else:
-                                                     # total_issues
-                start_positions = range(max_results, 2 * max_results, max_results)
-
-                # for parallelization_index in start_positions:
-                #     parallelization_resp_code, parallelization_response_content = \
-                #         make_single_get_req(url, parallelization_index, client, fields)
-                #
-                #     aggregate_values.append(parallelization_response_content[aggregate_key])
-
-                pool = Pool()
-                unprocessed_results_map = pool.starmap(make_single_get_req,
-                                                       [(f"{url}?startAt={parallelization_index}{fields}", client)
-                                                        for parallelization_index in start_positions])
-                pool.close()
-                pool.join()
-
-                aggregate_values = reduce(
-                    (lambda aggr_vals, resp_tuple: aggr_vals
-                     if aggr_vals.append(resp_tuple[1][aggregate_key])
-                     else aggr_vals),
-                    unprocessed_results_map,
-                    aggregate_values)
-
-                is_last = True
-
-        max_pages_retrieved -= 1
-        if max_pages_retrieved == 0:
-            is_last = True
-
-        index += max_results
-
-        resp_code = int(resp_code['status'])
-
-    return resp_code, [value for value_list in aggregate_values for value in value_list], total_issues
+    return resp_code, (json.loads(response_content) if resp_code is 200 else {})
