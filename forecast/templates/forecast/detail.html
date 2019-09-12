@@ -97,7 +97,7 @@
                 <h5 class="mb-0">
                     <button class="btn btn-light btn-lg btn-block" data-toggle="collapse"
                             data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                        <b> Run estimation </b>
+                        <b> Run Estimation </b>
                     </button>
                 </h5>
             </div>
@@ -107,70 +107,85 @@
                 <div class="card-body">
                     <div class="container">
                         <form action="{% url 'forecast:run_estimation' query.id%}" method="post">
-                            {% csrf_token %}
-                            <h3>
-                                Notes:
-                            </h3>
-                            <br>
                             <h5>
                                 Legend
                             </h5>
-                            <h8>
-                                <span style="background-color: #fff5f5;border: double"> <b> These fields </b> </span>
-                                &nbsp; are fetched from JQL filters on refresh. They can be changed before running the estimation but <b> will not be saved </b> for later use.
-                            </h8>
-                            <br>
-                            <h8>
-                                <span style="background-color: white;border: double"> <b> These fields </b> </span>
-                                &nbsp; are loaded from your configuration. They can be changed before running the estimation and <b> will be saved </b> for later use.
-                            </h8>
-                            <br>
-                            <h8>
-                                <span class="bg-success text-white" style="border: double; border-color: black"> Run estimation </span> &nbsp; creates a forecast using only the <b> numerical </b> values below.
-                            </h8>
-                            <br>
+                            <ul>
+                                <li>
+                                    <h8>
+                                        <span style="background-color: white;border: double"> <b> Configured Filters </b> </span>
+                                        &nbsp; are loaded from your saved configuration.
+                                    </h8>
+                                    <br>
+                                </li>
+                                <li>
+                                    <h8>
+                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span>
+                                        &nbsp; is fetched from <span style="background-color: white;border: double"> <b> Configured Filters </b> </span> on page reload.
+                                    </h8>
+                                    <br>
+                                </li>
+                                <li>
+                                    <h8>
+                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation and Update Configuration </span> &nbsp; creates a forecast using the
+                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> &nbsp;, it saves
+                                        <span style="background-color: white;border: double"> <b> Configured Filters </b> </span> &nbsp; changes for later use and
+                                        finally, redirects back on this page.
+                                    </h8>
+                                    <br>
+                                </li>
+                            </ul>
                             <br>
                             <h5>
-                                Valid Throughput filters
+                                Valid JQL Throughput Filters
                             </h5>
-                            <h8>
-                                * <b>cannot</b> have ORDER BY clause (Not supported yet)
-                            </h8>
+                            <ul>
+                                <li>
+                                    <h8>
+                                        <b>cannot</b> have ORDER BY clause (Not supported yet)
+                                    </h8>
+                                    <br>
+                                </li>
+                                <li>
+                                    <h8>
+                                        <b>must</b> have "resolution = Done" clause or equivalent (since Jira issues must have a non-null resolutiondate)
+                                    </h8>
+                                    <br>
+                                </li>
+                            </ul>
                             <br>
-                            <h8>
-                                * <b>must</b> have "resolution = Done" clause or equivalent (since jira issues must have a non-null resolutiondate)
-                            </h8>
-                            <br>
-                            <br>
+                            <h5>
+                                Estimation data
+                            </h5>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="wip_lower_bound"> <b> WIP - Low </b></label>
-                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}" style="background-color: #fff5f5">
+                                    <input type="text" name="wip_lower_bound" class="form-control" id="wip_lower_bound" value="{{form.wip_lower_bound}}" style="background-color: #e0feff">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="wip_upper_bound"> <b> WIP - High </b> </label>
-                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}" style="background-color: #fff5f5">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-12">
-                                    <label for="wip_filter"> <b> JQL filter to infer WIP: </b> </label>
-                                    <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
+                                    <input type="text" name="wip_upper_bound" class="form-control" id="wip_upper_bound" value="{{form.wip_upper_bound}}" style="background-color: #e0feff">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="throughput_lower_bound"> <b> (Weekly) Throughput - Low </b> </label>
-                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}" style="background-color: #fff5f5">
+                                    <input type="text" name="throughput_lower_bound" class="form-control" id="throughput_lower_bound" value="{{form.throughput_lower_bound}}" style="background-color: #e0feff">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="throughput_upper_bound"> <b> (Weekly) Throughput - High </b> </label>
-                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}" style="background-color: #fff5f5">
+                                    <input type="text" name="throughput_upper_bound" class="form-control" id="throughput_upper_bound" value="{{form.throughput_upper_bound}}" style="background-color: #e0feff">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="throughput_filter"> <b> JQL filter to infer Throughput: </b> </label>
+                                    <label for="wip_filter"> <b> JQL Filter to infer WIP </b> </label>
+                                    <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-12">
+                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput </b> </label>
                                     <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
                                 </div>
                             </div>
@@ -191,7 +206,7 @@
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-success">Run estimation</button>
+                                    <button type="submit" class="btn btn-success">Run Estimation and Update Configuration</button>
                                 </div>
                                 <div class="col-md-4"></div>
                             </div>
