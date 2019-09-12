@@ -33,36 +33,36 @@ def fetch_wip_filter(form):
     resp_code, response_content = \
         make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_filter}&maxResults=1&fields=None")
     if resp_code == 200:
-        if 'total' in response_content:
-            form.wip_lower_bound = form.wip_upper_bound = response_content['total']
-            return
+        form.wip_lower_bound = form.wip_upper_bound = response_content['total']
+        return
     form.wip_lower_bound = form.wip_upper_bound = -1
 
 
 def fetch_throughput_filter(form):
     resp_code_asc, response_content_asc = \
         make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
-                            f"ORDER BY resolutiondate ASC &maxResults=1&fields=resolutiondate")
+                            f"ORDER BY resolutiondate ASC &maxResults=1&fields=resolutiondate",
+                            client)
 
     if resp_code_asc == 200:
-        if 'total' in response_content_asc:
-            total = response_content_asc['total']
+        total = response_content_asc['total']
 
-            resp_code_desc, response_content_desc = \
-                make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
-                                    f"ORDER BY resolutiondate DESC &maxResults=1&fields=resolutiondate")
+        resp_code_desc, response_content_desc = \
+            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
+                                f"ORDER BY resolutiondate DESC &maxResults=1&fields=resolutiondate",
+                                client)
 
-            if len(response_content_asc['issues']) != 0 and len(response_content_desc['issues']) != 0:
-                first_issue_done_date = response_content_asc['issues'][0]['fields']['resolutiondate']
-                last_issue_done_date = response_content_desc['issues'][0]['fields']['resolutiondate']
+        if len(response_content_asc['issues']) != 0 and len(response_content_desc['issues']) != 0:
+            first_issue_done_date = response_content_asc['issues'][0]['fields']['resolutiondate']
+            last_issue_done_date = response_content_desc['issues'][0]['fields']['resolutiondate']
 
-                if first_issue_done_date and last_issue_done_date:
+            if first_issue_done_date and last_issue_done_date:
 
-                    duration_in_weeks = ((dateutil.parser.parse(last_issue_done_date) -
-                                         dateutil.parser.parse(first_issue_done_date)).days + 1) / 7
+                duration_in_weeks = ((dateutil.parser.parse(last_issue_done_date) -
+                                     dateutil.parser.parse(first_issue_done_date)).days + 1) / 7
 
-                    form.throughput_lower_bound = form.throughput_upper_bound = total / duration_in_weeks
-                    return
+                form.throughput_lower_bound = form.throughput_upper_bound = total / duration_in_weeks
+                return
 
     form.throughput_lower_bound = form.throughput_upper_bound = -1
 
@@ -88,7 +88,7 @@ def make_single_get_req(url, client=None):
 
         response_content = response.text
 
-    return resp_code, json.loads(response_content)
+    return resp_code, (json.loads(response_content) if resp_code is 200 else {})
 
 
 # # Figure out what type of authentication method should be used
