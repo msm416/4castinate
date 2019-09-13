@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.test import TestCase
 from django.db.models import Sum
 
+from forecast.helperMethods.rest import fetch_filters_and_update_form
 from .models import Query, Form, Estimation, SUCCESS_MESSAGE
 
 
@@ -23,7 +24,6 @@ def random_string_with_digits_and_symbols(string_length=10):
 
 
 def random_fields_for_form_model(query):
-    name = random_string_with_digits_and_symbols(100)
     wip_lower_bound = random.randint(0, 10000)
     wip_upper_bound = random.randint(wip_lower_bound, 20000)
     throughput_lower_bound = random.randint(0, 10000)
@@ -35,7 +35,6 @@ def random_fields_for_form_model(query):
     split_factor_upper_bound = random.uniform(split_factor_lower_bound, 20000)
 
     return {'query': query,
-            'name': name,
             'wip_lower_bound': wip_lower_bound,
             'wip_upper_bound': wip_upper_bound,
             'throughput_lower_bound': throughput_lower_bound,
@@ -46,7 +45,7 @@ def random_fields_for_form_model(query):
             'split_factor_upper_bound': split_factor_upper_bound}
 
 
-class SimulationTests(TestCase):
+class UnitTests(TestCase):
 
     def test_form_validity_check(self):
         """
@@ -64,6 +63,44 @@ class SimulationTests(TestCase):
             check_validity_response = form.check_validity()
             self.assertEqual(run_estimation_response, check_validity_response)
 
+    def test_invalid_form_filters(self):
+        """
+        Invalid throughput/wip filter should return [-1,-1] for low/high throughput/wip.
+        """
+
+        # throughput_filter will never match a valid JQL with " ORDER BY "
+        throughput_filter = f"{random_string_with_digits_and_symbols()} ORDER BY "
+        wip_filter = f"{random_string_with_digits_and_symbols()} ORDER BY "
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        Form.objects.create(**random_fields_for_form_model(query))
+        Form.objects.filter(query=query).update(wip_filter=wip_filter,
+                                                throughput_filter=throughput_filter)
+
+        form = Form.objects.get(query=query)
+        fetch_filters_and_update_form(form)
+
+        self.assertEqual(form.wip_lower_bound, -1)
+        self.assertEqual(form.wip_upper_bound, -1)
+        self.assertEqual(form.throughput_lower_bound, -1)
+        self.assertEqual(form.throughput_upper_bound, -1)
+
+    def test_valid_form_wip_filter(self):
+        """
+        ANY VALID JQL QUERY FOR WIP FILTER WILL RESULT IN SOME POSITIVE WIP (>=0)
+
+        TO GENERATE A VALID JQL QUERY, WE"LL CONSIDER THE EMPTY QUERY (i.e. all issues)
+        """
+        wip_filter = "status = Done"
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        Form.objects.create(**random_fields_for_form_model(query))
+        Form.objects.filter(query=query).update(wip_filter=wip_filter)
+
+        form = Form.objects.get(query=query)
+        fetch_filters_and_update_form(form)
+
+        self.assertGreaterEqual(form.wip_lower_bound, 0)
+        self.assertGreaterEqual(form.wip_upper_bound, 0)
+
 
 class ViewTests(TestCase):
 
@@ -73,8 +110,7 @@ class ViewTests(TestCase):
 
     def test_valid_get_req_detail(self):
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
-        Form.objects.create(query=query,
-                            name=random_string_with_digits_and_symbols())
+        Form.objects.create(query=query)
 
         response = self.client.get(reverse('forecast:detail',
                                            args=(query.pk,
@@ -90,8 +126,7 @@ class ViewTests(TestCase):
 
     def test_valid_post_req_run_estimation(self):
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
-        Form.objects.create(query=query,
-                            name=random_string_with_digits_and_symbols())
+        Form.objects.create(query=query)
 
         response = self.client.post(reverse('forecast:run_estimation',
                                             args=(query.pk,)),
@@ -101,8 +136,7 @@ class ViewTests(TestCase):
 
     def test_valid_get_req_results(self):
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
-        Form.objects.create(query=query,
-                            name=random_string_with_digits_and_symbols())
+        Form.objects.create(query=query)
 
         response = query.run_estimation()
         self.assertEqual(response, SUCCESS_MESSAGE)

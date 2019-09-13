@@ -107,6 +107,7 @@
                 <div class="card-body">
                     <div class="container">
                         <form action="{% url 'forecast:run_estimation' query.id%}" method="post">
+                            {% csrf_token %}
                             <h5>
                                 Legend
                             </h5>
@@ -225,13 +226,10 @@
             <thead>
                 <tr>
                     <th> View Forecast </th>
-                    <th>Name</th>
-                    <th>#Sim</th>
                     <th>WIP</th>
-                    <th>WIP_Source</th>
-                    <th>TPut_Rate</th>
-                    <th>TPut_Source</th>
-                    <th>S_Rate</th>
+                    <th>Filter for WIP</th>
+                    <th>Throughput</th>
+                    <th>Filter for Throughput</th>
                     <th>(DB) Creation date</th>
                 </tr>
             </thead>
@@ -242,25 +240,16 @@
                             <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
                         </td>
                         <td>
-                            {{estimation.name}}
-                        </td>
-                        <td>
-                            {{estimation.simulation_count}}
-                        </td>
-                        <td>
                             [{{estimation.wip_lower_bound}},{{estimation.wip_upper_bound}}]
                         </td>
                         <td>
-                            DELET DIS
+                            {{ estimation.wip_filter }}
                         </td>
                         <td>
-                            DELET THIS TPUT
+                            [{{estimation.throughput_lower_bound}},{{estimation.throughput_upper_bound}}]
                         </td>
                         <td>
-                            DELEEEEET
-                        </td>
-                        <td>
-                            [{{estimation.split_factor_lower_bound}},{{estimation.split_factor_upper_bound}}]
+                            {{ estimation.throughput_filter }}
                         </td>
                         <td>
                             {{ estimation.creation_date }}

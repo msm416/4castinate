@@ -100,7 +100,6 @@ def create_query(request):
     wip_filter, throughput_filter = create_form_filters(request.POST['filter'])
 
     Form.objects.create(query=query,
-                        name="default Form",
                         wip_filter=wip_filter,
                         throughput_filter=throughput_filter)
 
