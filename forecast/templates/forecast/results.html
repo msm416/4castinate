@@ -3,7 +3,7 @@
 
 {% block body %}
 
-    <canvas id="myChart"></canvas>
+    <canvas id="myProbabilityDistribution"></canvas>
 
     <canvas id="myLikelihoodTable"></canvas>
 
@@ -15,10 +15,11 @@
 
     <script>
         //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
-        var ctx = document.getElementById('myChart').getContext('2d');
+        var ctx = document.getElementById('myProbabilityDistribution').getContext('2d');
         var weeks = JSON.parse(document.getElementById('weeks').textContent);
         var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
         var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+        var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
 
         var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
         gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
@@ -43,10 +44,10 @@
                     pointBackgroundColor: gradientStroke,
                     pointHoverBackgroundColor: gradientStroke,
                     pointHoverBorderColor: gradientStroke,
-                    pointBorderWidth: 10,
+                    pointBorderWidth: 0,
                     pointHoverRadius: 10,
                     pointHoverBorderWidth: 1,
-                    pointRadius: 3,
+                    pointRadius: 0,
                     fill: true,
                     backgroundColor: gradientFill,
                     borderWidth: 4,
@@ -66,11 +67,22 @@
                             display: true,
                             labelString: 'Probability'
                         }
+                        // ,type: 'logarithmic'
                     }],
                     xAxes: [{
                         scaleLabel: {
                             display: true,
                             labelString: 'Week'
+                        },
+                        ticks: {
+                            userCallback: function(item, index) {
+                                console.log((centile_values.indexOf(parseInt(item,10)) > -1));
+                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
+                            },
+                            autoSkip: false
+                        },
+                        gridLines: {
+                            display:false
                         }
                     }]
                 }
