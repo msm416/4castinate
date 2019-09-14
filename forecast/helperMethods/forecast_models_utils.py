@@ -9,20 +9,11 @@ def reduce_durations(durations):
 
     weeks_frequency_sum = sum(weeks_frequency)
     centile_values.sort()
-    print(centile_values)
-    print(weeks_frequency)
 
     weeks = [(str(k) if k in set(centile_values) else str(k)) for (k, v) in weeks_to_frequency]
-    point_radius_list = [(2 if k in set(centile_values) else 0) for (k, v) in weeks_to_frequency]
-    point_color_list = [("rgba(0,0,0,0.25)" if k in set(centile_values) else 0) for (k, v) in weeks_to_frequency]
-    # print(weeks_frequency_sum)
+    point_radius_list = [(3 if k in set(centile_values) else 0) for (k, v) in weeks_to_frequency]
+    point_color_list = [("rgba(0,0,0,0.5)" if k in set(centile_values) else 0) for (k, v) in weeks_to_frequency]
 
-    # weeks = [k for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
-    # weeks_frequency = [v for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
-
-    # weeks = [k for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
-    # weeks_frequency = [v for (k, v) in weeks_to_frequency][0::int(len(weeks_to_frequency)/20)]
-    # print(centile_values)
     return centile_values, weeks, weeks_frequency, \
            weeks_frequency_sum, point_radius_list, point_color_list
 

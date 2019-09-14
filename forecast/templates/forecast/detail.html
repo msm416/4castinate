@@ -17,45 +17,7 @@
     <br>
 
     {% if latest_estimation_list.exists %}
-    <div class="row">
-        <div class="col-md-12">
-            <canvas id="myProbabilityDistribution"></canvas>
-        </div>
-    </div>
-
-    <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
-        <thead>
-        <tr>
-            <th> 0% </th>
-            <th> 5% </th>
-            <th> 10% </th>
-            <th> 15% </th>
-            <th> 20% </th>
-            <th> 5% </th>
-            <th> 10% </th>
-            <th> 15% </th>
-            <th> 20% </th>
-            <th> 5%</th>
-            <th> 10%</th>
-        </tr>
-        </thead>
-        <tbody id="myForecastTable">
-        <tr>
-            <td> 0 </td>
-            <td> 1 </td>
-            <td> 2 </td>
-            <td> 4 </td>
-            <td> 3 </td>
-            <td> 5 </td>
-            <td> 6 </td>
-            <td> 7 </td>
-            <td> 9 </td>
-            <td> 8 </td>
-            <td> 10 </td>
-
-        </tr>
-        </tbody>
-    </table>
+        <canvas id="myProbabilityDistribution"></canvas>
 
         {{ weeks |json_script:"weeks"}}
         {{ weeks_frequency |json_script:"weeks_frequency"}}
@@ -113,15 +75,17 @@
             options: {
                 title: {
                     display: true,
-                    text: 'Test Results - Discrete Probability Distribution'
+                    text: 'Estimation Results - Discrete Probability Distribution',
                 },
                 scales: {
                     yAxes: [{
                         scaleLabel: {
                             display: true,
                             labelString: 'Probability'
+                        },
+                        gridLines: {
+                            display:false
                         }
-                        // ,type: 'logarithmic'
                     }],
                     xAxes: [{
                         scaleLabel: {
@@ -133,8 +97,6 @@
                                 if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
                             },
                             autoSkip: false
-                            // stepSize: 1,
-                            // fixedStepSize: 1
                         },
                         gridLines: {
                             userCallback: function(item, index) {
@@ -146,7 +108,6 @@
                     }]
                 },
                 tooltips: {
-                    //titleFontSize: 0,
                     mode: 'nearest',
                     filter: function (item, data) {
                         return item.label !== "undefined";
@@ -154,14 +115,15 @@
                     },
                     callbacks: {
                         label: function(tooltipItem, data) {
-                            console.log(tooltipItem.toString().concat( " BRO"));
-                            return tooltipItem.xLabel
+                            var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                            var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                            if (firstIndexOfItem === lastIndexOfItem)
+                                {return firstIndexOfItem.concat(" % Likelihood")}
+                            else
+                                {return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % Likelihood")}
                         }
                     }
                 }
-
-
-
             }
         });
     </script>
@@ -302,7 +264,6 @@
     <br>
     <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
-
         <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
             <thead>
                 <tr>
@@ -340,21 +301,6 @@
                 {% endfor %}
             </tbody>
         </table>
-
-    {% if error_message %}
-        <br>
-        <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4" align="center">
-                <p>
-                    <strong> Warning: {{ error_message }} </strong>
-                </p>
-            </div>
-            <div class="col-md-4"></div>
-        </div>
-    {% endif %}
-
-
     <script>
         $(document).ready(function(){$("#myInput").on("keyup", function() {
             var value = $(this).val().toLowerCase();

@@ -26,7 +26,8 @@ def detail(request, query_id, run_estimation_response=None):
 
     estimation = latest_estimation_list.first()
 
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum, point_radius_list, point_color_list) = \
+    (centile_values, weeks, weeks_frequency,
+     weeks_frequency_sum, point_radius_list, point_color_list) = \
         reduce_durations([int(x) for x in estimation.durations.split(";")]) \
         if latest_estimation_list.exists() \
         else ([], [], [], None, [], [])
@@ -52,7 +53,8 @@ def results(request, query_id, estimation_id):
 
     estimation = get_object_or_404(Estimation, pk=estimation_id)
 
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum, point_radius_list, point_color_list) = \
+    (centile_values, weeks, weeks_frequency,
+     weeks_frequency_sum, point_radius_list, point_color_list) = \
         reduce_durations([int(x) for x in estimation.durations.split(";")])
 
     context = {
