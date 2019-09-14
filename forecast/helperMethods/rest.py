@@ -26,9 +26,10 @@ def create_form_filters(filter):
 
 
 def fetch_filters_and_update_form(form):
-    fetch_wip_filter(form)
-    fetch_throughput_filter(form)
+    initial_wip = fetch_wip_filter(form)
+    initial_throughput = fetch_throughput_filter(form)
     form.save()
+    return initial_wip, initial_throughput
 
 
 def fetch_wip_filter(form):
@@ -38,10 +39,13 @@ def fetch_wip_filter(form):
                                 client)
         print(resp_code)
         if resp_code == 200:
-            form.wip_lower_bound = form.wip_upper_bound = response_content['total']
-            return
+            initial_wip = response_content['total']
+            form.wip_lower_bound = int(response_content['total'] * (1.00 - form.split_rate_wip))
+            form.wip_upper_bound = int(response_content['total'] * (1.00 + form.split_rate_wip))
+            return initial_wip
 
     form.wip_lower_bound = form.wip_upper_bound = -1
+    return -1
 
 
 def fetch_throughput_filter(form):
@@ -66,10 +70,13 @@ def fetch_throughput_filter(form):
                     duration_in_weeks = ((dateutil.parser.parse(last_issue_done_date) -
                                          dateutil.parser.parse(first_issue_done_date)).days + 1) / 7
 
-                    form.throughput_lower_bound = form.throughput_upper_bound = total / duration_in_weeks
-                    return
+                    initial_throughput = int(total / duration_in_weeks)
+                    form.throughput_lower_bound = int(initial_throughput * (1.00 - form.split_rate_throughput))
+                    form.throughput_upper_bound = int(initial_throughput * (1.00 + form.split_rate_throughput))
+                    return initial_throughput
 
     form.throughput_lower_bound = form.throughput_upper_bound = -1
+    return -1
 
 
 def make_single_get_req(url, client=None):

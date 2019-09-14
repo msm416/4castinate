@@ -16,6 +16,9 @@
     <br>
     <br>
 
+    {{ initial_wip |json_script:"initial_wip"}}
+    {{ initial_throughput |json_script:"initial_throughput"}}
+
     {% if latest_estimation_list.exists %}
         <canvas id="myProbabilityDistribution"></canvas>
 
@@ -236,30 +239,26 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="wip_filter"> <b> JQL Filter to infer WIP </b> </label>
+                                    <label for="wip_filter"> <b> JQL Filter to infer WIP (fetched value: {{initial_wip}}) </b> </label>
                                     <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput </b> </label>
+                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput (fetched value: {{initial_throughput}}) </b> </label>
                                     <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
                                 </div>
                             </div>
-<!--                            <div class="form-row">-->
-<!--                                <div class="form-group col-md-4">-->
-<!--                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>-->
-<!--                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="{{form.split_factor_lower_bound}}">-->
-<!--                                </div>-->
-<!--                                <div class="form-group col-md-4">-->
-<!--                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>-->
-<!--                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="{{form.split_factor_upper_bound}}">-->
-<!--                                </div>-->
-<!--                                <div class="form-group col-md-4">-->
-<!--                                    <label for="simulation_count"> <b> Simulation count </b> </label>-->
-<!--                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="{{form.simulation_count}}">-->
-<!--                                </div>-->
-<!--                            </div>-->
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="split_rate_wip"> <b> WIP SPLIT RATE <span id="split_rate_wip_value" > {{form.split_rate_wip}} </span> </b> </label>
+                                    <input type="range" name="split_rate_wip" class="form-control" id="split_rate_wip" value="{{form.split_rate_wip}}" min="0.00" max="1.00" step="0.01">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="split_rate_throughput"> <b> THROUGHPUT SPLIT RATE <span id="split_rate_throughput_value"> {{form.split_rate_throughput}} </span> </b> </label>
+                                    <input type="range" name="split_rate_throughput" class="form-control" id="split_rate_throughput" value="{{form.split_rate_throughput}}" min="0.00" max="1.00" step="0.01">
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
@@ -268,6 +267,25 @@
                                 <div class="col-md-4"></div>
                             </div>
                         </form>
+                        <script>
+                            var initial_wip = JSON.parse(document.getElementById('initial_wip').textContent);
+                            var initial_throughput = JSON.parse(document.getElementById('initial_throughput').textContent);
+
+                            $(document).on('input', '#split_rate_wip', function() {
+                                var rate = parseFloat($(this).val());
+                                $('#split_rate_wip_value').html($(this).val());
+                                document.getElementById("wip_upper_bound").value = rate;
+                                document.getElementById("wip_lower_bound").value = Math.floor((1.00 - rate) * initial_wip);
+                                document.getElementById("wip_upper_bound").value = Math.floor((1.00 + rate) * initial_wip);
+                            });
+
+                            $(document).on('input', '#split_rate_throughput', function() {
+                                var rate = parseFloat($(this).val());
+                                $('#split_rate_throughput_value').html($(this).val());
+                                document.getElementById("throughput_lower_bound").value = Math.floor((1.00 - rate) * initial_throughput);
+                                document.getElementById("throughput_upper_bound").value = Math.floor((1.00 + rate) * initial_throughput);
+                            });
+                        </script>
                     </div>
                 </div>
             </div>
@@ -275,7 +293,7 @@
     </div>
 
     <br>
-    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past estimation ...">
+    <input class="form-control" id="mySearch" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
         <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
             <thead>
@@ -315,7 +333,7 @@
             </tbody>
         </table>
     <script>
-        $(document).ready(function(){$("#myInput").on("keyup", function() {
+        $(document).ready(function(){$("#mySearch").on("keyup", function() {
             var value = $(this).val().toLowerCase();
             $("#myTable tr").filter(function() {
                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)

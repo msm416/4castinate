@@ -21,8 +21,8 @@ class EstimationInput(models.Model):
     # Default: we consider forms that don't use filter to determine throughput
     throughput_filter = models.TextField(default="")
 
-    split_factor_lower_bound = models.FloatField(default=1.00)
-    split_factor_upper_bound = models.FloatField(default=1.00)
+    split_rate_wip = models.FloatField(default=0.00)
+    split_rate_throughput = models.FloatField(default=0.00)
 
     simulation_count = models.PositiveSmallIntegerField(default=10000)
 
@@ -53,13 +53,10 @@ class Query(models.Model):
         wip = random.uniform(form.wip_lower_bound, form.wip_upper_bound,
                              (form.simulation_count,))
 
-        split_rate = random.uniform(form.split_factor_lower_bound, form.split_factor_upper_bound,
-                                    (form.simulation_count,))
-
         weekly_throughput = random.uniform(form.throughput_lower_bound, form.throughput_upper_bound,
                                            (form.simulation_count,))
 
-        completion_duration = (ceil((wip * split_rate) / weekly_throughput)).astype(int)
+        completion_duration = (ceil(wip / weekly_throughput)).astype(int)
 
         durations = ';'.join(map(str, completion_duration))
         end_time = time.time()
@@ -94,9 +91,13 @@ class Form(EstimationInput):
             run_estimation_response += f"Throughput is " \
                 f"({self.throughput_lower_bound}, { self.throughput_upper_bound}). "
 
-        if 0 >= self.split_factor_lower_bound or self.split_factor_lower_bound > self.split_factor_upper_bound:
-            run_estimation_response += f"Split Rate is " \
-                f"({self.split_factor_lower_bound}, { self.split_factor_upper_bound}). "
+        if 0 > self.split_rate_wip or self.split_rate_wip > 1.00:
+            run_estimation_response += f"Split Rate for WIP is " \
+                f"{self.split_rate_wip}. "
+
+        if 0 > self.split_rate_throughput or self.split_rate_throughput > 1.00:
+            run_estimation_response += f"Split Rate for Throughput is " \
+                f"{self.split_rate_throughput}. "
 
         return f"failed: {run_estimation_response}" if run_estimation_response else SUCCESS_MESSAGE
 

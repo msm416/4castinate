@@ -31,8 +31,8 @@ def random_fields_for_form_model(query):
     wip_filter = random_string_with_digits_and_symbols(100)
     throughput_filter = random_string_with_digits_and_symbols(100)
 
-    split_factor_lower_bound = random.uniform(1, 10000)
-    split_factor_upper_bound = random.uniform(split_factor_lower_bound, 20000)
+    split_rate_wip = random.uniform(0, 1)
+    split_rate_throughput = random.uniform(0, 1)
 
     return {'query': query,
             'wip_lower_bound': wip_lower_bound,
@@ -41,8 +41,8 @@ def random_fields_for_form_model(query):
             'throughput_upper_bound': throughput_upper_bound,
             'wip_filter': wip_filter,
             'throughput_filter': throughput_filter,
-            'split_factor_lower_bound': split_factor_lower_bound,
-            'split_factor_upper_bound': split_factor_upper_bound}
+            'split_rate_wip': split_rate_wip,
+            'split_rate_throughput': split_rate_throughput,}
 
 
 class UnitTests(TestCase):

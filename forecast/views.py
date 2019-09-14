@@ -20,7 +20,7 @@ def detail(request, query_id, run_estimation_response=None):
     # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
-    fetch_filters_and_update_form(query.form)
+    initial_wip, initial_throughput = fetch_filters_and_update_form(query.form)
 
     latest_estimation_list = query.estimation_set.order_by('-creation_date')
 
@@ -43,7 +43,9 @@ def detail(request, query_id, run_estimation_response=None):
                'nbar': 'detail',
                'run_estimation_response': run_estimation_response,
                'point_radius_list': point_radius_list,
-               'point_color_list': point_color_list}
+               'point_color_list': point_color_list,
+               'initial_wip': initial_wip,
+               'initial_throughput': initial_throughput}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -82,8 +84,8 @@ def run_estimation(request, query_id):
                 throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                 throughput_upper_bound=float(request.POST['throughput_upper_bound']),
                 throughput_filter=request.POST['throughput_filter'],
-                # split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
-                #                 # split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+                split_rate_wip=float(request.POST['split_rate_wip']),
+                split_rate_throughput=float(request.POST['split_rate_throughput']),
                 # simulation_count=int(request.POST['simulation_count'])
                 )
 
