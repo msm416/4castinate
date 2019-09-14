@@ -14,15 +14,56 @@
     <br>
     <h3 class="text-center">{{ query.name }}: Preview of latest estimation</h3>
     <br>
+    <br>
 
     {% if latest_estimation_list.exists %}
-        <canvas id="myProbabilityDistribution"></canvas>
+    <div class="row">
+        <div class="col-md-12">
+            <canvas id="myProbabilityDistribution"></canvas>
+        </div>
+    </div>
+
+    <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
+        <thead>
+        <tr>
+            <th> 0% </th>
+            <th> 5% </th>
+            <th> 10% </th>
+            <th> 15% </th>
+            <th> 20% </th>
+            <th> 5% </th>
+            <th> 10% </th>
+            <th> 15% </th>
+            <th> 20% </th>
+            <th> 5%</th>
+            <th> 10%</th>
+        </tr>
+        </thead>
+        <tbody id="myForecastTable">
+        <tr>
+            <td> 0 </td>
+            <td> 1 </td>
+            <td> 2 </td>
+            <td> 4 </td>
+            <td> 3 </td>
+            <td> 5 </td>
+            <td> 6 </td>
+            <td> 7 </td>
+            <td> 9 </td>
+            <td> 8 </td>
+            <td> 10 </td>
+
+        </tr>
+        </tbody>
+    </table>
 
         {{ weeks |json_script:"weeks"}}
         {{ weeks_frequency |json_script:"weeks_frequency"}}
         {{ weeks_frequency_sum |json_script:"weeks_frequency_sum"}}
         {{ centile_indices |json_script:"centile_indices"}}
         {{ centile_values |json_script:"centile_values"}}
+        {{ point_radius_list |json_script:"point_radius_list"}}
+        {{ point_color_list |json_script:"point_color_list"}}
 
     <script>
         //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
@@ -31,6 +72,8 @@
         var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
         var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
         var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+        var point_radius_list = JSON.parse(document.getElementById('point_radius_list').textContent);
+        var point_color_list = JSON.parse(document.getElementById('point_color_list').textContent);
 
         var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
         gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
@@ -51,14 +94,14 @@
                 datasets: [{
                     label: weeks_frequency_sum,
                     borderColor: gradientStroke,
-                    pointBorderColor: gradientStroke,
+                    pointBorderColor: point_color_list,
                     pointBackgroundColor: gradientStroke,
                     pointHoverBackgroundColor: gradientStroke,
                     pointHoverBorderColor: gradientStroke,
-                    pointBorderWidth: 0,
-                    pointHoverRadius: 10,
-                    pointHoverBorderWidth: 1,
-                    pointRadius: 0,
+                    pointBorderWidth: 10,
+                    pointHoverRadius: point_radius_list,
+                    pointHoverBorderWidth: 10,
+                    pointRadius: point_radius_list,
                     fill: true,
                     backgroundColor: gradientFill,
                     borderWidth: 4,
@@ -87,19 +130,42 @@
                         },
                         ticks: {
                             userCallback: function(item, index) {
+                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
+                            },
+                            autoSkip: false
+                            // stepSize: 1,
+                            // fixedStepSize: 1
+                        },
+                        gridLines: {
+                            userCallback: function(item, index) {
                                 console.log((centile_values.indexOf(parseInt(item,10)) > -1));
                                 if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
                             },
                             autoSkip: false
-                        },
-                        gridLines: {
-                            display:false
                         }
                     }]
+                },
+                tooltips: {
+                    //titleFontSize: 0,
+                    mode: 'nearest',
+                    filter: function (item, data) {
+                        return item.label !== "undefined";
+
+                    },
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            console.log(tooltipItem.toString().concat( " BRO"));
+                            return tooltipItem.xLabel
+                        }
+                    }
                 }
+
+
+
             }
         });
     </script>
+
     {% else %}
         <h3 class="text-center"> No estimations </h3>
     {% endif %}
@@ -237,7 +303,7 @@
     <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
 
-        <table class="table table-bordered table-striped">
+        <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
             <thead>
                 <tr>
                     <th> View Forecast </th>

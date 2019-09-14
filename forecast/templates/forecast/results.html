@@ -76,13 +76,16 @@
                         },
                         ticks: {
                             userCallback: function(item, index) {
-                                console.log((centile_values.indexOf(parseInt(item,10)) > -1));
                                 if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
                             },
                             autoSkip: false
                         },
                         gridLines: {
-                            display:false
+                            userCallback: function(item, index) {
+                                console.log((centile_values.indexOf(parseInt(item,10)) > -1));
+                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
+                            },
+                            autoSkip: false
                         }
                     }]
                 }
@@ -121,7 +124,7 @@
                     pointBorderWidth: 10,
                     pointHoverRadius: 10,
                     pointHoverBorderWidth: 1,
-                    pointRadius: 3,
+                    pointRadius: 0,
                     fill: true,
                     backgroundColor: gradientFill,
                     borderWidth: 4,
@@ -129,6 +132,7 @@
                 lineTension:0.1
                 }]
             },
+            showTooltips: true,
             options: {
                 title: {
                     display: true,
@@ -147,7 +151,21 @@
                             labelString: 'Week'
                         }
                     }]
-                }
+                },
+                // tooltips: {
+                //     filter: function (tooltipItem, data) {
+                //         var label = data.labels[tooltipItem.index];
+                //         console.log(tooltipItem, data, label);
+                //         console.log("AAAAAA");
+                //         return true;
+                //         if (label == "Red") {
+                //             return false;
+                //         } else {
+                //             return true;
+                //         }
+                //     }
+                // },
+                spanGaps: true
             }
         });
     </script>

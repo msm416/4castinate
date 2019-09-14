@@ -26,10 +26,10 @@ def detail(request, query_id, run_estimation_response=None):
 
     estimation = latest_estimation_list.first()
 
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = \
+    (centile_values, weeks, weeks_frequency, weeks_frequency_sum, point_radius_list, point_color_list) = \
         reduce_durations([int(x) for x in estimation.durations.split(";")]) \
         if latest_estimation_list.exists() \
-        else ([], [], [], None)
+        else ([], [], [], None, [], [])
 
     context = {'query': query,
                'form': query.form,
@@ -40,7 +40,9 @@ def detail(request, query_id, run_estimation_response=None):
                'centile_indices': [5*i for i in range(0, 21)],
                'centile_values': centile_values,
                'nbar': 'detail',
-               'run_estimation_response': run_estimation_response}
+               'run_estimation_response': run_estimation_response,
+               'point_radius_list': point_radius_list,
+               'point_color_list': point_color_list}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -50,7 +52,7 @@ def results(request, query_id, estimation_id):
 
     estimation = get_object_or_404(Estimation, pk=estimation_id)
 
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = \
+    (centile_values, weeks, weeks_frequency, weeks_frequency_sum, point_radius_list, point_color_list) = \
         reduce_durations([int(x) for x in estimation.durations.split(";")])
 
     context = {
@@ -60,7 +62,9 @@ def results(request, query_id, estimation_id):
         'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
         'centile_indices': [5*i for i in range(0, 21)],
         'centile_values': centile_values,
-        'nbar': 'results'
+        'nbar': 'results',
+        'point_radius_list': point_radius_list,
+        'point_color_list': point_color_list,
     }
 
     return render(request, 'forecast/results.html', context)
