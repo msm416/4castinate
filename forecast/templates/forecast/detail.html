@@ -42,11 +42,6 @@
         gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
         gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
 
-        var gradientFill = ctx.createLinearGradient(0, 0, $(window).width(), 0);
-        gradientFill.addColorStop(0, "rgba(244,29,49,0.6)");
-        gradientFill.addColorStop(0.5, "rgba(244,215,28,0.6)");
-        gradientFill.addColorStop(1, "rgba(120,244,31,0.6)");
-
         var chart = new Chart(ctx, {
             // The type of chart we want to create
             type: 'line',
@@ -55,17 +50,17 @@
                 labels: weeks,
                 datasets: [{
                     label: weeks_frequency_sum,
-                    borderColor: gradientStroke,
                     pointBorderColor: point_color_list,
-                    pointBackgroundColor: gradientStroke,
-                    pointHoverBackgroundColor: gradientStroke,
-                    pointHoverBorderColor: gradientStroke,
                     pointBorderWidth: 10,
                     pointHoverRadius: point_radius_list,
                     pointHoverBorderWidth: 10,
                     pointRadius: point_radius_list,
                     fill: true,
-                    backgroundColor: gradientFill,
+                    // borderColor: gradientStroke,
+                    // pointBackgroundColor: gradientStroke,
+                    // pointHoverBackgroundColor: gradientStroke,
+                    // pointHoverBorderColor: gradientStroke,
+                    // backgroundColor: gradientStroke,
                     borderWidth: 4,
                     data: weeks_frequency
                 }]
@@ -75,7 +70,7 @@
             options: {
                 title: {
                     display: true,
-                    text: 'Estimation Results - Discrete Probability Distribution',
+                    text: 'Estimation Results - Discrete Probability Distribution'
                 },
                 scales: {
                     yAxes: [{
@@ -124,7 +119,25 @@
                         }
                     }
                 }
-            }
+            },
+            plugins: [{
+                beforeRender: function (x, options) {
+                    var c = x.chart;
+                    var dataset = x.data.datasets[0];
+
+                    var fille = ctx.createLinearGradient(0, 0, c.width, 0);
+                    fille.addColorStop(0, "rgba(244,29,49,0.6)");
+                    fille.addColorStop(0.3, "rgba(244,215,28,0.6)");
+                    fille.addColorStop(1, "rgba(120,244,31,0.6)");
+
+                    var model = x.data.datasets[0]._meta[Object.keys(dataset._meta)[0]].dataset._model;
+                    model.backgroundColor = fille;
+                    model.pointBackgroundColor= fille;
+                    model.pointHoverBackgroundColor= fille;
+                    model.pointHoverBorderColor = fille;
+                    model.borderColor = fille;
+                }
+            }]
         });
     </script>
 
