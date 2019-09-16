@@ -20,16 +20,17 @@ def detail(request, query_id, run_estimation_response=None):
     # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
-    fetch_filters_and_update_form(query.form)
+    initial_wip, initial_throughput = fetch_filters_and_update_form(query.form)
 
     latest_estimation_list = query.estimation_set.order_by('-creation_date')
 
     estimation = latest_estimation_list.first()
 
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = \
+    (centile_values, weeks, weeks_frequency,
+     weeks_frequency_sum, point_radius_list, point_color_list) = \
         reduce_durations([int(x) for x in estimation.durations.split(";")]) \
         if latest_estimation_list.exists() \
-        else ([], [], [], None)
+        else ([], [], [], None, [], [])
 
     context = {'query': query,
                'form': query.form,
@@ -40,7 +41,11 @@ def detail(request, query_id, run_estimation_response=None):
                'centile_indices': [5*i for i in range(0, 21)],
                'centile_values': centile_values,
                'nbar': 'detail',
-               'run_estimation_response': run_estimation_response}
+               'run_estimation_response': run_estimation_response,
+               'point_radius_list': point_radius_list,
+               'point_color_list': point_color_list,
+               'initial_wip': initial_wip,
+               'initial_throughput': initial_throughput}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -50,7 +55,8 @@ def results(request, query_id, estimation_id):
 
     estimation = get_object_or_404(Estimation, pk=estimation_id)
 
-    (centile_values, weeks, weeks_frequency, weeks_frequency_sum) = \
+    (centile_values, weeks, weeks_frequency,
+     weeks_frequency_sum, point_radius_list, point_color_list) = \
         reduce_durations([int(x) for x in estimation.durations.split(";")])
 
     context = {
@@ -60,7 +66,9 @@ def results(request, query_id, estimation_id):
         'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
         'centile_indices': [5*i for i in range(0, 21)],
         'centile_values': centile_values,
-        'nbar': 'results'
+        'nbar': 'results',
+        'point_radius_list': point_radius_list,
+        'point_color_list': point_color_list,
     }
 
     return render(request, 'forecast/results.html', context)
@@ -76,8 +84,8 @@ def run_estimation(request, query_id):
                 throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                 throughput_upper_bound=float(request.POST['throughput_upper_bound']),
                 throughput_filter=request.POST['throughput_filter'],
-                # split_factor_lower_bound=float(request.POST['split_factor_lower_bound']),
-                #                 # split_factor_upper_bound=float(request.POST['split_factor_upper_bound']),
+                split_rate_wip=float(request.POST['split_rate_wip']),
+                split_rate_throughput=float(request.POST['split_rate_throughput']),
                 # simulation_count=int(request.POST['simulation_count'])
                 )
 
@@ -100,7 +108,6 @@ def create_query(request):
     wip_filter, throughput_filter = create_form_filters(request.POST['filter'])
 
     Form.objects.create(query=query,
-                        name="default Form",
                         wip_filter=wip_filter,
                         throughput_filter=throughput_filter)
 

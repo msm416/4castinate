@@ -14,77 +14,136 @@
     <br>
     <h3 class="text-center">{{ query.name }}: Preview of latest estimation</h3>
     <br>
+    <br>
+
+    {{ initial_wip |json_script:"initial_wip"}}
+    {{ initial_throughput |json_script:"initial_throughput"}}
 
     {% if latest_estimation_list.exists %}
-        <canvas id="myLikelihoodTable"></canvas>
+        <canvas id="myProbabilityDistribution"></canvas>
 
         {{ weeks |json_script:"weeks"}}
         {{ weeks_frequency |json_script:"weeks_frequency"}}
         {{ weeks_frequency_sum |json_script:"weeks_frequency_sum"}}
         {{ centile_indices |json_script:"centile_indices"}}
         {{ centile_values |json_script:"centile_values"}}
+        {{ point_radius_list |json_script:"point_radius_list"}}
+        {{ point_color_list |json_script:"point_color_list"}}
 
-        <script>
-            //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
-            var ctx = document.getElementById('myLikelihoodTable').getContext('2d');
-            var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
-            var centile_indices = JSON.parse(document.getElementById('centile_indices').textContent);
-            var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+    <script>
+        //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
+        var ctx = document.getElementById('myProbabilityDistribution').getContext('2d');
+        var weeks = JSON.parse(document.getElementById('weeks').textContent);
+        var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
+        var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+        var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+        var point_radius_list = JSON.parse(document.getElementById('point_radius_list').textContent);
+        var point_color_list = JSON.parse(document.getElementById('point_color_list').textContent);
 
-            var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width() * 2/3, $(window).width() * 1/3);
-            gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
-            gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
-            gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
+        var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+        gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
+        gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
+        gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
 
-            var gradientFill = ctx.createLinearGradient(0, 0, $(window).width() * 2/3, $(window).width() * 1/3);
-            gradientFill.addColorStop(0, "rgba(244,29,49,0.6)");
-            gradientFill.addColorStop(0.5, "rgba(244,215,28,0.6)");
-            gradientFill.addColorStop(1, "rgba(120,244,31,0.6)");
+        var chart = new Chart(ctx, {
+            // The type of chart we want to create
+            type: 'line',
+            // The data for our dataset
+            data: {
+                labels: weeks,
+                datasets: [{
+                    label: weeks_frequency_sum,
+                    pointBorderColor: point_color_list,
+                    pointBorderWidth: 10,
+                    pointHoverRadius: point_radius_list,
+                    pointHoverBorderWidth: 10,
+                    pointRadius: point_radius_list,
+                    fill: true,
+                    // borderColor: gradientStroke,
+                    // pointBackgroundColor: gradientStroke,
+                    // pointHoverBackgroundColor: gradientStroke,
+                    // pointHoverBorderColor: gradientStroke,
+                    // backgroundColor: gradientStroke,
+                    borderWidth: 4,
+                    data: weeks_frequency
+                }]
+            },
 
-            var myLineChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: centile_values,
-                    datasets:[{
-                        label:weeks_frequency_sum,
-                        borderColor: gradientStroke,
-                        pointBorderColor: gradientStroke,
-                        pointBackgroundColor: gradientStroke,
-                        pointHoverBackgroundColor: gradientStroke,
-                        pointHoverBorderColor: gradientStroke,
-                        pointBorderWidth: 10,
-                        pointHoverRadius: 10,
-                        pointHoverBorderWidth: 1,
-                        pointRadius: 3,
-                        fill: true,
-                        backgroundColor: gradientFill,
-                        borderWidth: 4,
-                        data:centile_indices,
-                        lineTension:0.1
+            // Configuration options go here
+            options: {
+                title: {
+                    display: true,
+                    text: 'Estimation Results - Discrete Probability Distribution'
+                },
+                scales: {
+                    yAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Probability'
+                        },
+                        gridLines: {
+                            display:false
+                        }
+                    }],
+                    xAxes: [{
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Week'
+                        },
+                        ticks: {
+                            userCallback: function(item, index) {
+                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
+                            },
+                            autoSkip: false
+                        },
+                        gridLines: {
+                            userCallback: function(item, index) {
+                                console.log((centile_values.indexOf(parseInt(item,10)) > -1));
+                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
+                            },
+                            autoSkip: false
+                        }
                     }]
                 },
-                options: {
-                    title: {
-                        display: true,
-                        text: 'Forecast Completion Date - Likelihood Graph'
+                tooltips: {
+                    mode: 'nearest',
+                    filter: function (item, data) {
+                        return item.label !== "undefined";
+
                     },
-                    scales: {
-                        yAxes: [{
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Likelihood'
-                            }
-                        }],
-                        xAxes: [{
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Week'
-                            }
-                        }]
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                            var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                            if (firstIndexOfItem === lastIndexOfItem)
+                                {return firstIndexOfItem.concat(" % Likelihood")}
+                            else
+                                {return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % Likelihood")}
+                        }
                     }
                 }
-            });
-        </script>
+            },
+            plugins: [{
+                beforeRender: function (x, options) {
+                    var c = x.chart;
+                    var dataset = x.data.datasets[0];
+
+                    var fille = ctx.createLinearGradient(0, 0, c.width, 0);
+                    fille.addColorStop(0, "rgba(244,29,49,0.6)");
+                    fille.addColorStop(0.3, "rgba(244,215,28,0.6)");
+                    fille.addColorStop(1, "rgba(120,244,31,0.6)");
+
+                    var model = x.data.datasets[0]._meta[Object.keys(dataset._meta)[0]].dataset._model;
+                    model.backgroundColor = fille;
+                    model.pointBackgroundColor= fille;
+                    model.pointHoverBackgroundColor= fille;
+                    model.pointHoverBorderColor = fille;
+                    model.borderColor = fille;
+                }
+            }]
+        });
+    </script>
+
     {% else %}
         <h3 class="text-center"> No estimations </h3>
     {% endif %}
@@ -107,30 +166,29 @@
                 <div class="card-body">
                     <div class="container">
                         <form action="{% url 'forecast:run_estimation' query.id%}" method="post">
+                            {% csrf_token %}
                             <h5>
                                 Legend
                             </h5>
                             <ul>
                                 <li>
                                     <h8>
-                                        <span style="background-color: white;border: double"> <b> Configured Filters </b> </span>
-                                        &nbsp; are loaded from your saved configuration.
+                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp; for this query is displayed.
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
                                         <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span>
-                                        &nbsp; is fetched from <span style="background-color: white;border: double"> <b> Configured Filters </b> </span> on page reload.
+                                        &nbsp; is fetched from <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp;.
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
-                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation and Update Configuration </span> &nbsp; creates a forecast using the
-                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> &nbsp;, it saves
-                                        <span style="background-color: white;border: double"> <b> Configured Filters </b> </span> &nbsp; changes for later use and
-                                        finally, redirects back on this page.
+                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation </span> &nbsp; creates a forecast using the
+                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> &nbsp; and saves
+                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp; changes for later use.
                                     </h8>
                                     <br>
                                 </li>
@@ -179,38 +237,53 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="wip_filter"> <b> JQL Filter to infer WIP </b> </label>
+                                    <label for="wip_filter"> <b> JQL Filter to infer WIP (fetched value: {{initial_wip}}) </b> </label>
                                     <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput </b> </label>
+                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput (fetched value: {{initial_throughput}}) </b> </label>
                                     <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
                                 </div>
                             </div>
-<!--                            <div class="form-row">-->
-<!--                                <div class="form-group col-md-4">-->
-<!--                                    <label for="split_factor_lower_bound"> <b> Split Rate - Low </b> </label>-->
-<!--                                    <input type="text" name="split_factor_lower_bound" class="form-control" id="split_factor_lower_bound" value="{{form.split_factor_lower_bound}}">-->
-<!--                                </div>-->
-<!--                                <div class="form-group col-md-4">-->
-<!--                                    <label for="split_factor_upper_bound"> <b> Split Rate - High </b> </label>-->
-<!--                                    <input type="text" name="split_factor_upper_bound" class="form-control" id="split_factor_upper_bound" value="{{form.split_factor_upper_bound}}">-->
-<!--                                </div>-->
-<!--                                <div class="form-group col-md-4">-->
-<!--                                    <label for="simulation_count"> <b> Simulation count </b> </label>-->
-<!--                                    <input type="text" name="simulation_count" class="form-control" id="simulation_count" value="{{form.simulation_count}}">-->
-<!--                                </div>-->
-<!--                            </div>-->
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="split_rate_wip"> <b> WIP SPLIT RATE <span id="split_rate_wip_value" > {{form.split_rate_wip}} </span> </b> </label>
+                                    <input type="range" name="split_rate_wip" class="form-control" id="split_rate_wip" value="{{form.split_rate_wip}}" min="0.00" max="1.00" step="0.01">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="split_rate_throughput"> <b> THROUGHPUT SPLIT RATE <span id="split_rate_throughput_value"> {{form.split_rate_throughput}} </span> </b> </label>
+                                    <input type="range" name="split_rate_throughput" class="form-control" id="split_rate_throughput" value="{{form.split_rate_throughput}}" min="0.00" max="1.00" step="0.01">
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-4"></div>
                                 <div class="col-md-4" align="center">
-                                    <button type="submit" class="btn btn-success">Run Estimation and Update Configuration</button>
+                                    <button type="submit" class="btn btn-success">Run Estimation</button>
                                 </div>
                                 <div class="col-md-4"></div>
                             </div>
                         </form>
+                        <script>
+                            var initial_wip = JSON.parse(document.getElementById('initial_wip').textContent);
+                            var initial_throughput = JSON.parse(document.getElementById('initial_throughput').textContent);
+
+                            $(document).on('input', '#split_rate_wip', function() {
+                                var rate = parseFloat($(this).val());
+                                $('#split_rate_wip_value').html($(this).val());
+                                document.getElementById("wip_upper_bound").value = rate;
+                                document.getElementById("wip_lower_bound").value = Math.floor((1.00 - rate) * initial_wip);
+                                document.getElementById("wip_upper_bound").value = Math.floor((1.00 + rate) * initial_wip);
+                            });
+
+                            $(document).on('input', '#split_rate_throughput', function() {
+                                var rate = parseFloat($(this).val());
+                                $('#split_rate_throughput_value').html($(this).val());
+                                document.getElementById("throughput_lower_bound").value = Math.floor((1.00 - rate) * initial_throughput);
+                                document.getElementById("throughput_upper_bound").value = Math.floor((1.00 + rate) * initial_throughput);
+                            });
+                        </script>
                     </div>
                 </div>
             </div>
@@ -218,20 +291,16 @@
     </div>
 
     <br>
-    <input class="form-control" id="myInput" type="text" placeholder="Search by keyword to find past estimation ...">
+    <input class="form-control" id="mySearch" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
-
-        <table class="table table-bordered table-striped">
+        <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
             <thead>
                 <tr>
                     <th> View Forecast </th>
-                    <th>Name</th>
-                    <th>#Sim</th>
                     <th>WIP</th>
-                    <th>WIP_Source</th>
-                    <th>TPut_Rate</th>
-                    <th>TPut_Source</th>
-                    <th>S_Rate</th>
+                    <th>Filter for WIP</th>
+                    <th>Throughput</th>
+                    <th>Filter for Throughput</th>
                     <th>(DB) Creation date</th>
                 </tr>
             </thead>
@@ -242,25 +311,16 @@
                             <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
                         </td>
                         <td>
-                            {{estimation.name}}
-                        </td>
-                        <td>
-                            {{estimation.simulation_count}}
-                        </td>
-                        <td>
                             [{{estimation.wip_lower_bound}},{{estimation.wip_upper_bound}}]
                         </td>
                         <td>
-                            DELET DIS
+                            {{ estimation.wip_filter }}
                         </td>
                         <td>
-                            DELET THIS TPUT
+                            [{{estimation.throughput_lower_bound}},{{estimation.throughput_upper_bound}}]
                         </td>
                         <td>
-                            DELEEEEET
-                        </td>
-                        <td>
-                            [{{estimation.split_factor_lower_bound}},{{estimation.split_factor_upper_bound}}]
+                            {{ estimation.throughput_filter }}
                         </td>
                         <td>
                             {{ estimation.creation_date }}
@@ -270,23 +330,8 @@
                 {% endfor %}
             </tbody>
         </table>
-
-    {% if error_message %}
-        <br>
-        <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4" align="center">
-                <p>
-                    <strong> Warning: {{ error_message }} </strong>
-                </p>
-            </div>
-            <div class="col-md-4"></div>
-        </div>
-    {% endif %}
-
-
     <script>
-        $(document).ready(function(){$("#myInput").on("keyup", function() {
+        $(document).ready(function(){$("#mySearch").on("keyup", function() {
             var value = $(this).val().toLowerCase();
             $("#myTable tr").filter(function() {
                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
