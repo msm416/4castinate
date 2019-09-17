@@ -30,120 +30,6 @@
         {{ point_radius_list |json_script:"point_radius_list"}}
         {{ point_color_list |json_script:"point_color_list"}}
 
-    <script>
-        //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
-        var ctx = document.getElementById('myProbabilityDistribution').getContext('2d');
-        var weeks = JSON.parse(document.getElementById('weeks').textContent);
-        var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
-        var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
-        var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
-        var point_radius_list = JSON.parse(document.getElementById('point_radius_list').textContent);
-        var point_color_list = JSON.parse(document.getElementById('point_color_list').textContent);
-
-        var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
-        gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
-        gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
-        gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
-
-        var chart = new Chart(ctx, {
-            // The type of chart we want to create
-            type: 'line',
-            // The data for our dataset
-            data: {
-                labels: weeks,
-                datasets: [{
-                    label: weeks_frequency_sum,
-                    pointBorderColor: point_color_list,
-                    pointBorderWidth: 10,
-                    pointHoverRadius: point_radius_list,
-                    pointHoverBorderWidth: 10,
-                    pointRadius: point_radius_list,
-                    fill: true,
-                    // borderColor: gradientStroke,
-                    // pointBackgroundColor: gradientStroke,
-                    // pointHoverBackgroundColor: gradientStroke,
-                    // pointHoverBorderColor: gradientStroke,
-                    // backgroundColor: gradientStroke,
-                    borderWidth: 4,
-                    data: weeks_frequency
-                }]
-            },
-
-            // Configuration options go here
-            options: {
-                title: {
-                    display: true,
-                    text: 'Estimation Results - Discrete Probability Distribution'
-                },
-                scales: {
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Probability'
-                        },
-                        gridLines: {
-                            display:false
-                        }
-                    }],
-                    xAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Week'
-                        },
-                        ticks: {
-                            userCallback: function(item, index) {
-                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
-                            },
-                            autoSkip: false
-                        },
-                        gridLines: {
-                            userCallback: function(item, index) {
-                                console.log((centile_values.indexOf(parseInt(item,10)) > -1));
-                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
-                            },
-                            autoSkip: false
-                        }
-                    }]
-                },
-                tooltips: {
-                    mode: 'nearest',
-                    filter: function (item, data) {
-                        return item.label !== "undefined";
-
-                    },
-                    callbacks: {
-                        label: function(tooltipItem, data) {
-                            var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
-                            var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
-                            if (firstIndexOfItem === lastIndexOfItem)
-                                {return firstIndexOfItem.concat(" % Likelihood")}
-                            else
-                                {return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % Likelihood")}
-                        }
-                    }
-                }
-            },
-            plugins: [{
-                beforeRender: function (x, options) {
-                    var c = x.chart;
-                    var dataset = x.data.datasets[0];
-
-                    var fille = ctx.createLinearGradient(0, 0, c.width, 0);
-                    fille.addColorStop(0, "rgba(244,29,49,0.6)");
-                    fille.addColorStop(0.3, "rgba(244,215,28,0.6)");
-                    fille.addColorStop(1, "rgba(120,244,31,0.6)");
-
-                    var model = x.data.datasets[0]._meta[Object.keys(dataset._meta)[0]].dataset._model;
-                    model.backgroundColor = fille;
-                    model.pointBackgroundColor= fille;
-                    model.pointHoverBackgroundColor= fille;
-                    model.pointHoverBorderColor = fille;
-                    model.borderColor = fille;
-                }
-            }]
-        });
-    </script>
-
     {% else %}
         <h3 class="text-center"> No estimations </h3>
     {% endif %}
@@ -265,25 +151,6 @@
                                 <div class="col-md-4"></div>
                             </div>
                         </form>
-                        <script>
-                            var initial_wip = JSON.parse(document.getElementById('initial_wip').textContent);
-                            var initial_throughput = JSON.parse(document.getElementById('initial_throughput').textContent);
-
-                            $(document).on('input', '#split_rate_wip', function() {
-                                var rate = parseFloat($(this).val());
-                                $('#split_rate_wip_value').html($(this).val());
-                                document.getElementById("wip_upper_bound").value = rate;
-                                document.getElementById("wip_lower_bound").value = Math.floor((1.00 - rate) * initial_wip);
-                                document.getElementById("wip_upper_bound").value = Math.floor((1.00 + rate) * initial_wip);
-                            });
-
-                            $(document).on('input', '#split_rate_throughput', function() {
-                                var rate = parseFloat($(this).val());
-                                $('#split_rate_throughput_value').html($(this).val());
-                                document.getElementById("throughput_lower_bound").value = Math.floor((1.00 - rate) * initial_throughput);
-                                document.getElementById("throughput_upper_bound").value = Math.floor((1.00 + rate) * initial_throughput);
-                            });
-                        </script>
                     </div>
                 </div>
             </div>
@@ -330,14 +197,152 @@
                 {% endfor %}
             </tbody>
         </table>
+
+{% endblock %}
+
+{% block body_scripts %}
+    <script>
+        //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
+        if (document.getElementById('myProbabilityDistribution') != null) {
+            var ctx = document.getElementById('myProbabilityDistribution').getContext('2d');
+            var weeks = JSON.parse(document.getElementById('weeks').textContent);
+            var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
+            var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+            var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+            var point_radius_list = JSON.parse(document.getElementById('point_radius_list').textContent);
+            var point_color_list = JSON.parse(document.getElementById('point_color_list').textContent);
+            var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+            gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
+            gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
+            gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
+            var chart = new Chart(ctx, {
+                // The type of chart we want to create
+                type: 'line',
+                // The data for our dataset
+                data: {
+                    labels: weeks,
+                    datasets: [{
+                        label: weeks_frequency_sum,
+                        pointBorderColor: point_color_list,
+                        pointBorderWidth: 10,
+                        pointHoverRadius: point_radius_list,
+                        pointHoverBorderWidth: 10,
+                        pointRadius: point_radius_list,
+                        fill: true,
+                        // borderColor: gradientStroke,
+                        // pointBackgroundColor: gradientStroke,
+                        // pointHoverBackgroundColor: gradientStroke,
+                        // pointHoverBorderColor: gradientStroke,
+                        // backgroundColor: gradientStroke,
+                        borderWidth: 4,
+                        data: weeks_frequency
+                    }]
+                },
+
+                // Configuration options go here
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Estimation Results - Discrete Probability Distribution'
+                    },
+                    scales: {
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Probability'
+                            },
+                            gridLines: {
+                                display: false
+                            }
+                        }],
+                        xAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Week'
+                            },
+                            ticks: {
+                                userCallback: function (item, index) {
+                                    if (centile_values.indexOf(parseInt(item, 10)) > -1) return item;
+                                },
+                                autoSkip: false
+                            },
+                            gridLines: {
+                                userCallback: function (item, index) {
+                                    console.log((centile_values.indexOf(parseInt(item, 10)) > -1));
+                                    if (centile_values.indexOf(parseInt(item, 10)) > -1) return item;
+                                },
+                                autoSkip: false
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        mode: 'nearest',
+                        filter: function (item, data) {
+                            return item.label !== "undefined";
+
+                        },
+                        callbacks: {
+                            label: function (tooltipItem, data) {
+                                var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                                var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                                if (firstIndexOfItem === lastIndexOfItem) {
+                                    return firstIndexOfItem.concat(" % Likelihood")
+                                } else {
+                                    return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % Likelihood")
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [{
+                    beforeRender: function (x, options) {
+                        var c = x.chart;
+                        var dataset = x.data.datasets[0];
+
+                        var fille = ctx.createLinearGradient(0, 0, c.width, 0);
+                        fille.addColorStop(0, "rgba(244,29,49,0.6)");
+                        fille.addColorStop(0.3, "rgba(244,215,28,0.6)");
+                        fille.addColorStop(1, "rgba(120,244,31,0.6)");
+
+                        var model = x.data.datasets[0]._meta[Object.keys(dataset._meta)[0]].dataset._model;
+                        model.backgroundColor = fille;
+                        model.pointBackgroundColor = fille;
+                        model.pointHoverBackgroundColor = fille;
+                        model.pointHoverBorderColor = fille;
+                        model.borderColor = fille;
+                    }
+                }]
+            });
+        }
+    </script>
+
+    <script>
+        var initial_wip = JSON.parse(document.getElementById('initial_wip').textContent);
+        var initial_throughput = JSON.parse(document.getElementById('initial_throughput').textContent);
+
+        $(document).on('input', '#split_rate_wip', function() {
+            var rate = parseFloat($(this).val());
+            $('#split_rate_wip_value').html($(this).val());
+            document.getElementById("wip_upper_bound").value = rate;
+            document.getElementById("wip_lower_bound").value = Math.floor((1.00 - rate) * initial_wip);
+            document.getElementById("wip_upper_bound").value = Math.floor((1.00 + rate) * initial_wip);
+        });
+
+        $(document).on('input', '#split_rate_throughput', function() {
+            var rate = parseFloat($(this).val());
+            $('#split_rate_throughput_value').html($(this).val());
+            document.getElementById("throughput_lower_bound").value = Math.floor((1.00 - rate) * initial_throughput);
+            document.getElementById("throughput_upper_bound").value = Math.floor((1.00 + rate) * initial_throughput);
+        });
+    </script>
+
     <script>
         $(document).ready(function(){$("#mySearch").on("keyup", function() {
             var value = $(this).val().toLowerCase();
             $("#myTable tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
             });
         });
+        });
     </script>
-
 {% endblock %}

@@ -2,7 +2,6 @@
 {% block title %}My amazing index{% endblock %}
 
 {% block body %}
-
     <br>
     <h1 class="text-center" >Choose Query - Total number of Queries in database: {{query_list.count}} </h1>
     <br>
@@ -89,7 +88,9 @@
         {% endfor %}
         </tbody>
     </table>
+{% endblock %}
 
+{% block body_scripts %}
     <script>
         $(document).ready(function(){
             $("#myInput").on("keyup", function() {
@@ -100,5 +101,4 @@
             });
         });
     </script>
-
 {% endblock %}
