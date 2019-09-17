@@ -2,8 +2,9 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import fetch_filters_and_update_form, create_form_filters
-from forecast.helperMethods.forecast_models_utils import reduce_durations
+from forecast.helperMethods.rest import fetch_filters_and_update_form
+from forecast.helperMethods.forecast_models_utils import reduce_durations, remove_order_by_from_filter, \
+    append_resolution_to_form_filters
 from .models import Query, Estimation, Form
 
 
@@ -105,7 +106,8 @@ def create_query(request):
 
     query.save()
 
-    wip_filter, throughput_filter = create_form_filters(request.POST['filter'])
+    wip_filter, throughput_filter = append_resolution_to_form_filters(
+        remove_order_by_from_filter(request.POST['filter']))
 
     Form.objects.create(query=query,
                         wip_filter=wip_filter,

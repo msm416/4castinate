@@ -1,4 +1,5 @@
 import base64
+import os
 from urllib.parse import parse_qsl
 
 from tlslite.utils import keyfactory
@@ -6,7 +7,7 @@ import oauth2 as oauth
 from pathlib import Path
 
 
-base_url = "https://4cast.atlassian.net"
+base_url = os.environ['JIRA_URL']
 consumer_key = 'OauthKey'
 consumer_secret = 'dont_care'
 

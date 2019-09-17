@@ -14,15 +14,7 @@ from forecast.helperMethods.oauth.jira_oauth_script import SignatureMethod_RSA_S
 client = create_oauth_client('OauthKey', 'dont_care',
                              SignatureMethod_RSA_SHA1(),
                              oauth.Token(JIRA_OAUTH_TOKEN,
-                                         JIRA_OAUTH_TOKEN_SECRET)) if True else None
-                                                           # TODO: if str(JIRA_EMAIL).find('@') == -1:
-
-
-JQL_ORDER_BY_CLAUSE = " ORDER BY resolutiondate "
-
-
-def create_form_filters(filter):
-    return f"{filter} and resolution is EMPTY", f"{filter} and resolution = done"
+                                         JIRA_OAUTH_TOKEN_SECRET)) if str(JIRA_EMAIL).find('@') == -1 else None
 
 
 def fetch_filters_and_update_form(form):
@@ -33,22 +25,25 @@ def fetch_filters_and_update_form(form):
 
 
 def fetch_wip_filter(form):
+    # Sets form's wip_l_b / wip_u_b to positive values (>=0) or to -1
     if form.wip_filter:
         resp_code, response_content = \
             make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.wip_filter}&maxResults=1&fields=None",
                                 client)
-        print(resp_code)
+
         if resp_code == 200:
             initial_wip = response_content['total']
             form.wip_lower_bound = int(response_content['total'] * (1.00 - form.split_rate_wip))
             form.wip_upper_bound = int(response_content['total'] * (1.00 + form.split_rate_wip))
             return initial_wip
 
+    # End up here if we didn't return above
     form.wip_lower_bound = form.wip_upper_bound = -1
     return -1
 
 
 def fetch_throughput_filter(form):
+    # Sets form's wip_l_b / wip_u_b to STRICTLY positive values (>0) or to -1
     if form.throughput_filter:
         resp_code_asc, response_content_asc = \
             make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
@@ -70,26 +65,31 @@ def fetch_throughput_filter(form):
                     duration_in_weeks = ((dateutil.parser.parse(last_issue_done_date) -
                                          dateutil.parser.parse(first_issue_done_date)).days + 1) / 7
 
-                    initial_throughput = int(total / duration_in_weeks)
-                    form.throughput_lower_bound = int(initial_throughput * (1.00 - form.split_rate_throughput))
-                    form.throughput_upper_bound = int(initial_throughput * (1.00 + form.split_rate_throughput))
-                    return initial_throughput
+                    if duration_in_weeks != 0:
+                        initial_throughput = total / duration_in_weeks
+                        form.throughput_lower_bound = int(initial_throughput * (1.00 - form.split_rate_throughput))
+                        form.throughput_upper_bound = int(initial_throughput * (1.00 + form.split_rate_throughput))
 
+                        if form.throughput_lower_bound > 0:
+                            return initial_throughput
+
+    # End up here if we didn't return above
     form.throughput_lower_bound = form.throughput_upper_bound = -1
     return -1
 
 
-def make_single_get_req(url, client=None):
+def make_single_get_req(url, oauth_client=None):
     # You need to do Random.atfork() in the child process after every call
     # to os.fork() to avoid reusing PRNG state
     Crypto.Random.atfork()
-    print(f"********** MAKING GET REQUEST FOR URL: {url} **********")
-    if client:
-        resp_code, response_content = client.request(url, "GET")
+    if oauth_client:
+        req_type = "OAUTH"
+        resp_code, response_content = oauth_client.request(url, "GET")
 
         resp_code = int(resp_code['status'])
     else:
-        # BASIC REQUEST
+        # BASIC HTTP REQUEST
+        req_type = "BASIC HTTP REQUEST"
         response = requests.request(
             "GET",
             url,
@@ -101,4 +101,5 @@ def make_single_get_req(url, client=None):
 
         response_content = response.text
 
+    print(f"********** {req_type} RESP CODE: {resp_code}: GET REQUEST FOR URL: {url} **********\n")
     return resp_code, (json.loads(response_content) if resp_code == 200 else {})

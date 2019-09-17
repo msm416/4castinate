@@ -83,7 +83,7 @@ class Form(EstimationInput):
     def check_validity(self):
         run_estimation_response = ""
 
-        if 0 >= self.wip_lower_bound or self.wip_lower_bound > self.wip_upper_bound:
+        if 0 > self.wip_lower_bound or self.wip_lower_bound > self.wip_upper_bound:
             run_estimation_response += f"WIP is " \
                 f"({self.wip_lower_bound}, {self.wip_upper_bound}). "
 

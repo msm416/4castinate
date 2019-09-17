@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.test import TestCase
 from django.db.models import Sum
 
+from forecast.helperMethods.forecast_models_utils import remove_order_by_from_filter
 from forecast.helperMethods.rest import fetch_filters_and_update_form
 from .models import Query, Form, Estimation, SUCCESS_MESSAGE
 
@@ -26,7 +27,7 @@ def random_string_with_digits_and_symbols(string_length=10):
 def random_fields_for_form_model(query):
     wip_lower_bound = random.randint(0, 10000)
     wip_upper_bound = random.randint(wip_lower_bound, 20000)
-    throughput_lower_bound = random.randint(0, 10000)
+    throughput_lower_bound = random.randint(1, 10000)
     throughput_upper_bound = random.randint(throughput_lower_bound, 20000)
     wip_filter = random_string_with_digits_and_symbols(100)
     throughput_filter = random_string_with_digits_and_symbols(100)
@@ -42,7 +43,7 @@ def random_fields_for_form_model(query):
             'wip_filter': wip_filter,
             'throughput_filter': throughput_filter,
             'split_rate_wip': split_rate_wip,
-            'split_rate_throughput': split_rate_throughput,}
+            'split_rate_throughput': split_rate_throughput}
 
 
 class UnitTests(TestCase):
@@ -52,23 +53,31 @@ class UnitTests(TestCase):
         Valid forms should give SUCCESS_MESSAGE as response
         on both run_estimation() and check_validity() methods
         """
-        for _ in range(0, 20):
-            query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
 
-            form = Form.objects.create(**random_fields_for_form_model(query))
+        form = Form.objects.create(**random_fields_for_form_model(query))
 
-            run_estimation_response = query.run_estimation()
-            self.assertEqual(run_estimation_response, SUCCESS_MESSAGE)
+        run_estimation_response = query.run_estimation()
+        self.assertEqual(run_estimation_response, SUCCESS_MESSAGE)
 
-            check_validity_response = form.check_validity()
-            self.assertEqual(run_estimation_response, check_validity_response)
+        check_validity_response = form.check_validity()
+        self.assertEqual(run_estimation_response, check_validity_response)
 
-    def test_invalid_form_filters(self):
+    def test_remove_order_by_from_filter(self):
+        first_part = random_string_with_digits_and_symbols()
+        second_part = random_string_with_digits_and_symbols()
+        concatenation = first_part + " ORdEr By" + second_part
+        self.assertEqual(remove_order_by_from_filter(concatenation), first_part)
+
+
+class HTTPRequests(TestCase):
+
+    def test_fetch_invalid_form_filters(self):
         """
         Invalid throughput/wip filter should return [-1,-1] for low/high throughput/wip.
         """
 
-        # throughput_filter will never match a valid JQL with " ORDER BY "
+        # invalidate jql by appending the reserved keyword " ORDER BY " (resulting in incomplete jql)
         throughput_filter = f"{random_string_with_digits_and_symbols()} ORDER BY "
         wip_filter = f"{random_string_with_digits_and_symbols()} ORDER BY "
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
@@ -84,16 +93,19 @@ class UnitTests(TestCase):
         self.assertEqual(form.throughput_lower_bound, -1)
         self.assertEqual(form.throughput_upper_bound, -1)
 
-    def test_valid_form_wip_filter(self):
+    def test_fetch_valid_form_wip_filter(self):
         """
         ANY VALID JQL QUERY FOR WIP FILTER WILL RESULT IN SOME POSITIVE WIP (>=0)
 
-        TO GENERATE A VALID JQL QUERY, WE"LL CONSIDER THE EMPTY QUERY (i.e. all issues)
+        TO GENERATE A VALID JQL QUERY, WE"LL CONSIDER THE <status = Done> QUERY
         """
         wip_filter = "status = Done"
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
         Form.objects.create(**random_fields_for_form_model(query))
-        Form.objects.filter(query=query).update(wip_filter=wip_filter)
+        Form.objects.filter(query=query).update(
+            wip_filter=wip_filter,
+            wip_lower_bound=-1,
+            wip_upper_bound=-1)
 
         form = Form.objects.get(query=query)
         fetch_filters_and_update_form(form)
