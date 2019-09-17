@@ -21,8 +21,8 @@ class EstimationInput(models.Model):
     # Default: we consider forms that don't use filter to determine throughput
     throughput_filter = models.TextField(default="")
 
-    split_rate_wip = models.FloatField(default=0.00)
-    split_rate_throughput = models.FloatField(default=0.00)
+    split_rate_wip = models.FloatField(default=0.5)
+    split_rate_throughput = models.FloatField(default=0.7)
 
     simulation_count = models.PositiveSmallIntegerField(default=10000)
 
