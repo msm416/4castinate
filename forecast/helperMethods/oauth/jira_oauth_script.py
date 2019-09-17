@@ -20,7 +20,7 @@ data_url = f'{base_url}/rest/agile/1.0/board'
 def create_oauth_client(consumer_key, consumer_secret, sign_method, token=None):
     client = oauth.Client(oauth.Consumer(consumer_key, consumer_secret), token)
     client.set_signature_method(sign_method)
-    client.disable_ssl_certificate_validation = True  # TODO: IS THIS THE RIGHT THING?
+    client.disable_ssl_certificate_validation = True  # TODO: HOW NOT TO DISABLE SSL?
     return client
 
 

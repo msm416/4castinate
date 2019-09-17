@@ -2,11 +2,7 @@ import json
 import Crypto
 import oauth2 as oauth
 import requests
-from multiprocessing import Pool
-from functools import reduce
 import dateutil.parser
-from urllib.parse import parse_qsl
-
 
 from ebdjango.settings import JIRA_URL, JIRA_OAUTH_TOKEN, JIRA_OAUTH_TOKEN_SECRET, JIRA_EMAIL, JIRA_API_TOKEN
 from forecast.helperMethods.oauth.jira_oauth_script import SignatureMethod_RSA_SHA1, create_oauth_client
@@ -46,24 +42,31 @@ def fetch_throughput_filter(form):
     # Sets form's wip_l_b / wip_u_b to STRICTLY positive values (>0) or to -1
     if form.throughput_filter:
         resp_code_asc, response_content_asc = \
-            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
-                                f"ORDER BY resolutiondate ASC &maxResults=1&fields=resolutiondate",
+            make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter}"
+                                f" ORDER BY resolutiondate ASC &maxResults=1&fields=resolutiondate,updated,created",
                                 client)
         if resp_code_asc == 200:
             total = response_content_asc['total']
 
             resp_code_desc, response_content_desc = \
                 make_single_get_req(f"{JIRA_URL}/rest/api/2/search?jql={form.throughput_filter} "
-                                    f"ORDER BY resolutiondate DESC &maxResults=1&fields=resolutiondate",
+                                    f" ORDER BY resolutiondate DESC &maxResults=1&fields=resolutiondate,updated,created",
                                     client)
             if len(response_content_asc['issues']) != 0 and len(response_content_desc['issues']) != 0:
-                first_issue_done_date = response_content_asc['issues'][0]['fields']['resolutiondate']
-                last_issue_done_date = response_content_desc['issues'][0]['fields']['resolutiondate']
+                first_issue_fields = response_content_asc['issues'][0]['fields']
+                last_issue_fields = response_content_desc['issues'][0]['fields']
+
+                first_issue_done_date = first_issue_fields['resolutiondate'] if first_issue_fields['resolutiondate'] \
+                    else (first_issue_fields['updated'] if first_issue_fields['updated']
+                          else first_issue_fields['created'])
+
+                last_issue_done_date = last_issue_fields['resolutiondate'] if last_issue_fields['resolutiondate'] \
+                    else (last_issue_fields['updated'] if last_issue_fields['updated']
+                          else last_issue_fields['created'])
 
                 if first_issue_done_date and last_issue_done_date:
-
                     duration_in_weeks = ((dateutil.parser.parse(last_issue_done_date) -
-                                         dateutil.parser.parse(first_issue_done_date)).days + 1) / 7
+                                          dateutil.parser.parse(first_issue_done_date)).days + 1) / 7
 
                     if duration_in_weeks != 0:
                         initial_throughput = total / duration_in_weeks
