@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from forecast.helperMethods.rest import fetch_filters_and_update_form
-from forecast.helperMethods.forecast_models_utils import reduce_durations, remove_order_by_from_filter, \
+from forecast.helperMethods.forecast_utils import parse_durations_for_ui, remove_order_by_from_filter, \
     append_resolution_to_form_filters
 from .models import Query, Estimation, Form
 
@@ -11,14 +11,14 @@ from .models import Query, Estimation, Form
 def index(request):
     query_list = Query.objects.order_by('-creation_date')
 
-    context = {'query_list': query_list,
-               'nbar': 'index'}
+    context = {
+        'nbar': 'index',
+        'query_list': query_list}
 
     return render(request, 'forecast/index.html', context)
 
 
 def detail(request, query_id, run_estimation_response=None):
-    # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
     initial_wip, initial_throughput = fetch_filters_and_update_form(query.form)
@@ -29,24 +29,25 @@ def detail(request, query_id, run_estimation_response=None):
 
     (centile_values, weeks, weeks_frequency,
      weeks_frequency_sum, point_radius_list, point_color_list) = \
-        reduce_durations([int(x) for x in estimation.durations.split(";")]) \
+        parse_durations_for_ui([int(x) for x in estimation.durations.split(";")]) \
         if latest_estimation_list.exists() \
         else ([], [], [], None, [], [])
 
-    context = {'query': query,
-               'form': query.form,
-               'latest_estimation_list': latest_estimation_list,
-               'weeks': weeks,
-               'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
-               'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
-               'centile_indices': [5*i for i in range(0, 21)],
-               'centile_values': centile_values,
-               'nbar': 'detail',
-               'run_estimation_response': run_estimation_response,
-               'point_radius_list': point_radius_list,
-               'point_color_list': point_color_list,
-               'initial_wip': initial_wip,
-               'initial_throughput': initial_throughput}
+    context = {
+        'nbar': 'detail',
+        'query': query,
+        'form': query.form,
+        'run_estimation_response': run_estimation_response,
+        'initial_wip': initial_wip,
+        'initial_throughput': initial_throughput,
+        'latest_estimation_list': latest_estimation_list,
+        'centile_indices': [5*i for i in range(0, 21)],
+        'centile_values': centile_values,
+        'weeks': weeks,
+        'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
+        'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
+        'point_radius_list': point_radius_list,
+        'point_color_list': point_color_list}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -58,19 +59,18 @@ def results(request, query_id, estimation_id):
 
     (centile_values, weeks, weeks_frequency,
      weeks_frequency_sum, point_radius_list, point_color_list) = \
-        reduce_durations([int(x) for x in estimation.durations.split(";")])
+        parse_durations_for_ui([int(x) for x in estimation.durations.split(";")])
 
     context = {
+        'nbar': 'results',
+        'centile_indices': [5*i for i in range(0, 21)],
+        'centile_values': centile_values,
         'query': query,
         'weeks': weeks,
         'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
         'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
-        'centile_indices': [5*i for i in range(0, 21)],
-        'centile_values': centile_values,
-        'nbar': 'results',
         'point_radius_list': point_radius_list,
-        'point_color_list': point_color_list,
-    }
+        'point_color_list': point_color_list}
 
     return render(request, 'forecast/results.html', context)
 
@@ -81,14 +81,12 @@ def run_estimation(request, query_id):
         .filter(query__pk=query_id) \
         .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
                 wip_upper_bound=int(request.POST['wip_upper_bound']),
-                wip_filter=request.POST['wip_filter'],
+                wip_filter=remove_order_by_from_filter(request.POST['wip_filter']),
                 throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                 throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-                throughput_filter=request.POST['throughput_filter'],
+                throughput_filter=remove_order_by_from_filter(request.POST['throughput_filter']),
                 split_rate_wip=float(request.POST['split_rate_wip']),
-                split_rate_throughput=float(request.POST['split_rate_throughput']),
-                # simulation_count=int(request.POST['simulation_count'])
-                )
+                split_rate_throughput=float(request.POST['split_rate_throughput']))
 
     query = get_object_or_404(Query, pk=query_id)
 
@@ -101,7 +99,6 @@ def run_estimation(request, query_id):
 
 
 def create_query(request):
-    # TODO: check validity before creation of _filter and other fields
     query = Query(name=request.POST['name'], description=request.POST['description'])
 
     query.save()

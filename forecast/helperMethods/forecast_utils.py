@@ -2,7 +2,7 @@ from collections import Counter
 import numpy as np
 
 
-def reduce_durations(durations):
+def parse_durations_for_ui(durations):
     weeks_to_frequency = sorted(Counter(durations).items())
     centile_values = list(map(lambda x: int(x), np.percentile(durations, range(0, 101, 5), interpolation='nearest')))
     weeks_frequency = [v for (k, v) in weeks_to_frequency]
@@ -18,7 +18,8 @@ def reduce_durations(durations):
 
 
 def remove_order_by_from_filter(filter_str):
-    return filter_str[:filter_str.lower().find(" order by")]
+    pos = filter_str.lower().find(" order by")
+    return filter_str[:pos] if pos != -1 else filter_str
 
 
 def append_resolution_to_form_filters(filter_str):

@@ -1,21 +1,19 @@
-from datetime import timedelta
-import time
 import random
 import string
 
-from django.utils import timezone
 from django.urls import reverse
 from django.test import TestCase
-from django.db.models import Sum
 
-from forecast.helperMethods.forecast_models_utils import remove_order_by_from_filter
+from forecast.helperMethods.forecast_utils import remove_order_by_from_filter
 from forecast.helperMethods.rest import fetch_filters_and_update_form
-from .models import Query, Form, Estimation, SUCCESS_MESSAGE
+from .models import Query, Form, SUCCESS_MESSAGE
 
 
 """
-NOTE: TEST METHODS RUN AGAINST A FAKE DB. DB FLUSHES AFTER EACH METHOD.
+NOTE: TEST METHODS RUN AGAINST A FAKE DB. DB FLUSHES AFTER EACH INDIVIDUAL TEST IS RAN.
 """
+
+order_by_clause = " order by"
 
 
 def random_string_with_digits_and_symbols(string_length=10):
@@ -64,10 +62,20 @@ class UnitTests(TestCase):
         self.assertEqual(run_estimation_response, check_validity_response)
 
     def test_remove_order_by_from_filter(self):
+        """
+        Removing "Order by" from a filter that contains it should return the substring preceding the clause.
+        Removing "Order by" from a filter that doesn't contain it should return the original filter.
+        """
         first_part = random_string_with_digits_and_symbols()
+        while first_part.lower().find(order_by_clause) != -1:
+            first_part = random_string_with_digits_and_symbols()
+
         second_part = random_string_with_digits_and_symbols()
-        concatenation = first_part + " ORdEr By" + second_part
+
+        concatenation = first_part + order_by_clause + second_part
+
         self.assertEqual(remove_order_by_from_filter(concatenation), first_part)
+        self.assertEqual(remove_order_by_from_filter(first_part), first_part)
 
 
 class HTTPRequests(TestCase):
@@ -78,8 +86,9 @@ class HTTPRequests(TestCase):
         """
 
         # invalidate jql by appending the reserved keyword " ORDER BY " (resulting in incomplete jql)
-        throughput_filter = f"{random_string_with_digits_and_symbols()} ORDER BY "
-        wip_filter = f"{random_string_with_digits_and_symbols()} ORDER BY "
+        throughput_filter = f"{random_string_with_digits_and_symbols()}{order_by_clause}"
+        wip_filter = f"{random_string_with_digits_and_symbols()}{order_by_clause}"
+
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
         Form.objects.create(**random_fields_for_form_model(query))
         Form.objects.filter(query=query).update(wip_filter=wip_filter,
@@ -95,15 +104,18 @@ class HTTPRequests(TestCase):
 
     def test_fetch_valid_form_wip_filter(self):
         """
-        ANY VALID JQL QUERY FOR WIP FILTER WILL RESULT IN SOME POSITIVE WIP (>=0)
+        Any valid JQL Query for wip filter will result in some positive wip (>=0)
+        Not any valid JQL Query for throughput filter will result in some strictly positive wip (>0)
+        One valid JQL Query for wip/throughput is "status = Done"
 
-        TO GENERATE A VALID JQL QUERY, WE"LL CONSIDER THE <status = Done> QUERY
         """
-        wip_filter = "status = Done"
+
+        wip_filter = throughput_filter = "status = Done"
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
         Form.objects.create(**random_fields_for_form_model(query))
         Form.objects.filter(query=query).update(
             wip_filter=wip_filter,
+            throughput_filter=throughput_filter,
             wip_lower_bound=-1,
             wip_upper_bound=-1)
 
@@ -114,7 +126,7 @@ class HTTPRequests(TestCase):
         self.assertGreaterEqual(form.wip_upper_bound, 0)
 
 
-class ViewTests(TestCase):
+class CallViewsTests(TestCase):
 
     def test_valid_get_req_index(self):
         response = self.client.get(reverse('forecast:index'))

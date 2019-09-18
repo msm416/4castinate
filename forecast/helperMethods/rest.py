@@ -31,7 +31,7 @@ def fetch_wip_filter(form):
             initial_wip = response_content['total']
             form.wip_lower_bound = int(response_content['total'] * (1.00 - form.split_rate_wip))
             form.wip_upper_bound = int(response_content['total'] * (1.00 + form.split_rate_wip))
-            return initial_wip
+            return int(initial_wip)
 
     # End up here if we didn't return above
     form.wip_lower_bound = form.wip_upper_bound = -1
@@ -74,7 +74,7 @@ def fetch_throughput_filter(form):
                         form.throughput_upper_bound = int(initial_throughput * (1.00 + form.split_rate_throughput))
 
                         if form.throughput_lower_bound > 0:
-                            return initial_throughput
+                            return int(initial_throughput)
 
     # End up here if we didn't return above
     form.throughput_lower_bound = form.throughput_upper_bound = -1
@@ -85,7 +85,9 @@ def make_single_get_req(url, oauth_client=None):
     # You need to do Random.atfork() in the child process after every call
     # to os.fork() to avoid reusing PRNG state
     Crypto.Random.atfork()
+
     if oauth_client:
+        # OAUTH REQUEST
         req_type = "OAUTH"
         resp_code, response_content = oauth_client.request(url, "GET")
 

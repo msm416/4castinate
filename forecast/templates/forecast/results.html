@@ -16,7 +16,6 @@
 
 {% block body_scripts %}
 <script>
-    //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
     var ctx = document.getElementById('myProbabilityDistribution').getContext('2d');
     var weeks = JSON.parse(document.getElementById('weeks').textContent);
     var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
