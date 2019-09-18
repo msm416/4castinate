@@ -59,40 +59,40 @@
                             <ul>
                                 <li>
                                     <h8>
-                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp; for this query is displayed.
+                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> for a query = JQL Filters and Split Rates. Fetched_values are pulled on page reload.
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
                                         <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span>
-                                        &nbsp; is fetched from <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp;.
+                                        is determined from <span style="background-color: white;border: double"> <b> Configuration </b> </span> : input_low / input_high == Fetched_value x (1.00 -/+ rate).
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
-                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation </span> &nbsp; creates a forecast using the
-                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> &nbsp; and saves
-                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp; changes for later use.
+                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation </span> creates a forecast using the
+                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> and saves
+                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> changes for later use.
                                     </h8>
                                     <br>
                                 </li>
                             </ul>
                             <br>
                             <h5>
-                                Valid JQL Throughput Filters
+                                Notes on Configuration
                             </h5>
                             <ul>
                                 <li>
                                     <h8>
-                                        <b>cannot</b> have ORDER BY clause (Not supported yet)
+                                        Updating JQL Filters <b> ignores </b> ORDER BY clauses and EVERYTHING that comes after.
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
-                                        <b>must</b> have "resolution = Done" clause or equivalent (since Jira issues must have a non-null resolutiondate)
+                                        Sensible Throughput Filters <b> should </b> include resolution/status clauses.
                                     </h8>
                                     <br>
                                 </li>
@@ -123,13 +123,13 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="wip_filter"> <b> JQL Filter to infer WIP (fetched value: {{initial_wip}}) </b> </label>
+                                    <label for="wip_filter"> <b> JQL Filter to infer WIP (Fetched_value: {{initial_wip}}) </b> </label>
                                     <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput (fetched value: {{initial_throughput}}) </b> </label>
+                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput (Fetched_value: {{initial_throughput}}) </b> </label>
                                     <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
                                 </div>
                             </div>
