@@ -55,7 +55,8 @@
     <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
         <thead>
         <tr>
-            <th> View Query </th>
+            <th>Inspect Query</th>
+            <th>Inspect Query</th>
             <th>Query Name</th>
             <th>Query Description</th>
             <th>Query WIP FILTER</th>
@@ -70,6 +71,13 @@
                     {% csrf_token %}
                     <input type="hidden" name="supporttype"/>
                     <input class="btn btn-success" type="submit" value="->">
+                </form>
+            </td>
+            <td>
+                <form action="{% url 'forecast:delete_query' query.id %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="supporttype"/>
+                    <input class="btn btn-danger" type="submit" value="X">
                 </form>
             </td>
             <td>

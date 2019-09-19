@@ -114,3 +114,23 @@ def create_query(request):
     # with POST data. This prevents data from being posted twice if a
     # user hits the Back button.
     return HttpResponseRedirect(reverse('forecast:index'))
+
+
+def delete_estimation(request, query_id, estimation_id):
+    estimation = get_object_or_404(Estimation, pk=estimation_id)
+    estimation.delete()
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
+    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
+
+
+def delete_query(request, query_id):
+    query = get_object_or_404(Query, pk=query_id)
+    query.delete()
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
+    return HttpResponseRedirect(reverse('forecast:index'))

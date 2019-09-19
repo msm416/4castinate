@@ -16,4 +16,8 @@ urlpatterns = [
     # ex: /forecast/5/create-form/
     path('create-query/', views.create_query, name='create_query'),
     # ex: /forecast/create-query/
+    path('<int:query_id>/delete-estimation/<int:estimation_id>/', views.delete_estimation, name='delete_estimation'),
+    # ex: /forecast/5/delete-estimation/2
+    path('delete-query/<int:query_id>/', views.delete_query, name='delete_query')
+    # ex: /forecast/delete-query/5
 ]

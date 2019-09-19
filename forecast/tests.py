@@ -6,8 +6,7 @@ from django.test import TestCase
 
 from forecast.helperMethods.forecast_utils import remove_order_by_from_filter
 from forecast.helperMethods.rest import fetch_filters_and_update_form
-from .models import Query, Form, SUCCESS_MESSAGE
-
+from .models import Query, Form, SUCCESS_MESSAGE, Estimation
 
 """
 NOTE: TEST METHODS RUN AGAINST A FAKE DB. DB FLUSHES AFTER EACH INDIVIDUAL TEST IS RAN.
@@ -66,9 +65,12 @@ class UnitTests(TestCase):
         Removing "Order by" from a filter that contains it should return the substring preceding the clause.
         Removing "Order by" from a filter that doesn't contain it should return the original filter.
         """
-        first_part = random_string_with_digits_and_symbols()
-        while first_part.lower().find(order_by_clause) != -1:
+
+        # Ensure that first_part does not contain order_by clause by chance
+        while True:
             first_part = random_string_with_digits_and_symbols()
+            if first_part.lower().find(order_by_clause) == -1:
+                break
 
         second_part = random_string_with_digits_and_symbols()
 
@@ -152,11 +154,23 @@ class CallViewsTests(TestCase):
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
         Form.objects.create(query=query)
 
+        # Post with invalid fields on form won't create an Estimation in the DB
+        invalid_fields = random_fields_for_form_model(query)
+        invalid_fields['wip_lower_bound'] = -1
+
+        self.client.post(reverse('forecast:run_estimation',
+                                 args=(query.pk,)),
+                         invalid_fields)
+
+        self.assertEqual(False, Estimation.objects.exists())
+
         response = self.client.post(reverse('forecast:run_estimation',
                                             args=(query.pk,)),
                                     random_fields_for_form_model(query))
+
         self.assertRedirects(response, reverse('forecast:detail',
                                                args=(query.pk, query.run_estimation())))
+        self.assertEqual(True, Estimation.objects.exists())
 
     def test_valid_get_req_results(self):
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
@@ -169,3 +183,29 @@ class CallViewsTests(TestCase):
         response = self.client.get(reverse('forecast:results',
                                            args=(query.pk, estimation.pk)))
         self.assertEqual(response.status_code, 200)
+
+    def test_valid_post_req_delete_estimation(self):
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        query.estimation_set.create(**random_fields_for_form_model(query))
+        Form.objects.create(query=query)
+
+        self.assertEqual(True, Estimation.objects.exists())
+
+        response = self.client.post(reverse('forecast:delete_estimation',
+                                            args=(query.pk, Estimation.objects.get().pk)),
+                                    random_fields_for_form_model(query))
+
+        self.assertRedirects(response, reverse('forecast:detail',
+                                               args=(query.pk,)))
+
+        self.assertEqual(False, Estimation.objects.exists())
+
+    def test_valid_post_req_delete_query(self):
+        query = Query.objects.create(name=random_string_with_digits_and_symbols())
+        self.assertEqual(True, Query.objects.exists())
+        response = self.client.post(reverse('forecast:delete_query',
+                                            args=(query.pk,)))
+
+        self.assertRedirects(response, reverse('forecast:index'))
+
+        self.assertEqual(False, Query.objects.exists())

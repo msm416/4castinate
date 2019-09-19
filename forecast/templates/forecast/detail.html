@@ -163,7 +163,8 @@
         <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
             <thead>
                 <tr>
-                    <th> View Forecast </th>
+                    <th> Inspect Estimation </th>
+                    <th> Delete Estimation </th>
                     <th>WIP</th>
                     <th>Filter for WIP</th>
                     <th>Throughput</th>
@@ -177,6 +178,14 @@
                         <td>
                             <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
                         </td>
+                        <td>
+                            <form action="{% url 'forecast:delete_estimation' query.id estimation.id %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="supporttype"/>
+                                <input class="btn btn-danger" type="submit" value="X">
+                            </form>
+                        </td>
+
                         <td>
                             [{{estimation.wip_lower_bound}},{{estimation.wip_upper_bound}}]
                         </td>
