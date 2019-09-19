@@ -3,6 +3,8 @@ from numpy import random, ceil
 from django.db import models
 from django.utils import timezone
 
+from forecast.helperMethods.forecast_utils import parse_durations_for_ui, list_of_primitives_as_string
+
 WEEK_IN_DAYS = 7
 SUCCESS_MESSAGE = "succeeded"
 
@@ -55,7 +57,10 @@ class Query(models.Model):
 
         completion_duration = (ceil(wip / weekly_throughput)).astype(int)
 
-        durations = ';'.join(map(str, completion_duration))
+        durations = list_of_primitives_as_string(completion_duration)
+
+        centile_values, weeks, weeks_frequency, point_radius_list, point_color_list \
+            = parse_durations_for_ui(completion_duration)
 
         # Create new Estimation
         self.estimation_set\
@@ -67,7 +72,12 @@ class Query(models.Model):
                     throughput_lower_bound=form.throughput_lower_bound,
                     throughput_upper_bound=form.throughput_upper_bound,
                     throughput_filter=form.throughput_filter,
-                    simulation_count=form.simulation_count)
+                    simulation_count=form.simulation_count,
+                    centile_values=list_of_primitives_as_string(centile_values),
+                    weeks=list_of_primitives_as_string(weeks),
+                    weeks_frequency=list_of_primitives_as_string(weeks_frequency),
+                    point_radius_list=list_of_primitives_as_string(point_radius_list),
+                    point_color_list=list_of_primitives_as_string(point_color_list))
 
         return run_estimation_response
 
@@ -100,4 +110,11 @@ class Form(EstimationInput):
 class Estimation(EstimationInput):
     query = models.ForeignKey(Query, on_delete=models.CASCADE)
 
-    durations = models.TextField(default='')
+    durations = models.TextField()
+
+    centile_values = models.TextField()
+    weeks = models.TextField()
+    weeks_frequency = models.TextField()
+    point_radius_list = models.TextField()
+    point_color_list = models.TextField()
+

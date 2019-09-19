@@ -3,8 +3,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from forecast.helperMethods.rest import fetch_filters_and_update_form
-from forecast.helperMethods.forecast_utils import parse_durations_for_ui, remove_order_by_from_filter, \
-    append_resolution_to_form_filters
+from forecast.helperMethods.forecast_utils import remove_order_by_from_filter, \
+    append_resolution_to_form_filters, dispatch_estimation_ui_values
 from .models import Query, Estimation, Form
 
 
@@ -27,11 +27,16 @@ def detail(request, query_id, run_estimation_response=None):
 
     estimation = latest_estimation_list.first()
 
-    (centile_values, weeks, weeks_frequency,
-     weeks_frequency_sum, point_radius_list, point_color_list) = \
-        parse_durations_for_ui([int(x) for x in estimation.durations.split(";")]) \
+    weeks_frequency_sum = \
+        estimation.simulation_count \
         if latest_estimation_list.exists() \
-        else ([], [], [], None, [], [])
+        else None
+
+    (centile_values, weeks, weeks_frequency,
+      point_radius_list, point_color_list) = \
+        dispatch_estimation_ui_values(estimation) \
+        if latest_estimation_list.exists() \
+        else ([], [], [], [], [])
 
     context = {
         'nbar': 'detail',
@@ -44,8 +49,8 @@ def detail(request, query_id, run_estimation_response=None):
         'centile_indices': [5*i for i in range(0, 21)],
         'centile_values': centile_values,
         'weeks': weeks,
-        'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
-        'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
+        'weeks_frequency': weeks_frequency,
+        'weeks_frequency_sum': ("SAMPLE SIZE: " + str(weeks_frequency_sum)),
         'point_radius_list': point_radius_list,
         'point_color_list': point_color_list}
 
@@ -57,9 +62,8 @@ def results(request, query_id, estimation_id):
 
     estimation = get_object_or_404(Estimation, pk=estimation_id)
 
-    (centile_values, weeks, weeks_frequency,
-     weeks_frequency_sum, point_radius_list, point_color_list) = \
-        parse_durations_for_ui([int(x) for x in estimation.durations.split(";")])
+    (centile_values, weeks, weeks_frequency, point_radius_list, point_color_list) = \
+        dispatch_estimation_ui_values(estimation)
 
     context = {
         'nbar': 'results',
@@ -67,8 +71,8 @@ def results(request, query_id, estimation_id):
         'centile_values': centile_values,
         'query': query,
         'weeks': weeks,
-        'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
-        'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
+        'weeks_frequency': weeks_frequency,
+        'weeks_frequency_sum': ("SAMPLE SIZE: " + str(estimation.simulation_count)),
         'point_radius_list': point_radius_list,
         'point_color_list': point_color_list}
 

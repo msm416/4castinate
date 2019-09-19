@@ -21,7 +21,7 @@ def random_string_with_digits_and_symbols(string_length=10):
     return ''.join(random.choice(password_characters) for _ in range(string_length))
 
 
-def random_fields_for_form_model(query):
+def random_fields_for_estimationInput_model(query):
     wip_lower_bound = random.randint(0, 10000)
     wip_upper_bound = random.randint(wip_lower_bound, 20000)
     throughput_lower_bound = random.randint(1, 10000)
@@ -52,7 +52,7 @@ class UnitTests(TestCase):
         """
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
 
-        form = Form.objects.create(**random_fields_for_form_model(query))
+        form = Form.objects.create(**random_fields_for_estimationInput_model(query))
 
         run_estimation_response = query.run_estimation()
         self.assertEqual(run_estimation_response, SUCCESS_MESSAGE)
@@ -92,7 +92,7 @@ class HTTPRequests(TestCase):
         wip_filter = f"{random_string_with_digits_and_symbols()}{order_by_clause}"
 
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
-        Form.objects.create(**random_fields_for_form_model(query))
+        Form.objects.create(**random_fields_for_estimationInput_model(query))
         Form.objects.filter(query=query).update(wip_filter=wip_filter,
                                                 throughput_filter=throughput_filter)
 
@@ -114,7 +114,7 @@ class HTTPRequests(TestCase):
 
         wip_filter = throughput_filter = "status = Done"
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
-        Form.objects.create(**random_fields_for_form_model(query))
+        Form.objects.create(**random_fields_for_estimationInput_model(query))
         Form.objects.filter(query=query).update(
             wip_filter=wip_filter,
             throughput_filter=throughput_filter,
@@ -155,7 +155,7 @@ class CallViewsTests(TestCase):
         Form.objects.create(query=query)
 
         # Post with invalid fields on form won't create an Estimation in the DB
-        invalid_fields = random_fields_for_form_model(query)
+        invalid_fields = random_fields_for_estimationInput_model(query)
         invalid_fields['wip_lower_bound'] = -1
 
         self.client.post(reverse('forecast:run_estimation',
@@ -166,7 +166,7 @@ class CallViewsTests(TestCase):
 
         response = self.client.post(reverse('forecast:run_estimation',
                                             args=(query.pk,)),
-                                    random_fields_for_form_model(query))
+                                    random_fields_for_estimationInput_model(query))
 
         self.assertRedirects(response, reverse('forecast:detail',
                                                args=(query.pk, query.run_estimation())))
@@ -186,14 +186,14 @@ class CallViewsTests(TestCase):
 
     def test_valid_post_req_delete_estimation(self):
         query = Query.objects.create(name=random_string_with_digits_and_symbols())
-        query.estimation_set.create(**random_fields_for_form_model(query))
+        query.estimation_set.create(**random_fields_for_estimationInput_model(query))
         Form.objects.create(query=query)
 
         self.assertEqual(True, Estimation.objects.exists())
 
         response = self.client.post(reverse('forecast:delete_estimation',
                                             args=(query.pk, Estimation.objects.get().pk)),
-                                    random_fields_for_form_model(query))
+                                    random_fields_for_estimationInput_model(query))
 
         self.assertRedirects(response, reverse('forecast:detail',
                                                args=(query.pk,)))
