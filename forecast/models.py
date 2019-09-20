@@ -1,8 +1,9 @@
 from numpy import random, ceil
-import time
 
 from django.db import models
 from django.utils import timezone
+
+from forecast.helperMethods.forecast_utils import parse_durations_for_ui, list_of_primitives_as_string
 
 WEEK_IN_DAYS = 7
 SUCCESS_MESSAGE = "succeeded"
@@ -13,18 +14,18 @@ class EstimationInput(models.Model):
 
     wip_lower_bound = models.PositiveSmallIntegerField(default=20)
     wip_upper_bound = models.PositiveSmallIntegerField(default=30)
-    # Default: we consider forms that don't use filter to determine wip
+
     wip_filter = models.TextField(default="")
 
     throughput_lower_bound = models.FloatField(default=1.00)
     throughput_upper_bound = models.FloatField(default=5.00)
-    # Default: we consider forms that don't use filter to determine throughput
+
     throughput_filter = models.TextField(default="")
 
-    split_rate_wip = models.FloatField(default=0.00)
-    split_rate_throughput = models.FloatField(default=0.00)
+    split_rate_wip = models.FloatField(default=0.5)
+    split_rate_throughput = models.FloatField(default=0.7)
 
-    simulation_count = models.PositiveSmallIntegerField(default=10000)
+    simulation_count = models.PositiveSmallIntegerField(default=1000000)
 
     class Meta:
         abstract = True
@@ -41,8 +42,6 @@ class Query(models.Model):
         return self.name
 
     def run_estimation(self):
-        start_time = time.time()
-
         form = self.form
 
         run_estimation_response = form.check_validity()
@@ -58,22 +57,28 @@ class Query(models.Model):
 
         completion_duration = (ceil(wip / weekly_throughput)).astype(int)
 
-        durations = ';'.join(map(str, completion_duration))
-        end_time = time.time()
-        msg = f"Elapsed simulation is: {str(end_time - start_time)} seconds."
+        durations = list_of_primitives_as_string(completion_duration)
 
-        # Create new estimation
+        centile_values, weeks, weeks_frequency, point_radius_list, point_color_list \
+            = parse_durations_for_ui(completion_duration)
+
+        # Create new Estimation
         self.estimation_set\
             .create(query=self,
                     durations=durations,
-                    message=msg,
                     wip_lower_bound=form.wip_lower_bound,
                     wip_upper_bound=form.wip_upper_bound,
                     wip_filter=form.wip_filter,
                     throughput_lower_bound=form.throughput_lower_bound,
                     throughput_upper_bound=form.throughput_upper_bound,
                     throughput_filter=form.throughput_filter,
-                    simulation_count=form.simulation_count)
+                    simulation_count=form.simulation_count,
+                    centile_values=list_of_primitives_as_string(centile_values),
+                    weeks=list_of_primitives_as_string(weeks),
+                    weeks_frequency=list_of_primitives_as_string(weeks_frequency),
+                    point_radius_list=list_of_primitives_as_string(point_radius_list),
+                    point_color_list=list_of_primitives_as_string(point_color_list))
+
         return run_estimation_response
 
 
@@ -83,7 +88,7 @@ class Form(EstimationInput):
     def check_validity(self):
         run_estimation_response = ""
 
-        if 0 >= self.wip_lower_bound or self.wip_lower_bound > self.wip_upper_bound:
+        if 0 > self.wip_lower_bound or self.wip_lower_bound > self.wip_upper_bound:
             run_estimation_response += f"WIP is " \
                 f"({self.wip_lower_bound}, {self.wip_upper_bound}). "
 
@@ -105,9 +110,11 @@ class Form(EstimationInput):
 class Estimation(EstimationInput):
     query = models.ForeignKey(Query, on_delete=models.CASCADE)
 
-    durations = models.TextField(default='')
+    durations = models.TextField()
 
-    message = models.CharField(max_length=200)
+    centile_values = models.TextField()
+    weeks = models.TextField()
+    weeks_frequency = models.TextField()
+    point_radius_list = models.TextField()
+    point_color_list = models.TextField()
 
-    def __str__(self):
-        return self.message

@@ -2,50 +2,61 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from forecast.helperMethods.rest import fetch_filters_and_update_form, create_form_filters
-from forecast.helperMethods.forecast_models_utils import reduce_durations
+from forecast.helperMethods.rest import fetch_filters_and_update_form
+from forecast.helperMethods.forecast_utils import remove_order_by_from_filter, \
+    append_resolution_to_form_filters, dispatch_estimation_ui_values, compute_latest_estimations_change_table
 from .models import Query, Estimation, Form
 
 
 def index(request):
     query_list = Query.objects.order_by('-creation_date')
 
-    context = {'query_list': query_list,
-               'nbar': 'index'}
+    context = {
+        'nbar': 'index',
+        'query_list': query_list}
 
     return render(request, 'forecast/index.html', context)
 
 
 def detail(request, query_id, run_estimation_response=None):
-    # TODO: refresh shows as a GET
     query = get_object_or_404(Query, pk=query_id)
 
     initial_wip, initial_throughput = fetch_filters_and_update_form(query.form)
 
     latest_estimation_list = query.estimation_set.order_by('-creation_date')
 
-    estimation = latest_estimation_list.first()
+    latest_estimation = latest_estimation_list.first()
+
+    weeks_frequency_sum = \
+        latest_estimation.simulation_count \
+        if latest_estimation_list.exists() \
+        else None
 
     (centile_values, weeks, weeks_frequency,
-     weeks_frequency_sum, point_radius_list, point_color_list) = \
-        reduce_durations([int(x) for x in estimation.durations.split(";")]) \
+      point_radius_list, point_color_list) = \
+        dispatch_estimation_ui_values(latest_estimation) \
         if latest_estimation_list.exists() \
-        else ([], [], [], None, [], [])
+        else ([], [], [], [], [])
 
-    context = {'query': query,
-               'form': query.form,
-               'latest_estimation_list': latest_estimation_list,
-               'weeks': weeks,
-               'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
-               'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
-               'centile_indices': [5*i for i in range(0, 21)],
-               'centile_values': centile_values,
-               'nbar': 'detail',
-               'run_estimation_response': run_estimation_response,
-               'point_radius_list': point_radius_list,
-               'point_color_list': point_color_list,
-               'initial_wip': initial_wip,
-               'initial_throughput': initial_throughput}
+    latest_estimation_change_table = \
+        compute_latest_estimations_change_table(query.estimation_set.order_by('creation_date'))
+
+    context = {
+        'nbar': 'detail',
+        'query': query,
+        'form': query.form,
+        'run_estimation_response': run_estimation_response,
+        'initial_wip': initial_wip,
+        'initial_throughput': initial_throughput,
+        'latest_estimation_list': latest_estimation_list,
+        'centile_indices': [5*i for i in range(0, 21)],
+        'centile_values': centile_values,
+        'weeks': weeks,
+        'weeks_frequency': weeks_frequency,
+        'weeks_frequency_sum': ("SAMPLE SIZE: " + str(weeks_frequency_sum)),
+        'point_radius_list': point_radius_list,
+        'point_color_list': point_color_list,
+        'latest_estimation_change_table': latest_estimation_change_table}
 
     return render(request, 'forecast/detail.html', context)
 
@@ -55,21 +66,19 @@ def results(request, query_id, estimation_id):
 
     estimation = get_object_or_404(Estimation, pk=estimation_id)
 
-    (centile_values, weeks, weeks_frequency,
-     weeks_frequency_sum, point_radius_list, point_color_list) = \
-        reduce_durations([int(x) for x in estimation.durations.split(";")])
+    (centile_values, weeks, weeks_frequency, point_radius_list, point_color_list) = \
+        dispatch_estimation_ui_values(estimation)
 
     context = {
-        'query': query,
-        'weeks': weeks,
-        'weeks_frequency': [x / weeks_frequency_sum for x in weeks_frequency],
-        'weeks_frequency_sum': ("sample size " + str(weeks_frequency_sum)),
+        'nbar': 'results',
         'centile_indices': [5*i for i in range(0, 21)],
         'centile_values': centile_values,
-        'nbar': 'results',
+        'query': query,
+        'weeks': weeks,
+        'weeks_frequency': weeks_frequency,
+        'weeks_frequency_sum': ("SAMPLE SIZE: " + str(estimation.simulation_count)),
         'point_radius_list': point_radius_list,
-        'point_color_list': point_color_list,
-    }
+        'point_color_list': point_color_list}
 
     return render(request, 'forecast/results.html', context)
 
@@ -80,14 +89,12 @@ def run_estimation(request, query_id):
         .filter(query__pk=query_id) \
         .update(wip_lower_bound=int(request.POST['wip_lower_bound']),
                 wip_upper_bound=int(request.POST['wip_upper_bound']),
-                wip_filter=request.POST['wip_filter'],
+                wip_filter=remove_order_by_from_filter(request.POST['wip_filter']),
                 throughput_lower_bound=float(request.POST['throughput_lower_bound']),
                 throughput_upper_bound=float(request.POST['throughput_upper_bound']),
-                throughput_filter=request.POST['throughput_filter'],
+                throughput_filter=remove_order_by_from_filter(request.POST['throughput_filter']),
                 split_rate_wip=float(request.POST['split_rate_wip']),
-                split_rate_throughput=float(request.POST['split_rate_throughput']),
-                # simulation_count=int(request.POST['simulation_count'])
-                )
+                split_rate_throughput=float(request.POST['split_rate_throughput']))
 
     query = get_object_or_404(Query, pk=query_id)
 
@@ -100,16 +107,36 @@ def run_estimation(request, query_id):
 
 
 def create_query(request):
-    # TODO: check validity before creation of _filter and other fields
     query = Query(name=request.POST['name'], description=request.POST['description'])
 
     query.save()
 
-    wip_filter, throughput_filter = create_form_filters(request.POST['filter'])
+    wip_filter, throughput_filter = append_resolution_to_form_filters(
+        remove_order_by_from_filter(request.POST['filter']))
 
     Form.objects.create(query=query,
                         wip_filter=wip_filter,
                         throughput_filter=throughput_filter)
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
+    return HttpResponseRedirect(reverse('forecast:index'))
+
+
+def delete_estimation(request, query_id, estimation_id):
+    estimation = get_object_or_404(Estimation, pk=estimation_id)
+    estimation.delete()
+
+    # Always return an HttpResponseRedirect after successfully dealing
+    # with POST data. This prevents data from being posted twice if a
+    # user hits the Back button.
+    return HttpResponseRedirect(reverse('forecast:detail', args=(query_id,)))
+
+
+def delete_query(request, query_id):
+    query = get_object_or_404(Query, pk=query_id)
+    query.delete()
 
     # Always return an HttpResponseRedirect after successfully dealing
     # with POST data. This prevents data from being posted twice if a

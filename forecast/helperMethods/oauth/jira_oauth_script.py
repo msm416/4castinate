@@ -1,4 +1,5 @@
 import base64
+import os
 from urllib.parse import parse_qsl
 
 from tlslite.utils import keyfactory
@@ -6,7 +7,7 @@ import oauth2 as oauth
 from pathlib import Path
 
 
-base_url = "https://4cast.atlassian.net"
+base_url = os.environ['JIRA_URL']
 consumer_key = 'OauthKey'
 consumer_secret = 'dont_care'
 
@@ -19,7 +20,7 @@ data_url = f'{base_url}/rest/agile/1.0/board'
 def create_oauth_client(consumer_key, consumer_secret, sign_method, token=None):
     client = oauth.Client(oauth.Consumer(consumer_key, consumer_secret), token)
     client.set_signature_method(sign_method)
-    client.disable_ssl_certificate_validation = True  # TODO: IS THIS THE RIGHT THING?
+    client.disable_ssl_certificate_validation = True  # TODO: HOW NOT TO DISABLE SSL?
     return client
 
 

@@ -2,7 +2,6 @@
 {% block title %}My amazing index{% endblock %}
 
 {% block body %}
-
     <br>
     <h1 class="text-center" >Choose Query - Total number of Queries in database: {{query_list.count}} </h1>
     <br>
@@ -35,7 +34,7 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="filter"> <b> Query Issues (JQL) </b></label>
+                                    <label for="filter"> <b> JQL Filter </b></label>
                                     <input type="text" name="filter" class="form-control" id="filter" value="">
                                 </div>
                             </div>
@@ -56,11 +55,12 @@
     <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
         <thead>
         <tr>
-            <th> View Query </th>
+            <th>Inspect Query</th>
+            <th>Delete Query</th>
             <th>Query Name</th>
             <th>Query Description</th>
-            <th>Query WIP FILTER</th>
-            <th>Query THROUGHPUT FILTER</th>
+            <th>Query WIP Filter</th>
+            <th>Query Throughput Filter</th>
         </tr>
         </thead>
         <tbody id="myTable">
@@ -71,6 +71,13 @@
                     {% csrf_token %}
                     <input type="hidden" name="supporttype"/>
                     <input class="btn btn-success" type="submit" value="->">
+                </form>
+            </td>
+            <td>
+                <form action="{% url 'forecast:delete_query' query.id %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="supporttype"/>
+                    <input class="btn btn-danger" type="submit" value="X">
                 </form>
             </td>
             <td>
@@ -89,7 +96,9 @@
         {% endfor %}
         </tbody>
     </table>
+{% endblock %}
 
+{% block body_scripts %}
     <script>
         $(document).ready(function(){
             $("#myInput").on("keyup", function() {
@@ -100,5 +109,4 @@
             });
         });
     </script>
-
 {% endblock %}

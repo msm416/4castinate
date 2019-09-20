@@ -30,120 +30,39 @@
         {{ point_radius_list |json_script:"point_radius_list"}}
         {{ point_color_list |json_script:"point_color_list"}}
 
-    <script>
-        //TODO: FIX $(window).width() TO REFRESH WHENEVER WINDOW WIDTH CHANGES
-        var ctx = document.getElementById('myProbabilityDistribution').getContext('2d');
-        var weeks = JSON.parse(document.getElementById('weeks').textContent);
-        var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
-        var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
-        var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
-        var point_radius_list = JSON.parse(document.getElementById('point_radius_list').textContent);
-        var point_color_list = JSON.parse(document.getElementById('point_color_list').textContent);
+        <br>
+        <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
+            <thead>
+            <tr>
+                <th> 25% </th>
+                <th> 50% </th>
+                <th> 75% </th>
+                <th> 85% </th>
+                <th> 100% </th>
+                <th> Creation date </th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for estimation_percentile_values in latest_estimation_change_table %}
+            <tr>
+                {% for percentile_value in estimation_percentile_values %}
+                <td>
+                    {{ percentile_value.week }} WEEKS
 
-        var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
-        gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
-        gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
-        gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
+                    {% if percentile_value.rem %}
+                    <span style="color: {{ percentile_value.color }}">
+                                    {{ percentile_value.rem }}
+                                </span>
+                    {% endif %}
 
-        var chart = new Chart(ctx, {
-            // The type of chart we want to create
-            type: 'line',
-            // The data for our dataset
-            data: {
-                labels: weeks,
-                datasets: [{
-                    label: weeks_frequency_sum,
-                    pointBorderColor: point_color_list,
-                    pointBorderWidth: 10,
-                    pointHoverRadius: point_radius_list,
-                    pointHoverBorderWidth: 10,
-                    pointRadius: point_radius_list,
-                    fill: true,
-                    // borderColor: gradientStroke,
-                    // pointBackgroundColor: gradientStroke,
-                    // pointHoverBackgroundColor: gradientStroke,
-                    // pointHoverBorderColor: gradientStroke,
-                    // backgroundColor: gradientStroke,
-                    borderWidth: 4,
-                    data: weeks_frequency
-                }]
-            },
-
-            // Configuration options go here
-            options: {
-                title: {
-                    display: true,
-                    text: 'Estimation Results - Discrete Probability Distribution'
-                },
-                scales: {
-                    yAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Probability'
-                        },
-                        gridLines: {
-                            display:false
-                        }
-                    }],
-                    xAxes: [{
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Week'
-                        },
-                        ticks: {
-                            userCallback: function(item, index) {
-                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
-                            },
-                            autoSkip: false
-                        },
-                        gridLines: {
-                            userCallback: function(item, index) {
-                                console.log((centile_values.indexOf(parseInt(item,10)) > -1));
-                                if (centile_values.indexOf(parseInt(item,10)) > -1) return item;
-                            },
-                            autoSkip: false
-                        }
-                    }]
-                },
-                tooltips: {
-                    mode: 'nearest',
-                    filter: function (item, data) {
-                        return item.label !== "undefined";
-
-                    },
-                    callbacks: {
-                        label: function(tooltipItem, data) {
-                            var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
-                            var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
-                            if (firstIndexOfItem === lastIndexOfItem)
-                                {return firstIndexOfItem.concat(" % Likelihood")}
-                            else
-                                {return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % Likelihood")}
-                        }
-                    }
-                }
-            },
-            plugins: [{
-                beforeRender: function (x, options) {
-                    var c = x.chart;
-                    var dataset = x.data.datasets[0];
-
-                    var fille = ctx.createLinearGradient(0, 0, c.width, 0);
-                    fille.addColorStop(0, "rgba(244,29,49,0.6)");
-                    fille.addColorStop(0.3, "rgba(244,215,28,0.6)");
-                    fille.addColorStop(1, "rgba(120,244,31,0.6)");
-
-                    var model = x.data.datasets[0]._meta[Object.keys(dataset._meta)[0]].dataset._model;
-                    model.backgroundColor = fille;
-                    model.pointBackgroundColor= fille;
-                    model.pointHoverBackgroundColor= fille;
-                    model.pointHoverBorderColor = fille;
-                    model.borderColor = fille;
-                }
-            }]
-        });
-    </script>
-
+                </td>
+                {% endfor %}
+                <td> {{ estimation_percentile_values.0.creation_date }} </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <br>
     {% else %}
         <h3 class="text-center"> No estimations </h3>
     {% endif %}
@@ -173,40 +92,40 @@
                             <ul>
                                 <li>
                                     <h8>
-                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp; for this query is displayed.
+                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> for a query = JQL Filters and Split Rates. Fetched_values are pulled on page reload.
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
                                         <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span>
-                                        &nbsp; is fetched from <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp;.
+                                        is determined from <span style="background-color: white;border: double"> <b> Configuration </b> </span> : input_low / input_high == Fetched_value x (1.00 -/+ rate).
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
-                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation </span> &nbsp; creates a forecast using the
-                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> &nbsp; and saves
-                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> &nbsp; changes for later use.
+                                        <span class="bg-success text-white" style="border: double; border-color: black"> Run Estimation </span> creates a forecast using the
+                                        <span style="background-color: #e0feff;border: double"> <b> Estimation Input </b> </span> and saves
+                                        <span style="background-color: white;border: double"> <b> Configuration </b> </span> changes for later use.
                                     </h8>
                                     <br>
                                 </li>
                             </ul>
                             <br>
                             <h5>
-                                Valid JQL Throughput Filters
+                                Notes on Configuration
                             </h5>
                             <ul>
                                 <li>
                                     <h8>
-                                        <b>cannot</b> have ORDER BY clause (Not supported yet)
+                                        Updating JQL Filters <b> ignores </b> ORDER BY clauses and EVERYTHING that comes after.
                                     </h8>
                                     <br>
                                 </li>
                                 <li>
                                     <h8>
-                                        <b>must</b> have "resolution = Done" clause or equivalent (since Jira issues must have a non-null resolutiondate)
+                                        Sensible Throughput Filters <b> should </b> include resolution/status clauses.
                                     </h8>
                                     <br>
                                 </li>
@@ -237,23 +156,23 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="wip_filter"> <b> JQL Filter to infer WIP (fetched value: {{initial_wip}}) </b> </label>
+                                    <label for="wip_filter"> <b> JQL Filter to infer WIP (Fetched_value: {{initial_wip}}) </b> </label>
                                     <input type="text" name="wip_filter" class="form-control" id="wip_filter" value="{{form.wip_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput (fetched value: {{initial_throughput}}) </b> </label>
+                                    <label for="throughput_filter"> <b> JQL Filter to infer Throughput (Fetched_value: {{initial_throughput}}) </b> </label>
                                     <input type="text" name="throughput_filter" class="form-control" id="throughput_filter" value="{{form.throughput_filter}}">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label for="split_rate_wip"> <b> WIP SPLIT RATE <span id="split_rate_wip_value" > {{form.split_rate_wip}} </span> </b> </label>
+                                    <label for="split_rate_wip"> <b> WIP Split Rate <span id="split_rate_wip_value" > {{form.split_rate_wip}} </span> </b> </label>
                                     <input type="range" name="split_rate_wip" class="form-control" id="split_rate_wip" value="{{form.split_rate_wip}}" min="0.00" max="1.00" step="0.01">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="split_rate_throughput"> <b> THROUGHPUT SPLIT RATE <span id="split_rate_throughput_value"> {{form.split_rate_throughput}} </span> </b> </label>
+                                    <label for="split_rate_throughput"> <b> Throughput Split Rate <span id="split_rate_throughput_value"> {{form.split_rate_throughput}} </span> </b> </label>
                                     <input type="range" name="split_rate_throughput" class="form-control" id="split_rate_throughput" value="{{form.split_rate_throughput}}" min="0.00" max="1.00" step="0.01">
                                 </div>
                             </div>
@@ -265,79 +184,208 @@
                                 <div class="col-md-4"></div>
                             </div>
                         </form>
-                        <script>
-                            var initial_wip = JSON.parse(document.getElementById('initial_wip').textContent);
-                            var initial_throughput = JSON.parse(document.getElementById('initial_throughput').textContent);
-
-                            $(document).on('input', '#split_rate_wip', function() {
-                                var rate = parseFloat($(this).val());
-                                $('#split_rate_wip_value').html($(this).val());
-                                document.getElementById("wip_upper_bound").value = rate;
-                                document.getElementById("wip_lower_bound").value = Math.floor((1.00 - rate) * initial_wip);
-                                document.getElementById("wip_upper_bound").value = Math.floor((1.00 + rate) * initial_wip);
-                            });
-
-                            $(document).on('input', '#split_rate_throughput', function() {
-                                var rate = parseFloat($(this).val());
-                                $('#split_rate_throughput_value').html($(this).val());
-                                document.getElementById("throughput_lower_bound").value = Math.floor((1.00 - rate) * initial_throughput);
-                                document.getElementById("throughput_upper_bound").value = Math.floor((1.00 + rate) * initial_throughput);
-                            });
-                        </script>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     <br>
+    {% if latest_estimation_list.exists %}
+
+    {% endif %}
     <input class="form-control" id="mySearch" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
-        <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
-            <thead>
+    <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
+        <thead>
+            <tr>
+                <th> Inspect </th>
+                <th> Delete </th>
+                <th>WIP VALUES</th>
+                <th>WIP Filter</th>
+                <th>T-PUT</th>
+                <th>T-PUT Filter</th>
+                <th>Creation date</th>
+            </tr>
+        </thead>
+        <tbody id="myTable">
+            {% for estimation in latest_estimation_list %}
                 <tr>
-                    <th> View Forecast </th>
-                    <th>WIP</th>
-                    <th>Filter for WIP</th>
-                    <th>Throughput</th>
-                    <th>Filter for Throughput</th>
-                    <th>(DB) Creation date</th>
-                </tr>
-            </thead>
-            <tbody id="myTable">
-                {% for estimation in latest_estimation_list %}
-                    <tr>
-                        <td>
-                            <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
-                        </td>
-                        <td>
-                            [{{estimation.wip_lower_bound}},{{estimation.wip_upper_bound}}]
-                        </td>
-                        <td>
-                            {{ estimation.wip_filter }}
-                        </td>
-                        <td>
-                            [{{estimation.throughput_lower_bound}},{{estimation.throughput_upper_bound}}]
-                        </td>
-                        <td>
-                            {{ estimation.throughput_filter }}
-                        </td>
-                        <td>
-                            {{ estimation.creation_date }}
-                        </td>
+                    <td>
+                        <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
+                    </td>
+                    <td>
+                        <form action="{% url 'forecast:delete_estimation' query.id estimation.id %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="supporttype"/>
+                            <input class="btn btn-danger" type="submit" value="X">
+                        </form>
+                    </td>
 
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    <td>
+                        [{{estimation.wip_lower_bound}}, {{estimation.wip_upper_bound}}]
+                    </td>
+                    <td>
+                        {{ estimation.wip_filter }}
+                    </td>
+                    <td>
+                        [{{estimation.throughput_lower_bound}}, {{estimation.throughput_upper_bound}}]
+                    </td>
+                    <td>
+                        {{ estimation.throughput_filter }}
+                    </td>
+                    <td>
+                        {{ estimation.creation_date }}
+                    </td>
+
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+{% block body_scripts %}
+    <script>
+        if (document.getElementById('myProbabilityDistribution') != null) {
+            var ctx = document.getElementById('myProbabilityDistribution').getContext('2d');
+            var weeks = JSON.parse(document.getElementById('weeks').textContent);
+            var weeks_frequency = JSON.parse(document.getElementById('weeks_frequency').textContent);
+            var weeks_frequency_sum = JSON.parse(document.getElementById('weeks_frequency_sum').textContent);
+            var centile_values = JSON.parse(document.getElementById('centile_values').textContent);
+            var point_radius_list = JSON.parse(document.getElementById('point_radius_list').textContent);
+            var point_color_list = JSON.parse(document.getElementById('point_color_list').textContent);
+            var gradientStroke = ctx.createLinearGradient(0, 0, $(window).width(), 0);
+            gradientStroke.addColorStop(0, "rgba(244,29,49,0.6)");
+            gradientStroke.addColorStop(0.5, "rgba(244,215,28,0.6)");
+            gradientStroke.addColorStop(1, "rgba(120,244,31,0.6)");
+            var chart = new Chart(ctx, {
+                // The type of chart we want to create
+                type: 'line',
+                // The data for our dataset
+                data: {
+                    labels: weeks,
+                    datasets: [{
+                        label: weeks_frequency_sum,
+                        pointBorderColor: point_color_list,
+                        pointBorderWidth: 10,
+                        pointHoverRadius: point_radius_list,
+                        pointHoverBorderWidth: 10,
+                        pointRadius: point_radius_list,
+                        fill: true,
+                        // borderColor: gradientStroke,
+                        // pointBackgroundColor: gradientStroke,
+                        // pointHoverBackgroundColor: gradientStroke,
+                        // pointHoverBorderColor: gradientStroke,
+                        // backgroundColor: gradientStroke,
+                        borderWidth: 4,
+                        data: weeks_frequency
+                    }]
+                },
+
+                // Configuration options go here
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Estimation Results - Discrete Probability Distribution'
+                    },
+                    scales: {
+                        yAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Probability'
+                            },
+                            gridLines: {
+                                display: false
+                            }
+                        }],
+                        xAxes: [{
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Week'
+                            },
+                            ticks: {
+                                userCallback: function (item, index) {
+                                    if (centile_values.indexOf(parseInt(item, 10)) > -1) return item;
+                                },
+                                autoSkip: false
+                            },
+                            gridLines: {
+                                userCallback: function (item, index) {
+                                    console.log((centile_values.indexOf(parseInt(item, 10)) > -1));
+                                    if (centile_values.indexOf(parseInt(item, 10)) > -1) return item;
+                                },
+                                autoSkip: false
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        mode: 'nearest',
+                        filter: function (item, data) {
+                            return item.label !== "undefined";
+
+                        },
+                        callbacks: {
+                            label: function (tooltipItem, data) {
+                                var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                                var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
+                                if (firstIndexOfItem === lastIndexOfItem) {
+                                    return firstIndexOfItem.concat(" % LIKELIHOOD")
+                                } else {
+                                    return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % LIKELIHOOD")
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [{
+                    beforeRender: function (x, options) {
+                        var c = x.chart;
+                        var dataset = x.data.datasets[0];
+
+                        var fille = ctx.createLinearGradient(0, 0, c.width, 0);
+                        fille.addColorStop(0, "rgba(244,29,49,0.6)");
+                        fille.addColorStop(0.3, "rgba(244,215,28,0.6)");
+                        fille.addColorStop(1, "rgba(120,244,31,0.6)");
+
+                        var model = x.data.datasets[0]._meta[Object.keys(dataset._meta)[0]].dataset._model;
+                        model.backgroundColor = fille;
+                        model.pointBackgroundColor = fille;
+                        model.pointHoverBackgroundColor = fille;
+                        model.pointHoverBorderColor = fille;
+                        model.borderColor = fille;
+                    }
+                }]
+            });
+        }
+    </script>
+
+    <script>
+        var initial_wip = JSON.parse(document.getElementById('initial_wip').textContent);
+        var initial_throughput = JSON.parse(document.getElementById('initial_throughput').textContent);
+
+        $(document).on('input', '#split_rate_wip', function() {
+            var rate = parseFloat($(this).val());
+            $('#split_rate_wip_value').html($(this).val());
+            document.getElementById("wip_upper_bound").value = rate;
+            document.getElementById("wip_lower_bound").value = Math.floor((1.00 - rate) * initial_wip);
+            document.getElementById("wip_upper_bound").value = Math.floor((1.00 + rate) * initial_wip);
+        });
+
+        $(document).on('input', '#split_rate_throughput', function() {
+            var rate = parseFloat($(this).val());
+            $('#split_rate_throughput_value').html($(this).val());
+            document.getElementById("throughput_lower_bound").value = Math.floor((1.00 - rate) * initial_throughput);
+            document.getElementById("throughput_upper_bound").value = Math.floor((1.00 + rate) * initial_throughput);
+        });
+    </script>
+
     <script>
         $(document).ready(function(){$("#mySearch").on("keyup", function() {
             var value = $(this).val().toLowerCase();
             $("#myTable tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
             });
         });
+        });
     </script>
-
 {% endblock %}
