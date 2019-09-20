@@ -100,9 +100,9 @@
                         var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
                         var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
                         if (firstIndexOfItem === lastIndexOfItem)
-                        {return firstIndexOfItem.concat(" % Likelihood")}
+                        {return firstIndexOfItem.concat(" % LIKELIHOOD")}
                         else
-                        {return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % Likelihood")}
+                        {return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % LIKELIHOOD")}
                     }
                 }
             }

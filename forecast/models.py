@@ -25,7 +25,7 @@ class EstimationInput(models.Model):
     split_rate_wip = models.FloatField(default=0.5)
     split_rate_throughput = models.FloatField(default=0.7)
 
-    simulation_count = models.PositiveSmallIntegerField(default=10000)
+    simulation_count = models.PositiveSmallIntegerField(default=1000000)
 
     class Meta:
         abstract = True

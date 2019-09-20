@@ -30,6 +30,39 @@
         {{ point_radius_list |json_script:"point_radius_list"}}
         {{ point_color_list |json_script:"point_color_list"}}
 
+        <br>
+        <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
+            <thead>
+            <tr>
+                <th> 25% </th>
+                <th> 50% </th>
+                <th> 75% </th>
+                <th> 85% </th>
+                <th> 100% </th>
+                <th> Creation date </th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for estimation_percentile_values in latest_estimation_change_table %}
+            <tr>
+                {% for percentile_value in estimation_percentile_values %}
+                <td>
+                    {{ percentile_value.week }} WEEKS
+
+                    {% if percentile_value.rem %}
+                    <span style="color: {{ percentile_value.color }}">
+                                    {{ percentile_value.rem }}
+                                </span>
+                    {% endif %}
+
+                </td>
+                {% endfor %}
+                <td> {{ estimation_percentile_values.0.creation_date }} </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <br>
     {% else %}
         <h3 class="text-center"> No estimations </h3>
     {% endif %}
@@ -135,11 +168,11 @@
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label for="split_rate_wip"> <b> WIP SPLIT RATE <span id="split_rate_wip_value" > {{form.split_rate_wip}} </span> </b> </label>
+                                    <label for="split_rate_wip"> <b> WIP Split Rate <span id="split_rate_wip_value" > {{form.split_rate_wip}} </span> </b> </label>
                                     <input type="range" name="split_rate_wip" class="form-control" id="split_rate_wip" value="{{form.split_rate_wip}}" min="0.00" max="1.00" step="0.01">
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label for="split_rate_throughput"> <b> THROUGHPUT SPLIT RATE <span id="split_rate_throughput_value"> {{form.split_rate_throughput}} </span> </b> </label>
+                                    <label for="split_rate_throughput"> <b> Throughput Split Rate <span id="split_rate_throughput_value"> {{form.split_rate_throughput}} </span> </b> </label>
                                     <input type="range" name="split_rate_throughput" class="form-control" id="split_rate_throughput" value="{{form.split_rate_throughput}}" min="0.00" max="1.00" step="0.01">
                                 </div>
                             </div>
@@ -156,56 +189,58 @@
             </div>
         </div>
     </div>
-
     <br>
+    {% if latest_estimation_list.exists %}
+
+    {% endif %}
     <input class="form-control" id="mySearch" type="text" placeholder="Search by keyword to find past estimation ...">
     <br>
-        <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
-            <thead>
+    <table class="table table-bordered table-striped" style="table-layout: fixed;word-wrap: break-word">
+        <thead>
+            <tr>
+                <th> Inspect </th>
+                <th> Delete </th>
+                <th>WIP VALUES</th>
+                <th>WIP Filter</th>
+                <th>T-PUT</th>
+                <th>T-PUT Filter</th>
+                <th>Creation date</th>
+            </tr>
+        </thead>
+        <tbody id="myTable">
+            {% for estimation in latest_estimation_list %}
                 <tr>
-                    <th> Inspect Estimation </th>
-                    <th> Delete Estimation </th>
-                    <th>WIP</th>
-                    <th>Filter for WIP</th>
-                    <th>Throughput</th>
-                    <th>Filter for Throughput</th>
-                    <th>(DB) Creation date</th>
+                    <td>
+                        <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
+                    </td>
+                    <td>
+                        <form action="{% url 'forecast:delete_estimation' query.id estimation.id %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="supporttype"/>
+                            <input class="btn btn-danger" type="submit" value="X">
+                        </form>
+                    </td>
+
+                    <td>
+                        [{{estimation.wip_lower_bound}}, {{estimation.wip_upper_bound}}]
+                    </td>
+                    <td>
+                        {{ estimation.wip_filter }}
+                    </td>
+                    <td>
+                        [{{estimation.throughput_lower_bound}}, {{estimation.throughput_upper_bound}}]
+                    </td>
+                    <td>
+                        {{ estimation.throughput_filter }}
+                    </td>
+                    <td>
+                        {{ estimation.creation_date }}
+                    </td>
+
                 </tr>
-            </thead>
-            <tbody id="myTable">
-                {% for estimation in latest_estimation_list %}
-                    <tr>
-                        <td>
-                            <a class="btn btn-success" href="{% url 'forecast:results' query.id estimation.id %}"> -> </a>
-                        </td>
-                        <td>
-                            <form action="{% url 'forecast:delete_estimation' query.id estimation.id %}" method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="supporttype"/>
-                                <input class="btn btn-danger" type="submit" value="X">
-                            </form>
-                        </td>
-
-                        <td>
-                            [{{estimation.wip_lower_bound}},{{estimation.wip_upper_bound}}]
-                        </td>
-                        <td>
-                            {{ estimation.wip_filter }}
-                        </td>
-                        <td>
-                            [{{estimation.throughput_lower_bound}},{{estimation.throughput_upper_bound}}]
-                        </td>
-                        <td>
-                            {{ estimation.throughput_filter }}
-                        </td>
-                        <td>
-                            {{ estimation.creation_date }}
-                        </td>
-
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            {% endfor %}
+        </tbody>
+    </table>
 
 {% endblock %}
 
@@ -294,9 +329,9 @@
                                 var firstIndexOfItem = ((centile_values.indexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
                                 var lastIndexOfItem = ((centile_values.lastIndexOf(parseInt(tooltipItem.xLabel))) * 5).toString();
                                 if (firstIndexOfItem === lastIndexOfItem) {
-                                    return firstIndexOfItem.concat(" % Likelihood")
+                                    return firstIndexOfItem.concat(" % LIKELIHOOD")
                                 } else {
-                                    return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % Likelihood")
+                                    return firstIndexOfItem.concat(" - ", lastIndexOfItem, " % LIKELIHOOD")
                                 }
                             }
                         }

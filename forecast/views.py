@@ -4,7 +4,7 @@ from django.urls import reverse
 
 from forecast.helperMethods.rest import fetch_filters_and_update_form
 from forecast.helperMethods.forecast_utils import remove_order_by_from_filter, \
-    append_resolution_to_form_filters, dispatch_estimation_ui_values
+    append_resolution_to_form_filters, dispatch_estimation_ui_values, compute_latest_estimations_change_table
 from .models import Query, Estimation, Form
 
 
@@ -25,18 +25,21 @@ def detail(request, query_id, run_estimation_response=None):
 
     latest_estimation_list = query.estimation_set.order_by('-creation_date')
 
-    estimation = latest_estimation_list.first()
+    latest_estimation = latest_estimation_list.first()
 
     weeks_frequency_sum = \
-        estimation.simulation_count \
+        latest_estimation.simulation_count \
         if latest_estimation_list.exists() \
         else None
 
     (centile_values, weeks, weeks_frequency,
       point_radius_list, point_color_list) = \
-        dispatch_estimation_ui_values(estimation) \
+        dispatch_estimation_ui_values(latest_estimation) \
         if latest_estimation_list.exists() \
         else ([], [], [], [], [])
+
+    latest_estimation_change_table = \
+        compute_latest_estimations_change_table(query.estimation_set.order_by('creation_date'))
 
     context = {
         'nbar': 'detail',
@@ -52,7 +55,8 @@ def detail(request, query_id, run_estimation_response=None):
         'weeks_frequency': weeks_frequency,
         'weeks_frequency_sum': ("SAMPLE SIZE: " + str(weeks_frequency_sum)),
         'point_radius_list': point_radius_list,
-        'point_color_list': point_color_list}
+        'point_color_list': point_color_list,
+        'latest_estimation_change_table': latest_estimation_change_table}
 
     return render(request, 'forecast/detail.html', context)
 

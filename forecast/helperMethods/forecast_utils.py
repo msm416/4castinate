@@ -35,3 +35,38 @@ def dispatch_estimation_ui_values(estimation):
             list(map(float, estimation.weeks_frequency.split(';'))),
             list(map(float, estimation.point_radius_list.split(';'))),
             estimation.point_color_list.split(';'))
+
+
+def compute_latest_estimations_change_table(estimations):
+    latest_estimation_change_table = []
+    earlier_entry = None
+
+    # NOTE: WE ITERATE IN REVERSE ORDER W.R.T. HOW IT IS DISPLAYED
+    # (we return the reverse list)
+    for estimation in estimations:
+        entry = [{"week": int(value)}
+                 for value in [list(map(float, estimation.centile_values.split(';')))[i]
+                               for i in [5, 10, 15, 17, 20]]]
+
+        # Arbitrary choice to pass the  creation date of the estimation
+        # in the dict coresponding to the 25th percentile
+        # (which happens to be the first dict - i.e. index 0 - in entry)
+        entry[0]["creation_date"] = estimation.creation_date
+
+        if earlier_entry:
+            for entry_dict, earlier_entry_dict in zip(entry, earlier_entry):
+                week_dif = entry_dict["week"] - earlier_entry_dict["week"] - \
+                           int((estimation.creation_date - earlier_entry_creation_date).days / 7)
+                if week_dif > 0:
+                    entry_dict["color"] = "red"
+                    entry_dict["rem"] = f"(+{week_dif})"
+                elif week_dif < 0:
+                    entry_dict["color"] = "green"
+                    entry_dict["rem"] = f"({week_dif})"
+
+        latest_estimation_change_table.append(entry)
+        earlier_entry = entry
+        earlier_entry_creation_date = estimation.creation_date
+
+    latest_estimation_change_table.reverse()
+    return latest_estimation_change_table
