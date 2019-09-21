@@ -1,8 +1,11 @@
 # 4castinate
 ## About
-### Automated forecasting tool for Agile Teams. 
+### An automated, out-of-the-box solution to predict delivery dates in agile businesses. Useful for Project and Product Managers to forecast and report when a certain feature/project/milestone will be completed - and for Scrum Masters to understand when a team's backlog (or any set of issues determined from a JQL Query) will be done and how the team is progressing.
+
+### The forecasts are made via Monte Carlo Simulations to provide a more accurate accounting for risk. Accuracy and determinism of results is ensured by aggregating 1.000.000 simulations per forecast.
 ### Developed at [FundingCircle](https://www.fundingcircle.com/uk/). Inspired by [FocusedObjective](http://focusedobjective.com/story-size-estimates-matter-experiment/).
-## How to use
+## How to Use
+## Install
 ### 0. Prerequisites:
        - Python 3.6
 
@@ -38,8 +41,8 @@
        export JIRA_EMAIL='<jira_user_email>'
        export JIRA_API_TOKEN='<jira_api_token>'
 
-       export JIRA_OAUTH_TOKEN = <oauth_token>
-       export JIRA_OAUTH_TOKEN_SECRET = <oauth_token_secret>
+       export JIRA_OAUTH_TOKEN='<oauth_token>'
+       export JIRA_OAUTH_TOKEN_SECRET='<oauth_token_secret>'
 ##### 5.2.3 Deactivate environment:
        deactivate
 ##### 5.2.4 Activate it back to reload the new changes:
@@ -54,9 +57,9 @@
 #### 5.4 Test the app:
          python manage.py test forecast
 #### 5.5 Test the app with code coverage:
-         coverage run --source='./forecast' manage.py test forecast
+         coverage run --source='./forecast' --omit='./forecast/helperMethods/oauth/jira_oauth_script.py' manage.py test forecast
 ####     Followed by:
-         coverage report
+         coverage report -m
 ### 6. Deploy the app with eb cli. 
 #### 6.1 Follow steps [1-3](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create-deploy-python-django.html#python-django-deploy). The *EB CLI init* steps you'll have to perform just at the time when you clone the repo:
 #### 6.2 Set EB environment variables. This has to be done for each new environment you make on AWS EB:

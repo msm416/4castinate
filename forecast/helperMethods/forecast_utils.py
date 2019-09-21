@@ -55,7 +55,7 @@ def compute_latest_estimations_change_table(estimations):
 
         if earlier_entry:
             for entry_dict, earlier_entry_dict in zip(entry, earlier_entry):
-                week_dif = entry_dict["week"] - earlier_entry_dict["week"] - \
+                week_dif = entry_dict["week"] - earlier_entry_dict["week"] + \
                            int((estimation.creation_date - earlier_entry_creation_date).days / 7)
                 if week_dif > 0:
                     entry_dict["color"] = "red"
