@@ -3,8 +3,12 @@
 ### An automated, out-of-the-box solution to predict delivery dates in agile businesses. Useful for Project and Product Managers to forecast and report when a certain feature/project/milestone will be completed - and for Scrum Masters to understand when a team's backlog (or any set of issues determined from a JQL Query) will be done and how the team is progressing.
 
 ### The forecasts are made via Monte Carlo Simulations to provide a more accurate accounting for risk. Accuracy and determinism of results is ensured by aggregating 1.000.000 simulations per forecast.
+
+### Built for Jira Integration, but it can be used without it.
+
 ### Developed at [FundingCircle](https://www.fundingcircle.com/uk/). Inspired by [FocusedObjective](http://focusedobjective.com/story-size-estimates-matter-experiment/).
-## How to Use
+## DEMO
+![Output sample](https://github.com/msm416/4castinate/raw/master/media/demo.gif)
 ## Install
 ### 0. Prerequisites:
        - Python 3.6
