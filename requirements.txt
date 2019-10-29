@@ -3,7 +3,7 @@ chardet==3.0.4
 coverage==4.5.4
 cycler==0.10.0
 Django==2.1.11
-ecdsa==0.13.2
+ecdsa==0.13.3
 httplib2==0.13.1
 idna==2.7
 Jinja2==2.10.1
